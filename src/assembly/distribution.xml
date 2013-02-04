@@ -1,0 +1,21 @@
+<assembly>
+    <id>distribution</id>
+    <formats>
+        <format>zip</format>
+    </formats>
+    <fileSets>
+        <fileSet>
+            <directory>src</directory>
+        </fileSet>
+        <fileSet>
+            <directory>target/${project.artifactId}-${project.version}-standalone/lib</directory>
+            <outputDirectory>lib</outputDirectory>
+        </fileSet>
+    </fileSets>
+    <files>
+        <file>
+            <source>pom.xml</source>
+            <outputDirectory>src</outputDirectory>
+        </file>
+    </files>
+</assembly>
