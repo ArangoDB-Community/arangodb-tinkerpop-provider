@@ -34,7 +34,25 @@ ${ARANGODB_DIR}/bin/arangod \
     --database.maximal-journal-size 1048576  \
     --server.disable-admin-interface true \
     --server.disable-authentication true \
-    --javascript.gc-interval 1 &
+    --javascript.gc-interval 1 \
+    --log-file ${ARANGODB_DIR}/arangodb.log &
+
+sleep 5
+tail -20  ${ARANGODB_DIR}/arangodb.log
+
+echo "Check process"
+process=$(ps auxww | grep "bin/arangod" | grep -v grep)
+echo "$process"
+
+if [ "x$process" == "x" ]; then
+  echo "no process found"
+  echo "pwd="
+  pwd
+  echo "ARANGODB_DIR=${ARANGODB_DIR}"
+  echo "ls -la ${ARANGODB_DIR}/bin/"
+  ls -la ${ARANGODB_DIR}/bin/
+  exit 1
+fi
 
 echo "Waiting until ArangoDB is ready on port 8529"
 while [[ -z `curl -s 'http://127.0.0.1:8529/_api/version' ` ]] ; do
