@@ -16,15 +16,24 @@ if [ ! -d "$DIR/$NAME" ]; then
   ls -la
 fi
 
+ARCH=$(arch)
 PID=$(echo $PPID)
 TMP_DIR="/tmp/arangodb.$PID"
 PID_FILE="/tmp/arangodb.$PID.pid"
 ARANGODB_DIR="$DIR/$NAME"
+ARANGOD="${ARANGODB_DIR}/bin/arangod"
+
+
+if [ "$ARCH" == "x86_64" ]; then
+  ARANGOD="${ARANGOD}_x86_64"
+fi
 
 # create database directory
 mkdir ${TMP_DIR}
 
-${ARANGODB_DIR}/bin/arangod \
+echo "Starting arangodb '${ARANGOD}'"
+
+${ARANGOD} \
     --database.directory ${TMP_DIR}  \
     --configuration none  \
     --server.endpoint tcp://127.0.0.1:8529 \
@@ -40,14 +49,13 @@ ${ARANGODB_DIR}/bin/arangod \
 sleep 5
 tail -20  ${ARANGODB_DIR}/arangodb.log
 
-echo "Check process"
+echo "Check for arangod process"
 process=$(ps auxww | grep "bin/arangod" | grep -v grep)
-echo "$process"
 
 if [ "x$process" == "x" ]; then
-  echo "no process found"
-  echo "pwd="
-  pwd
+  echo "no 'arangod' process found"
+  echo "ARCH = $ARCH"
+  echo "pwd = $(pwd)"  
   echo "ARANGODB_DIR=${ARANGODB_DIR}"
   echo "ls -la ${ARANGODB_DIR}/bin/"
   ls -la ${ARANGODB_DIR}/bin/
