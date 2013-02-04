@@ -3,7 +3,7 @@
 blueprints-arangodb-graph
 =========================
 
-An implementation of the Blueprints API over ArangoDB
+An implementation of the Blueprints API for ArangoDB
 
 Installation & Testing
 =======================

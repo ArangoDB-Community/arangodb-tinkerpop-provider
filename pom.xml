@@ -4,11 +4,11 @@
   <artifactId>blueprints-arangodb-graph</artifactId>
   <version>1.0.0-SNAPSHOT</version>
   <name>Blueprints-ArangoDB-Graph</name>
-  <description>Blueprints property graph implementation for the ArangoDB database</description>
+  <description>An implementation of the Blueprints API for ArangoDB</description>
   <properties>
       <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <blueprints.version>2.1.0</blueprints.version>
-        <rexster.version>2.1.0</rexster.version>      
+        <blueprints.version>2.2.0</blueprints.version>
+        <rexster.version>2.2.0</rexster.version>      
   </properties>
   <dependencies>
         <dependency>
