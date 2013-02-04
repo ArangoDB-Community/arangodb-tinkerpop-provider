@@ -10,10 +10,8 @@ if [ ! -d "$DIR/$NAME" ]; then
   # download ArangoDB
   echo "wget http://www.arangodb.org/travisCI/$NAME.tar.gz"
   wget http://www.arangodb.org/travisCI/$NAME.tar.gz
-  echo "tar zvxf $NAME.tar.gz"
+  echo "tar zxf $NAME.tar.gz"
   tar zvxf $NAME.tar.gz
-  echo "ls -la"
-  ls -la
 fi
 
 ARCH=$(arch)
