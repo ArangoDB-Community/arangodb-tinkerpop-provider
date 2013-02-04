@@ -17,3 +17,4 @@ Start ArangoDB on localhost port 8529.
 As with other Blueprints implementations, the ArangoDB implementation is built with
 	```mvn clean install```
 
+ 
