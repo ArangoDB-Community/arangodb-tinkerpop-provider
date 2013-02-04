@@ -98,6 +98,18 @@ public class ArangoDBGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>, Key
      */
     
 	public HashMap<String, ArangoDBEdge> edgeCache = null;	
+		
+	/**
+     *  Maximum number of changed and not saved elements
+     */
+    
+	private int maxChangedElements = 30;
+	
+	/**
+     *  Set of changed Elements
+     */
+    
+	private HashSet<ArangoDBElement> changedElements = null;	
 	
 	/**
      *  Creates a Graph (simple configuration)
@@ -113,17 +125,7 @@ public class ArangoDBGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>, Key
     
 	public ArangoDBGraph(String host, int port, String name, String verticesCollectionName, String edgesCollectionName) throws ArangoDBGraphException		
 	{		
-		ArangoDBConfiguration configuration = new ArangoDBConfiguration();
-		configuration.setHost(host);
-		configuration.setPort(port);
-		vertexCache = new HashMap<String, ArangoDBVertex>();
-		edgeCache = new HashMap<String, ArangoDBEdge>();
-		client = new ArangoDBSimpleGraphClient(configuration);						
-		try {
-			rawGraph = this.client.createGraph(name, verticesCollectionName, edgesCollectionName);			
-		} catch (ArangoDBException e) {			
-			throw new ArangoDBGraphException(e.getMessage());			
-		}
+		this(new ArangoDBConfiguration(host, port), name, verticesCollectionName, edgesCollectionName);
 	}
 
 	/**
@@ -142,6 +144,7 @@ public class ArangoDBGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>, Key
 		vertexCache = new HashMap<String, ArangoDBVertex>();
 		edgeCache = new HashMap<String, ArangoDBEdge>();
 		client = new ArangoDBSimpleGraphClient(configuration);						
+		changedElements = new HashSet<ArangoDBElement>();
 		try {
 			rawGraph = this.client.createGraph(name, verticesCollectionName, edgesCollectionName);			
 		} catch (ArangoDBException e) {			
@@ -169,7 +172,11 @@ public class ArangoDBGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>, Key
 	public void removeVertex(Vertex vertex) {
 		if (vertex.getClass().equals(ArangoDBVertex.class)) {
 			ArangoDBVertex e = (ArangoDBVertex) vertex;
-			e.delete();
+			try {
+				e.delete();
+			} catch (ArangoDBException e1) {
+				// ignore the error
+			}
 		}
 	}
 
@@ -195,7 +202,11 @@ public class ArangoDBGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>, Key
 	public void removeEdge(Edge edge) {
 		if (edge.getClass().equals(ArangoDBEdge.class)) {
 			ArangoDBEdge e = (ArangoDBEdge) edge;
-			e.delete();
+			try {
+				e.delete();
+			} catch (ArangoDBException e1) {
+				// ignore the error
+			}
 		}
 	}
 
@@ -336,26 +347,37 @@ public class ArangoDBGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>, Key
 	}
 	
 	/**
-	 * Save changed vertices and edges
+	 * Save changed vertices and edges 
 	 * This functions has to be called in the shutdown function and before a query creates the cursor.
+	 * 
+	 * @throws ArangoDBException 
 	 */
 	
 	public void save () {
-		Set<String> keys = vertexCache.keySet();		
-		for (String key: keys) {
-			ArangoDBVertex v =  vertexCache.get(key);
-			if (v != null) {
-				v.save();
-			}			
+		
+		for (ArangoDBElement element: changedElements) {
+			try {
+				element.save();
+			} catch (ArangoDBException e) {
+				// could not save an element
+			}	
 		}
 		
-		keys = edgeCache.keySet();		
-		for (String key: keys) {
-			ArangoDBEdge v =  edgeCache.get(key);
-			if (v != null) {
-				v.save();
-			}			
-		}		
+		changedElements.clear();
+	}
+	
+	/**
+	 * Add a changed element to the set of changed elements 
+	 * 
+	 * @param element     the changed Element
+	 */
+	
+	public void addChangedElement(ArangoDBElement element) {
+		changedElements.add(element);
+		
+		if (changedElements.size() > maxChangedElements) {
+			save();
+		}
 		
 	}
 

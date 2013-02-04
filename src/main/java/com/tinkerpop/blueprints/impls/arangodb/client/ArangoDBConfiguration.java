@@ -65,11 +65,18 @@ public class ArangoDBConfiguration {
 
 	private Integer batchSize;
 	
+    /**
+     * the default constructor 
+     */
+
 	public ArangoDBConfiguration() {
+		this("127.0.0.1", 8529);
+	}
+	public ArangoDBConfiguration(String host, int port) {
+		this.host = host;
+		this.port = port;
 		this.maxPerConnection = 20;
 		this.maxTotalConnection = 20;
-		this.host = "127.0.0.1";
-		this.port = 8529;
 		this.https = false;
 		this.batchSize = 100;
 	}

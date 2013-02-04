@@ -59,10 +59,6 @@ abstract public class ArangoDBElement implements Element {
 		this.document = document;
 	}
 
-	/**
-	 * @inheritDoc
-	 */
-	
 	public Set<String> getPropertyKeys() {
 		Set<String> ps = document.getPropertyKeys();		
 		HashSet<String> result = new HashSet<String>(); 
@@ -72,10 +68,6 @@ abstract public class ArangoDBElement implements Element {
 		return result;
 	}
 
-	/**
-	 * @inheritDoc
-	 */
-	
 	public void setProperty(String key, Object value) {
 		
         if (key == null || key.equals(StringFactory.EMPTY_STRING))
@@ -85,16 +77,12 @@ abstract public class ArangoDBElement implements Element {
 		
 		try {
 			document.setProperty(ArangoDBUtil.normalizeKey(key), value);	
-			changed = true;
+			graph.addChangedElement(this);
 		} catch (ArangoDBException e) {
             throw ExceptionFactory.propertyKeyIdIsReserved();
 		}
 	}
 
-	/**
-	 * @inheritDoc
-	 */
-	
 	public Object removeProperty(String key) {
         if (key == null || key.equals(StringFactory.EMPTY_STRING))
             throw ExceptionFactory.elementKeyCanNotBeEmpty();        
@@ -106,17 +94,13 @@ abstract public class ArangoDBElement implements Element {
 		Object o = null;
 		try {
 			o = document.removeProperty(ArangoDBUtil.normalizeKey(key));
-			changed = true;
+			graph.addChangedElement(this);
 		} catch (ArangoDBException e) {
             throw ExceptionFactory.propertyKeyIdIsReserved();
 		}
 		return o;
 	}
 
-	/**
-	 * @inheritDoc
-	 */
-	
 	public Object getId() {
 		return document.getDocumentKey();
 	}

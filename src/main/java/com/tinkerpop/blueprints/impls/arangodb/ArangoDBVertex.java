@@ -99,6 +99,9 @@ public class ArangoDBVertex extends ArangoDBElement implements Vertex
 	}
 
 	public Iterable<Edge> getEdges(Direction direction, String... labels) {
+		if (document.isDeleted()) {
+			return null;
+		}
 		ArangoDBQuery q = new ArangoDBQuery(graph, this);
 		q.direction(direction);
 		q.labels(labels);
@@ -107,6 +110,9 @@ public class ArangoDBVertex extends ArangoDBElement implements Vertex
 	}
 
 	public Iterable<Vertex> getVertices(Direction direction, String... labels) {
+		if (document.isDeleted()) {
+			return null;
+		}
 		ArangoDBQuery q = new ArangoDBQuery(graph, this);
 		q.direction(direction);
 		q.labels(labels);
@@ -115,6 +121,9 @@ public class ArangoDBVertex extends ArangoDBElement implements Vertex
 	}
 
 	public Query query() {
+		if (document.isDeleted()) {
+			return null;
+		}
 		return new ArangoDBQuery(graph, this);
 	}
 
@@ -126,25 +135,20 @@ public class ArangoDBVertex extends ArangoDBElement implements Vertex
         return StringFactory.vertexString(this);
     }
 	
-	public void delete () {
-		String key = document.getDocumentKey();
-		try {
-			graph.client.deleteVertex(graph.getRawGraph(), (ArangoDBSimpleVertex) document);
-		} catch (ArangoDBException e) {
-		}
-		graph.vertexCache.remove(key);
-		changed = false;
-	}
-	
-	public void save () {
+	public void delete () throws ArangoDBException {
 		if (document.isDeleted()) {
 			return;
 		}
-		try {
-			graph.client.saveVertex(graph.getRawGraph(), (ArangoDBSimpleVertex) document);
-		} catch (ArangoDBException e) {
+		String key = document.getDocumentKey();
+		graph.client.deleteVertex(graph.getRawGraph(), (ArangoDBSimpleVertex) document);
+		graph.vertexCache.remove(key);
+	}
+	
+	public void save () throws ArangoDBException {
+		if (document.isDeleted()) {
+			return;
 		}
-		changed = false;
+		graph.client.saveVertex(graph.getRawGraph(), (ArangoDBSimpleVertex) document);
 	}	
 
 }

@@ -68,7 +68,7 @@ public class ArangoDBEdgeIterable<T extends Edge> implements Iterable<ArangoDBEd
     				return null;
     			}
     			
-    			return ArangoDBEdge.build(graph, simpleEdge);
+    			return ArangoDBEdge.build(graph, simpleEdge, null, null);
     		}
 
     		public void remove() {

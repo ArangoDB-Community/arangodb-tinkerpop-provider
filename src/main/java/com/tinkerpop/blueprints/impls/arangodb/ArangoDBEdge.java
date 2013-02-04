@@ -23,6 +23,16 @@ import com.tinkerpop.blueprints.util.StringFactory;
 
 public class ArangoDBEdge extends ArangoDBElement implements Edge
 {
+	/**
+	 * the _from vertex 
+	 */
+	private Vertex outVertex = null;
+	
+	/**
+	 * the _to vertex 
+	 */
+	private Vertex inVertex = null;
+	
 	static ArangoDBEdge create (ArangoDBGraph graph, Object id, Vertex outVertex, Vertex inVertex, String label) {
 		String key = (id != null) ? id.toString() : null; 
 		
@@ -32,7 +42,7 @@ public class ArangoDBEdge extends ArangoDBElement implements Edge
 			
 			try {
 				ArangoDBSimpleEdge v = graph.client.createEdge(graph.getRawGraph(), key, label, from.getRawVertex(), to.getRawVertex(), null);
-				return build(graph, v);
+				return build(graph, v, outVertex, inVertex);
 			} catch (ArangoDBException e) {
 				if (e.errorNumber() == 1210) {
 					throw ExceptionFactory.vertexWithIdAlreadyExists(id);
@@ -58,14 +68,14 @@ public class ArangoDBEdge extends ArangoDBElement implements Edge
 		
 		try {
 			ArangoDBSimpleEdge v = graph.client.getEdge(graph.getRawGraph(), key);
-			return build(graph, v);			
+			return build(graph, v,  null ,null);			
 		} catch (ArangoDBException e) {
 			// do nothing
 			return null;
 		}		
 	}
 	
-	static ArangoDBEdge build (ArangoDBGraph graph, ArangoDBSimpleEdge simpleEdge) {
+	static ArangoDBEdge build (ArangoDBGraph graph, ArangoDBSimpleEdge simpleEdge, Vertex outVertex, Vertex inVertex) {
 		String id = simpleEdge.getDocumentKey();
 		
 		ArangoDBEdge vert = graph.edgeCache.get(id);
@@ -74,17 +84,16 @@ public class ArangoDBEdge extends ArangoDBElement implements Edge
 			return vert;
 		}
 		
-		ArangoDBEdge newEdge = new ArangoDBEdge(graph, simpleEdge);
+		ArangoDBEdge newEdge = new ArangoDBEdge(graph, simpleEdge, outVertex, inVertex);
 		graph.edgeCache.put(newEdge.getRaw().getDocumentKey(), newEdge);
 		return newEdge;							
 	}
 
-	private Vertex inVertex = null;
-	private Vertex outVertex = null;
-	
-	private ArangoDBEdge(ArangoDBGraph graph, ArangoDBSimpleEdge edge) {
+	private ArangoDBEdge(ArangoDBGraph graph, ArangoDBSimpleEdge edge, Vertex outVertex, Vertex inVertex) {
 		this.graph = graph;
 		this.document = edge;
+		this.outVertex = outVertex;
+		this.inVertex= inVertex;
 	}
 	
 	public Vertex getVertex(Direction direction) throws IllegalArgumentException 
@@ -129,28 +138,20 @@ public class ArangoDBEdge extends ArangoDBElement implements Edge
         return StringFactory.edgeString(this);
     }
     
-	public void delete () {
+	public void delete () throws ArangoDBException {
 		if (document.isDeleted()) {
 			return;
 		}
 		String key = document.getDocumentKey();
-		try {
-			graph.client.deleteEdge(graph.getRawGraph(), (ArangoDBSimpleEdge) document);
-		} catch (ArangoDBException e) {
-		}			
+		graph.client.deleteEdge(graph.getRawGraph(), (ArangoDBSimpleEdge) document);
 		graph.edgeCache.remove(key);
-		changed = false;
 	}
     
-	public void save () {
+	public void save () throws ArangoDBException {
 		if (document.isDeleted()) {
 			return;
 		}
-		try {
-			graph.client.saveEdge(graph.getRawGraph(), (ArangoDBSimpleEdge) document);
-		} catch (ArangoDBException e) {
-		}				
-		changed = false;
+		graph.client.saveEdge(graph.getRawGraph(), (ArangoDBSimpleEdge) document);
 	}
 	
 }
