@@ -43,11 +43,9 @@ ${ARANGOD} \
     --database.maximal-journal-size 1048576  \
     --server.disable-admin-interface true \
     --server.disable-authentication true \
-    --javascript.gc-interval 1 \
-    --log-file ${ARANGODB_DIR}/arangodb.log &
+    --javascript.gc-interval 1 &
 
 sleep 5
-tail -20  ${ARANGODB_DIR}/arangodb.log
 
 echo "Check for arangod process"
 process=$(ps auxww | grep "bin/arangod" | grep -v grep)
