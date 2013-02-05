@@ -95,6 +95,9 @@ public class ArangoDBQuery implements Query {
     }
 
     public Query labels(final String... labels) {
+    	if (labels == null) {
+    		return this;
+    	}
     	this.labels = new Vector<String>();
     	
 		for (String label: labels) {

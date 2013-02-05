@@ -8,12 +8,20 @@
 
 package com.tinkerpop.blueprints.impls.arangodb.client;
 
+import org.apache.log4j.Logger;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 
 public class ArangoDBBaseCursor {
 
+	/**
+	 * the logger
+	 */
+
+	private static Logger LOG = Logger
+			.getLogger(ArangoDBBaseCursor.class);
+	
     /**
      * the ArangoDB client
      *
@@ -75,9 +83,30 @@ public class ArangoDBBaseCursor {
      */
 
 	public boolean hasNext () {
-		return hasNext || index < result.length();
+		if (index < result.length()) {
+			return true;
+		}
+		
+		if (hasNext) {
+			// get more results from the server
+			
+			try {
+				JSONObject json = client.getNextCursorValues(id);
+				setValues(json);			
+			} catch (ArangoDBException e) {
+				LOG.error("Cursor update failed!: " + e);
+				e.printStackTrace();
+				setValues(null);
+			}		
+			
+			if (index < result.length()) {
+				return true;
+			}
+		}
+		
+		return false;
 	}
-	
+
     /**
      * returns the next result
      *  
@@ -86,13 +115,6 @@ public class ArangoDBBaseCursor {
 
 	public Object next () {
 		if (hasNext()) {			
-			if (index >= result.length()) {
-				// load next chunk
-				if (!update()) {
-					return null;
-				}
-			}
-			
 			try {
 				return result.get(index++);
 			} catch (JSONException e) {
@@ -102,20 +124,6 @@ public class ArangoDBBaseCursor {
 		return null;
 	}
 	
-    /**
-     * loads more results and updates the state
-     */
-
-	private boolean update () {		
-		try {
-			JSONObject json = client.getNextCursorValues(id);
-			return setValues(json);
-			
-		} catch (ArangoDBException e) {
-			return false;
-		}		
-	}
-		
     /**
      * updates the state
      *  
@@ -187,6 +195,10 @@ public class ArangoDBBaseCursor {
 		id = "";
 		index = 0;
 	}
+	
+    /**
+     * Returns the count value
+     */
 	
 	public int count() {
 		return this.count;

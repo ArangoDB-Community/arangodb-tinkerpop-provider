@@ -102,7 +102,7 @@ public class ArangoDBEdge extends ArangoDBElement implements Edge
         {
         	if (inVertex == null) {
             	Object id = document.getProperty(ArangoDBSimpleEdge._TO);
-            	inVertex = graph.getVertex(id);
+            	inVertex = graph.getVertex(getKey(id));
         	}        	
     		return inVertex;
         }
@@ -110,7 +110,7 @@ public class ArangoDBEdge extends ArangoDBElement implements Edge
         {
         	if (outVertex == null) {
             	Object id = document.getProperty(ArangoDBSimpleEdge._FROM);
-            	outVertex = graph.getVertex(id);        		
+            	outVertex = graph.getVertex(getKey(id));        		
         	}
         	return outVertex;
         }
@@ -118,6 +118,20 @@ public class ArangoDBEdge extends ArangoDBElement implements Edge
         {
         	throw ExceptionFactory.bothIsNotSupported();
         }
+	}
+	
+	private String getKey (Object id) {
+		if (id == null) {			
+			return "";
+		}
+		
+		String[] parts = id.toString().split("/");
+		
+		if (parts.length > 1) {
+			return parts[1];
+		}
+		
+		return parts[0];
 	}
 
 	public String getLabel() 

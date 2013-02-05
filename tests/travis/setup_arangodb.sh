@@ -19,9 +19,8 @@ PID=$(echo $PPID)
 TMP_DIR="/tmp/arangodb.$PID"
 PID_FILE="/tmp/arangodb.$PID.pid"
 ARANGODB_DIR="$DIR/$NAME"
+
 ARANGOD="${ARANGODB_DIR}/bin/arangod"
-
-
 if [ "$ARCH" == "x86_64" ]; then
   ARANGOD="${ARANGOD}_x86_64"
 fi
@@ -51,10 +50,6 @@ process=$(ps auxww | grep "bin/arangod" | grep -v grep)
 if [ "x$process" == "x" ]; then
   echo "no 'arangod' process found"
   echo "ARCH = $ARCH"
-  echo "pwd = $(pwd)"  
-  echo "ARANGODB_DIR=${ARANGODB_DIR}"
-  echo "ls -la ${ARANGODB_DIR}/bin/"
-  ls -la ${ARANGODB_DIR}/bin/
   exit 1
 fi
 

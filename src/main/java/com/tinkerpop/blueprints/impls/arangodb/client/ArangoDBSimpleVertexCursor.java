@@ -20,6 +20,10 @@ public class ArangoDBSimpleVertexCursor extends ArangoDBBaseCursor {
 	public ArangoDBSimpleVertex next () {
 		Object o = super.next();
 		
+		if (o == null) {
+			return null;
+		}
+		
 		if (o instanceof JSONObject) {
 			try {
 				return new ArangoDBSimpleVertex((JSONObject) o);

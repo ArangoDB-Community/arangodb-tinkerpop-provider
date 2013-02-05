@@ -937,6 +937,7 @@ public class ArangoDBSimpleGraphClient {
 				JSONObject o = new JSONObject(tempString);
 
 				if (status.getStatusCode() > 299) {
+					// LOG.error("got code " + status.getStatusCode() + " after: " + path);
 					if (o.has("errorNum") && o.has("errorMessage")) {
 						throw new ArangoDBException(
 								o.getString("errorMessage"),
@@ -947,12 +948,19 @@ public class ArangoDBSimpleGraphClient {
 				return o;
 			}
 
+			LOG.error("no result after: " + path);
 			throw new ArangoDBException("no result");
 		} catch (ClientProtocolException e) {
+			LOG.error("ClientProtocolException after: " + path, e);
+			e.printStackTrace();
 			throw new ArangoDBException("URL request error: " + e.getMessage());
 		} catch (IOException e) {
+			LOG.error("IOException after: " + path, e);
+			e.printStackTrace();
 			throw new ArangoDBException("URL request error: " + e.getMessage());
 		} catch (JSONException e) {
+			LOG.error("JSONException after: " + path, e);
+			e.printStackTrace();
 			throw new ArangoDBException("Error in request result: "
 					+ e.getMessage());
 		}

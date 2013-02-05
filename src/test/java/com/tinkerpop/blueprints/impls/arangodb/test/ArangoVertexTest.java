@@ -517,6 +517,13 @@ public class ArangoVertexTest extends ArangoDBTestCase {
 				//System.out.println(count + ": " + v.getId());
 			}
 			assertEquals(num, count2);
+
+			count = 0;
+            for (final Vertex vertex : graph.getVertices()) {
+            	++count;
+            	assertNotNull(vertex);
+            }			
+			assertEquals(num, count);
 			
 			graph.shutdown();			
 		} catch (ArangoDBGraphException e) {

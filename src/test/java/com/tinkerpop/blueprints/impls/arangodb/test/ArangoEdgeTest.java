@@ -311,6 +311,41 @@ public class ArangoEdgeTest extends ArangoDBTestCase {
 			
 	}	
 	
+	public void testGetGraphEdge2 () {
+		Vertex a = null;
+		Vertex b = null;
+		try {			
+			a = graph.addVertex(null);
+			b = graph.addVertex(null);
+
+			Edge e1 = graph.addEdge("same", a, b, "label1");
+			assertNotNull(e1);
+			
+			Iterable<Edge> ei = a.getEdges(Direction.OUT);
+			assertNotNull(ei);
+			
+			ei = a.getEdges(Direction.IN);
+			assertNotNull(ei);
+			
+			ei = a.getEdges(Direction.OUT, "label1");
+			assertNotNull(ei);			
+
+			ei = a.getEdges(Direction.OUT, "egal");
+			assertNotNull(ei);			
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+			
+		try {			
+			graph.addEdge("same", a, b, "label2");
+			fail("inserted edge with same id");
+		} catch (IllegalArgumentException e) {
+		}
+			
+	}	
+	
 	protected void setUp() {
 		super.setUp();
 		try {
