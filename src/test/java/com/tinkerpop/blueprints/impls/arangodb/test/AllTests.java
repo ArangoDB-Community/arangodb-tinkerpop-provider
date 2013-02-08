@@ -10,6 +10,7 @@ public class AllTests {
 		    suite.addTestSuite(ArangoVertexTest.class);
 		    suite.addTestSuite(ArangoEdgeTest.class);
 		    suite.addTestSuite(ArangoQueryTest.class);
+		    suite.addTestSuite(ArangoDBGraphFactoryTest.class);
 		    return suite;
 		  }	
 }
