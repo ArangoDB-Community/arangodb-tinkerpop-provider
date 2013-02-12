@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.tinkerpop.blueprints</groupId>
   <artifactId>blueprints-arangodb-graph</artifactId>
-  <version>1.0.3-SNAPSHOT</version>
+  <version>1.0.3</version>
   <name>Blueprints-ArangoDB-Graph</name>
   <description>An implementation of the Blueprints API for ArangoDB</description>
   <properties>
