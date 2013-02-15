@@ -97,5 +97,28 @@ public class SimpleGraphTest extends BaseTestCase {
 			assertTrue(true);
 		}
 	}
+
+	public void test_ReCreateGraph () {
+		
+		ArangoDBSimpleGraph graph = null;
+		ArangoDBSimpleGraph graph2 = null;
+
+		try {
+			
+			graph = client.createGraph(graphName, vertices, edges);
+			
+			assertNotNull(graph);		
+			assertEquals(graphName, graph.getName());
+			assertEquals(vertices, graph.getVertexCollection());
+			assertEquals(edges, graph.getEdgeCollection());
+			
+			graph2 = client.createGraph(graphName, vertices, edges);
+			assertTrue(false);		
+
+		} catch (ArangoDBException e) {
+			assertTrue(true);		
+		}
+			
+	}
 	
 }

@@ -146,9 +146,22 @@ public class ArangoDBGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>, Key
 		client = new ArangoDBSimpleGraphClient(configuration);						
 		changedElements = new HashSet<ArangoDBElement>();
 		try {
-			rawGraph = this.client.createGraph(name, verticesCollectionName, edgesCollectionName);			
-		} catch (ArangoDBException e) {			
-			throw new ArangoDBGraphException(e.getMessage());			
+			rawGraph = this.client.getGraph(name);			
+			if (verticesCollectionName != null && edgesCollectionName != null) {
+				// check names
+				if (!rawGraph.getVertexCollection().equals(verticesCollectionName)) {
+					throw new ArangoDBGraphException("Graph with that name already exists with other vertex collection");				
+				}
+				if (!rawGraph.getEdgeCollection().equals(edgesCollectionName)) {
+					throw new ArangoDBGraphException("Graph with that name already exists with other edge collection");				
+				}				
+			}
+		} catch (ArangoDBException e_gal) {			
+			try {
+				rawGraph = this.client.createGraph(name, verticesCollectionName, edgesCollectionName);			
+			} catch (ArangoDBException e) {			
+				throw new ArangoDBGraphException(e.getMessage());			
+			}
 		}
 	}
 	
