@@ -4,3 +4,6 @@ before_script:
   - chmod 777 ./tests/travis/setup_arangodb.sh
   - ./tests/travis/setup_arangodb.sh
 
+notifications:
+  webhooks: https://www.buildheroes.com/api/projects/344bc97de7b525c9d8ab7739af75b702abb150e4/builds
+
