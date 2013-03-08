@@ -39,8 +39,7 @@ ${ARANGOD} \
     --javascript.action-directory ${ARANGODB_DIR}/js/actions/system  \
     --database.maximal-journal-size 1048576  \
     --server.disable-admin-interface true \
-    --server.disable-authentication true \
-    --javascript.gc-interval 1 &
+    --server.disable-authentication true &
 
 sleep 5
 
