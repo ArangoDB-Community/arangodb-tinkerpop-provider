@@ -7,3 +7,8 @@ before_script:
 notifications:
   webhooks: https://www.buildheroes.com/api/projects/344bc97de7b525c9d8ab7739af75b702abb150e4/builds
 
+jdk:
+  - oraclejdk7
+  - openjdk7
+  - openjdk6
+

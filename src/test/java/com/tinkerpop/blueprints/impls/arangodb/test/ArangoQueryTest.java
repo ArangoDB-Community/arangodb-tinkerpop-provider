@@ -4,8 +4,8 @@ import java.util.Iterator;
 
 import com.tinkerpop.blueprints.Direction;
 import com.tinkerpop.blueprints.Edge;
-import com.tinkerpop.blueprints.Query;
 import com.tinkerpop.blueprints.Vertex;
+import com.tinkerpop.blueprints.VertexQuery;
 import com.tinkerpop.blueprints.impls.arangodb.ArangoDBGraph;
 import com.tinkerpop.blueprints.impls.arangodb.ArangoDBGraphException;
 
@@ -23,7 +23,7 @@ public class ArangoQueryTest extends ArangoDBTestCase {
 				graph.addEdge("Edge_" + i, a, b, "label " + i);
 			}
 
-			Query q = a.query();
+			VertexQuery q = a.query();
 			
 			Iterable<Edge> edges = q.edges();
 			
@@ -57,7 +57,7 @@ public class ArangoQueryTest extends ArangoDBTestCase {
 				graph.addEdge("Edge_" + i, a, b, "label " + i);
 			}
 			
-			Query q = a.query();
+			VertexQuery q = a.query();
 			q.labels("label 10", "label 100", "label 199");
 			
 			Iterable<Edge> edges = q.edges();
@@ -93,7 +93,7 @@ public class ArangoQueryTest extends ArangoDBTestCase {
 				e.setProperty("intValue", i);
 			}
 
-			Query q = a.query();
+			VertexQuery q = a.query();
 			q.has("intValue", 33);
 			
 			Iterable<Edge> edges = q.edges();
@@ -146,7 +146,7 @@ public class ArangoQueryTest extends ArangoDBTestCase {
 				e.setProperty("intValue", i);
 			}
 
-			Query q = a.query();
+			VertexQuery q = a.query();
 			q.interval("intValue", 10, 12);
 			
 			Iterable<Edge> edges = q.edges();
@@ -180,7 +180,7 @@ public class ArangoQueryTest extends ArangoDBTestCase {
 				e.setProperty("intValue", i);
 			}
 
-			Query q = a.query();
+			VertexQuery q = a.query();
 			q.has("intValue", 3);
 			q.direction(Direction.OUT);			
 			

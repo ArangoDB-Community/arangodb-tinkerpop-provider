@@ -12,7 +12,7 @@ import com.tinkerpop.blueprints.impls.arangodb.client.*;
 
 import com.tinkerpop.blueprints.Direction;
 import com.tinkerpop.blueprints.Edge;
-import com.tinkerpop.blueprints.Query;
+import com.tinkerpop.blueprints.VertexQuery;
 import com.tinkerpop.blueprints.Vertex;
 import com.tinkerpop.blueprints.util.ExceptionFactory;
 import com.tinkerpop.blueprints.util.StringFactory;
@@ -102,7 +102,7 @@ public class ArangoDBVertex extends ArangoDBElement implements Vertex
 		if (document.isDeleted()) {
 			return null;
 		}
-		ArangoDBQuery q = new ArangoDBQuery(graph, this);
+		ArangoDBVertexQuery q = new ArangoDBVertexQuery(graph, this);
 		q.direction(direction);
 		q.labels(labels);
 				
@@ -113,18 +113,18 @@ public class ArangoDBVertex extends ArangoDBElement implements Vertex
 		if (document.isDeleted()) {
 			return null;
 		}
-		ArangoDBQuery q = new ArangoDBQuery(graph, this);
+		ArangoDBVertexQuery q = new ArangoDBVertexQuery(graph, this);
 		q.direction(direction);
 		q.labels(labels);
 				
 		return q.vertices();
 	}
 
-	public Query query() {
+	public VertexQuery query() {
 		if (document.isDeleted()) {
 			return null;
 		}
-		return new ArangoDBQuery(graph, this);
+		return new ArangoDBVertexQuery(graph, this);
 	}
 
 	public ArangoDBSimpleVertex getRawVertex () {
@@ -135,12 +135,16 @@ public class ArangoDBVertex extends ArangoDBElement implements Vertex
         return StringFactory.vertexString(this);
     }
 	
-	public void delete () throws ArangoDBException {
+	public void remove () {
 		if (document.isDeleted()) {
 			return;
 		}
 		String key = document.getDocumentKey();
-		graph.client.deleteVertex(graph.getRawGraph(), (ArangoDBSimpleVertex) document);
+		try {
+			graph.client.deleteVertex(graph.getRawGraph(), (ArangoDBSimpleVertex) document);
+		} catch (ArangoDBException ex) {
+			// ignore error
+		}
 		graph.vertexCache.remove(key);
 	}
 	
@@ -149,6 +153,10 @@ public class ArangoDBVertex extends ArangoDBElement implements Vertex
 			return;
 		}
 		graph.client.saveVertex(graph.getRawGraph(), (ArangoDBSimpleVertex) document);
-	}	
+	}
+
+	public Edge addEdge(String label, Vertex inVertex) {
+		return ArangoDBEdge.create(this.graph, null, this, inVertex, label);
+	}
 
 }

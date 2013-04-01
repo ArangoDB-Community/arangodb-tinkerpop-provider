@@ -15,7 +15,7 @@ import com.tinkerpop.blueprints.impls.arangodb.client.*;
 
 import com.tinkerpop.blueprints.Direction;
 import com.tinkerpop.blueprints.Edge;
-import com.tinkerpop.blueprints.Query;
+import com.tinkerpop.blueprints.VertexQuery;
 import com.tinkerpop.blueprints.Vertex;
 
 /**
@@ -23,7 +23,7 @@ import com.tinkerpop.blueprints.Vertex;
  * @author Johannes Gocke (http://www.triagens.de)
  */
 
-public class ArangoDBQuery implements Query {
+public class ArangoDBVertexQuery implements VertexQuery {
 
     private final ArangoDBGraph graph;
     private final ArangoDBSimpleVertex vertex;
@@ -33,7 +33,7 @@ public class ArangoDBQuery implements Query {
     private ArangoDBPropertyFilter propertyFilter = new ArangoDBPropertyFilter();
     private boolean count;
 
-    public ArangoDBQuery(final ArangoDBGraph graph, final ArangoDBVertex vertex) {
+    public ArangoDBVertexQuery(final ArangoDBGraph graph, final ArangoDBVertex vertex) {
     	this.graph = graph;
     	
     	if (vertex != null) {
@@ -46,12 +46,12 @@ public class ArangoDBQuery implements Query {
         this.count = false;
     }
 
-    public Query has(final String key, final Object value) {    	
+    public VertexQuery has(final String key, final Object value) {
     	propertyFilter.has(key, value, ArangoDBPropertyFilter.Compare.EQUAL);
         return this;
     }
 
-    public <T extends Comparable<T>> Query has(final String key, final T value, final Compare compare) {
+    public <T extends Comparable<T>> VertexQuery has(final String key, final T value, final Compare compare) {
         switch (compare) {
         case EQUAL:
         	propertyFilter.has(key, value, ArangoDBPropertyFilter.Compare.EQUAL);
@@ -75,13 +75,13 @@ public class ArangoDBQuery implements Query {
         return this;
     }
 
-    public <T extends Comparable<T>> Query interval(final String key, final T startValue, final T endValue) {
+    public <T extends Comparable<T>> VertexQuery interval(final String key, final T startValue, final T endValue) {
     	propertyFilter.has(key, startValue, ArangoDBPropertyFilter.Compare.GREATER_THAN_EQUAL);
     	propertyFilter.has(key, endValue, ArangoDBPropertyFilter.Compare.LESS_THAN);
         return this;
     }
 
-    public Query direction(final Direction direction) {
+    public VertexQuery direction(final Direction direction) {
     	if (direction == Direction.IN) {
             this.direction = ArangoDBBaseQuery.Direction.IN;    		
     	}
@@ -94,7 +94,7 @@ public class ArangoDBQuery implements Query {
         return this;
     }
 
-    public Query labels(final String... labels) {
+    public VertexQuery labels(final String... labels) {
     	if (labels == null) {
     		return this;
     	}
@@ -107,7 +107,7 @@ public class ArangoDBQuery implements Query {
         return this;
     }
 
-    public Query limit(final long max) {
+    public VertexQuery limit(final long max) {
         this.limit = max;
         return this;
     }

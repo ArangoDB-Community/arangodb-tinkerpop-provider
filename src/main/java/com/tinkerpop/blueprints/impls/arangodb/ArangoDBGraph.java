@@ -21,6 +21,7 @@ import com.tinkerpop.blueprints.Edge;
 import com.tinkerpop.blueprints.Element;
 import com.tinkerpop.blueprints.Features;
 import com.tinkerpop.blueprints.Graph;
+import com.tinkerpop.blueprints.GraphQuery;
 import com.tinkerpop.blueprints.KeyIndexableGraph;
 import com.tinkerpop.blueprints.MetaGraph;
 import com.tinkerpop.blueprints.Parameter;
@@ -184,22 +185,18 @@ public class ArangoDBGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>, Key
 
 	public void removeVertex(Vertex vertex) {
 		if (vertex.getClass().equals(ArangoDBVertex.class)) {
-			ArangoDBVertex e = (ArangoDBVertex) vertex;
-			try {
-				e.delete();
-			} catch (ArangoDBException e1) {
-				// ignore the error
-			}
+			ArangoDBVertex v = (ArangoDBVertex) vertex;
+			v.remove();
 		}
 	}
 
 	public Iterable<Vertex> getVertices() {
-		ArangoDBQuery q = new ArangoDBQuery(this, null);					
+		ArangoDBVertexQuery q = new ArangoDBVertexQuery(this, null);					
 		return q.vertices();
 	}
 
 	public Iterable<Vertex> getVertices(String key, Object value) {
-		ArangoDBQuery q = new ArangoDBQuery(this, null);			
+		ArangoDBVertexQuery q = new ArangoDBVertexQuery(this, null);			
 		q.has(key, value);
 		return q.vertices();
 	}
@@ -215,21 +212,17 @@ public class ArangoDBGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>, Key
 	public void removeEdge(Edge edge) {
 		if (edge.getClass().equals(ArangoDBEdge.class)) {
 			ArangoDBEdge e = (ArangoDBEdge) edge;
-			try {
-				e.delete();
-			} catch (ArangoDBException e1) {
-				// ignore the error
-			}
+			e.remove();
 		}
 	}
 
 	public Iterable<Edge> getEdges() {
-		ArangoDBQuery q = new ArangoDBQuery(this, null);			
+		ArangoDBVertexQuery q = new ArangoDBVertexQuery(this, null);			
 		return q.edges();
 	}
 
 	public Iterable<Edge> getEdges(String key, Object value) {
-		ArangoDBQuery q = new ArangoDBQuery(this, null);			
+		ArangoDBVertexQuery q = new ArangoDBVertexQuery(this, null);			
 		q.has(key, value);
 		return q.edges();
 	}
@@ -392,6 +385,10 @@ public class ArangoDBGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>, Key
 			save();
 		}
 		
+	}
+
+	public GraphQuery query() {
+		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
 	}
 
 }

@@ -148,16 +148,21 @@ public class ArangoDBEdge extends ArangoDBElement implements Edge
 		return (ArangoDBSimpleEdge) document;
 	}
 	
+	@Override
     public String toString() {
         return StringFactory.edgeString(this);
     }
     
-	public void delete () throws ArangoDBException {
+	public void remove () {
 		if (document.isDeleted()) {
 			return;
 		}
 		String key = document.getDocumentKey();
-		graph.client.deleteEdge(graph.getRawGraph(), (ArangoDBSimpleEdge) document);
+		try {
+			graph.client.deleteEdge(graph.getRawGraph(), (ArangoDBSimpleEdge) document);
+		} catch (ArangoDBException ex) {
+			// ignore error;
+		}
 		graph.edgeCache.remove(key);
 	}
     

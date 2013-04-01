@@ -38,12 +38,6 @@ abstract public class ArangoDBElement implements Element {
 	abstract public void save () throws ArangoDBException;
 	
 	/**
-	 * Delete the vertex or the edge in ArangoDB
-	 */
-	
-	abstract public void delete () throws ArangoDBException;
-	
-	/**
 	 * @inheritDoc
 	 */
 	
@@ -71,7 +65,7 @@ abstract public class ArangoDBElement implements Element {
 	public void setProperty(String key, Object value) {
 		
         if (key == null || key.equals(StringFactory.EMPTY_STRING))
-            throw ExceptionFactory.elementKeyCanNotBeEmpty();        
+            throw ExceptionFactory.propertyKeyCanNotBeEmpty();
         if (key.equals(StringFactory.ID))
             throw ExceptionFactory.propertyKeyIdIsReserved();
 		
@@ -85,7 +79,7 @@ abstract public class ArangoDBElement implements Element {
 
 	public Object removeProperty(String key) {
         if (key == null || key.equals(StringFactory.EMPTY_STRING))
-            throw ExceptionFactory.elementKeyCanNotBeEmpty();        
+            throw ExceptionFactory.propertyKeyCanNotBeEmpty();
         if (key.equals(StringFactory.ID))
             throw ExceptionFactory.propertyKeyIdIsReserved();
         if (key.equals(StringFactory.LABEL) && this instanceof Edge)
