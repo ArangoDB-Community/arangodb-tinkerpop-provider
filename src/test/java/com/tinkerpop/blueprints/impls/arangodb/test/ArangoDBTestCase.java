@@ -2,17 +2,16 @@ package com.tinkerpop.blueprints.impls.arangodb.test;
 
 import java.util.Iterator;
 
-import junit.framework.*;
-
 import com.tinkerpop.blueprints.impls.arangodb.client.*;
 import org.codehaus.jettison.json.JSONObject;
 
+import com.tinkerpop.blueprints.BaseTest;
 import com.tinkerpop.blueprints.Element;
 import com.tinkerpop.blueprints.impls.arangodb.ArangoDBEdge;
 import com.tinkerpop.blueprints.impls.arangodb.ArangoDBGraph;
 import com.tinkerpop.blueprints.impls.arangodb.ArangoDBVertex;
 
-public abstract class ArangoDBTestCase extends TestCase {
+public abstract class ArangoDBTestCase extends BaseTest {
 
     /**
      * the client 
