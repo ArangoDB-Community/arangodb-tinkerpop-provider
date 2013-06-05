@@ -275,29 +275,9 @@ public class ArangoDBGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>, Key
 	}
 
 	public <T extends Element> void createKeyIndex(String key,
-			Class<T> elementClass) {
-		// blueprints 2.2.0
-		Vector<String> fields = new Vector<String>();
-		
-		String n = ArangoDBUtil.normalizeKey(key);
-		fields.add(n);
-
-		try {
-	        if (elementClass.isAssignableFrom(Vertex.class)) {
-	        	client.createVertexIndex(rawGraph, "hash", false, fields);
-	        }
-	        else if (elementClass.isAssignableFrom(Edge.class)) {
-	        	client.createEdgeIndex(rawGraph, "hash", false, fields);
-	        }
-		} catch (ArangoDBException e) {			
-		}				
-	}	
-
-	public <T extends Element> void createKeyIndex(String key,
 			Class<T> elementClass, Parameter... indexParameters) {		
-		// blueprints 2.3.0
 		
-		String type = "hash";
+		String type = "skiplist";
 		boolean unique = false;						
 		Vector<String> fields = new Vector<String>();
 		
