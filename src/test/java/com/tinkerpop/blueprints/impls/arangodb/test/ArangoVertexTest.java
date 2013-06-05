@@ -187,6 +187,32 @@ public class ArangoVertexTest extends ArangoDBTestCase {
 		}
 	}
 	
+	public void testCreateVertexWithUniqueIndexAndNoDelay() {
+		try {			
+			ArangoDBGraph graph = new ArangoDBGraph(configuration, graphName, vertices, edges);
+			graph.setDelaySaveUpdates(false);
+			
+			Parameter<String, String> type   = new Parameter<String, String>("type", "skiplist");
+			Parameter<String, Boolean> unique = new Parameter<String, Boolean>("unique", true);
+			
+			graph.createKeyIndex("key1", Vertex.class, type, unique);
+			
+			Vertex a = graph.addVertex("v1");
+			a.setProperty("key1", "value1");
+						
+			Vertex b = graph.addVertex("v2");
+			b.setProperty("key1", "value1"); // this fails
+			
+			assertTrue(false);
+			
+		} catch (ArangoDBGraphException e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		} catch (IllegalArgumentException e) {
+			assertTrue(true);
+		}
+	}
+	
 	public void testCreateDoubleVertex() {
 		Integer id = 123;
 		boolean thrown = false;
