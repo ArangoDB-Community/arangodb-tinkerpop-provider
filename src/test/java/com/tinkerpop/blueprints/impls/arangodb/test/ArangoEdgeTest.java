@@ -5,6 +5,7 @@ import java.util.Vector;
 
 import com.tinkerpop.blueprints.Direction;
 import com.tinkerpop.blueprints.Edge;
+import com.tinkerpop.blueprints.Parameter;
 import com.tinkerpop.blueprints.Vertex;
 import com.tinkerpop.blueprints.impls.arangodb.ArangoDBGraph;
 import com.tinkerpop.blueprints.impls.arangodb.ArangoDBGraphException;
@@ -109,6 +110,29 @@ public class ArangoEdgeTest extends ArangoDBTestCase {
 			fail(e.getMessage());
 		}
 	}
+	
+	public void testCreateEdgeIndex() {
+		try {			
+			ArangoDBGraph graph = new ArangoDBGraph(configuration, graphName, vertices, edges);
+			
+			Parameter<String, String> type   = new Parameter<String, String>("type", "skiplist");
+			Parameter<String, Boolean> unique = new Parameter<String, Boolean>("unique", false);
+			
+			graph.createKeyIndex("key1", Edge.class, type, unique);
+
+			type   = new Parameter<String, String>("type", "hash");
+			unique = new Parameter<String, Boolean>("unique", true);
+			
+			graph.createKeyIndex("key2", Edge.class, type, unique);
+			
+			graph.shutdown();			
+			
+		} catch (ArangoDBGraphException e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}		
+	}
+	
 	
 	public void testVertexCreateManyEdges () {
 		int num = 200;

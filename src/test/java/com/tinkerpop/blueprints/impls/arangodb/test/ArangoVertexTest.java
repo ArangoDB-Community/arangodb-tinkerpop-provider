@@ -5,9 +5,12 @@ import java.util.Vector;
 
 import com.tinkerpop.blueprints.Direction;
 import com.tinkerpop.blueprints.Edge;
+import com.tinkerpop.blueprints.Parameter;
 import com.tinkerpop.blueprints.Vertex;
 import com.tinkerpop.blueprints.impls.arangodb.ArangoDBGraph;
 import com.tinkerpop.blueprints.impls.arangodb.ArangoDBGraphException;
+import com.tinkerpop.blueprints.impls.arangodb.ArangoDBVertex;
+import com.tinkerpop.blueprints.impls.arangodb.client.ArangoDBException;
 
 public class ArangoVertexTest extends ArangoDBTestCase {
 		
@@ -133,6 +136,55 @@ public class ArangoVertexTest extends ArangoDBTestCase {
 			fail(e.getMessage());
 		}
 		
+	}
+
+	public void testCreateVertexIndex() {
+		try {			
+			ArangoDBGraph graph = new ArangoDBGraph(configuration, graphName, vertices, edges);
+			
+			Parameter<String, String> type   = new Parameter<String, String>("type", "skiplist");
+			Parameter<String, Boolean> unique = new Parameter<String, Boolean>("unique", false);
+			
+			graph.createKeyIndex("key1", Vertex.class, type, unique);
+
+			type   = new Parameter<String, String>("type", "hash");
+			unique = new Parameter<String, Boolean>("unique", true);
+			
+			graph.createKeyIndex("key2", Vertex.class, type, unique);
+			
+			graph.shutdown();			
+			
+		} catch (ArangoDBGraphException e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}		
+	}
+	
+	public void testCreateVertexWithUniqueIndex() {
+		try {			
+			ArangoDBGraph graph = new ArangoDBGraph(configuration, graphName, vertices, edges);
+			
+			Parameter<String, String> type   = new Parameter<String, String>("type", "skiplist");
+			Parameter<String, Boolean> unique = new Parameter<String, Boolean>("unique", true);
+			
+			graph.createKeyIndex("key1", Vertex.class, type, unique);
+			
+			ArangoDBVertex a = (ArangoDBVertex) graph.addVertex("v1");
+			a.setProperty("key1", "value1");
+			a.save();
+						
+			ArangoDBVertex b = (ArangoDBVertex) graph.addVertex("v2");
+			b.setProperty("key1", "value1");
+			b.save(); // this fails
+			
+			assertTrue(false);
+			
+		} catch (ArangoDBGraphException e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		} catch (ArangoDBException e) {
+			assertTrue(true);
+		}
 	}
 	
 	public void testCreateDoubleVertex() {
