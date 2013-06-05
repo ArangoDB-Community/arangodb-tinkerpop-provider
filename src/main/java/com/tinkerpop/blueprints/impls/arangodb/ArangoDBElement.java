@@ -73,7 +73,7 @@ abstract public class ArangoDBElement implements Element {
 			document.setProperty(ArangoDBUtil.normalizeKey(key), value);	
 			graph.addChangedElement(this);
 		} catch (ArangoDBException e) {
-            throw ExceptionFactory.propertyKeyIdIsReserved();
+			throw new IllegalArgumentException(e.getMessage());
 		}
 	}
 
@@ -90,7 +90,7 @@ abstract public class ArangoDBElement implements Element {
 			o = document.removeProperty(ArangoDBUtil.normalizeKey(key));
 			graph.addChangedElement(this);
 		} catch (ArangoDBException e) {
-            throw ExceptionFactory.propertyKeyIdIsReserved();
+			throw new IllegalArgumentException(e.getMessage());
 		}
 		return o;
 	}

@@ -107,6 +107,12 @@ public class ArangoDBGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>, Key
 	private int maxChangedElements = 30;
 	
 	/**
+     *  Delay the saving of vertex and edge updates
+     */
+    
+	private boolean delaySaveUpdates = true;
+	
+	/**
      *  Set of changed Elements
      */
     
@@ -356,17 +362,33 @@ public class ArangoDBGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>, Key
 	 * Add a changed element to the set of changed elements 
 	 * 
 	 * @param element     the changed Element
+	 * 
+	 * @throws ArangoDBException 
 	 */
 	
-	public void addChangedElement(ArangoDBElement element) {
-		changedElements.add(element);
+	public void addChangedElement(ArangoDBElement element) throws ArangoDBException {
+		if (delaySaveUpdates) {
+			changedElements.add(element);
 		
-		if (changedElements.size() > maxChangedElements) {
-			save();
+			if (changedElements.size() > maxChangedElements) {
+				save();
+			}
 		}
-		
+		else {
+			element.save();
+		}
 	}
 
+	/**
+	 * Set delay of saving updates 
+	 * 
+	 * @param delaySaveUpdates     set the delay on saving
+	 */
+	
+	public void setDelaySaveUpdates(boolean delaySaveUpdates) {
+		this.delaySaveUpdates = delaySaveUpdates;
+	}
+	
 	public GraphQuery query() {
 		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
 	}
