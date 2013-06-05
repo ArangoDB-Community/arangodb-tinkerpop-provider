@@ -45,6 +45,25 @@ public class SimpleGraphIndexTest extends BaseTestCase {
 		}		
 	}
 
+	public void test_CreateIndex2 () {
+		Vector<String> fields = new Vector<String>();
+		
+		try {
+			// fails
+			client.createVertexIndex(graph, "skiplist", false, fields);
+			assertTrue(false);		
+		} catch (ArangoDBException e) {			
+		}
+
+		try {
+			fields.add("name");
+			ArangoDBIndex i = client.createVertexIndex(graph, "skiplist", false, fields);
+			assertNotNull(i);						
+		} catch (ArangoDBException e) {
+			assertTrue(false);		
+		}		
+	}
+
 	public void test_GetIndex () {
 		Vector<String> fields = new Vector<String>();
 		
