@@ -3,7 +3,7 @@
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd $DIR
 
-VERSION=1.4.0
+VERSION=1.4.4
 NAME=ArangoDB-$VERSION
 
 if [ ! -d "$DIR/$NAME" ]; then
@@ -57,4 +57,3 @@ while [[ -z `curl -s 'http://127.0.0.1:8529/_api/version' ` ]] ; do
 done
 
 echo "ArangoDB is up"
-
