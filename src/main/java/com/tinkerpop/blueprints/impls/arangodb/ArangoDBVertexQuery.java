@@ -15,6 +15,7 @@ import com.tinkerpop.blueprints.impls.arangodb.client.*;
 
 import com.tinkerpop.blueprints.Direction;
 import com.tinkerpop.blueprints.Edge;
+import com.tinkerpop.blueprints.Predicate;
 import com.tinkerpop.blueprints.VertexQuery;
 import com.tinkerpop.blueprints.Vertex;
 
@@ -75,12 +76,12 @@ public class ArangoDBVertexQuery implements VertexQuery {
         return this;
     }
 
-    public <T extends Comparable<T>> VertexQuery interval(final String key, final T startValue, final T endValue) {
-    	propertyFilter.has(key, startValue, ArangoDBPropertyFilter.Compare.GREATER_THAN_EQUAL);
-    	propertyFilter.has(key, endValue, ArangoDBPropertyFilter.Compare.LESS_THAN);
-        return this;
-    }
-
+//    public <T extends Comparable<T>> VertexQuery interval(final String key, final T startValue, final T endValue) {
+//    	propertyFilter.has(key, startValue, ArangoDBPropertyFilter.Compare.GREATER_THAN_EQUAL);
+//    	propertyFilter.has(key, endValue, ArangoDBPropertyFilter.Compare.LESS_THAN);
+//        return this;
+//    }
+//
     public VertexQuery direction(final Direction direction) {
     	if (direction == Direction.IN) {
             this.direction = ArangoDBBaseQuery.Direction.IN;    		
@@ -196,6 +197,30 @@ public class ArangoDBVertexQuery implements VertexQuery {
     		}
     		
     	};
+    }
+
+    public VertexQuery has(String string) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    public VertexQuery hasNot(String string) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    public VertexQuery hasNot(String string, Object o) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    public VertexQuery has(String string, Predicate prdct, Object o) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    public <T extends Comparable<?>> VertexQuery interval(String string, T t, T t1) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    public VertexQuery limit(int i) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
 }

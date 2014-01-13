@@ -132,7 +132,7 @@ public class ArangoQueryTest extends ArangoDBTestCase {
 			fail("Could not create graph");
 		}
 	}	
-
+/*
 	public void testVertexQueryByInterval () {
 		int num = 30;
 		
@@ -166,7 +166,7 @@ public class ArangoQueryTest extends ArangoDBTestCase {
 			fail("Could not create graph");
 		}
 	}	
-
+*/
 	public void testVertexQueryIDs () {
 		int num = 7;
 		

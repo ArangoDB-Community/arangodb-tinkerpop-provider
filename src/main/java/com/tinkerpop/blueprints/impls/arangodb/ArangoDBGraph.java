@@ -41,7 +41,7 @@ public class ArangoDBGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>, Key
         FEATURES.supportsDuplicateEdges = true;
         FEATURES.supportsSelfLoops = true;
         FEATURES.isPersistent = true;
-        FEATURES.isRDFModel = false;
+//        FEATURES.isRDFModel = false;
         
         FEATURES.supportsVertexIteration = true;
         FEATURES.supportsEdgeIteration = true;
