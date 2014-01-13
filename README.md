@@ -19,7 +19,7 @@ Start ArangoDB on localhost port 8529.
 As with other Blueprints implementations, the ArangoDB implementation is built with
 	```mvn clean install```
 
- Rexster Configuration
+Rexster Configuration
 =====================
 
 [Rexster](http://rexster.tinkerpop.com) is a graph server that can serve any Blueprints graph implementations. The ArangoDB implementation comes with a Rexster configuration class and can be deployed within Rexster.
