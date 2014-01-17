@@ -16,7 +16,6 @@ import java.util.Vector;
 
 import com.tinkerpop.blueprints.impls.arangodb.client.*;
 import com.tinkerpop.blueprints.impls.arangodb.utils.ArangoDBUtil;
-
 import com.tinkerpop.blueprints.Edge;
 import com.tinkerpop.blueprints.Element;
 import com.tinkerpop.blueprints.Features;
@@ -26,6 +25,7 @@ import com.tinkerpop.blueprints.KeyIndexableGraph;
 import com.tinkerpop.blueprints.MetaGraph;
 import com.tinkerpop.blueprints.Parameter;
 import com.tinkerpop.blueprints.Vertex;
+import com.tinkerpop.blueprints.util.DefaultGraphQuery;
 import com.tinkerpop.blueprints.util.StringFactory;
 
 /**
@@ -390,7 +390,7 @@ public class ArangoDBGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>, Key
 	}
 	
 	public GraphQuery query() {
-		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+		return new DefaultGraphQuery(this);
 	}
 
 }
