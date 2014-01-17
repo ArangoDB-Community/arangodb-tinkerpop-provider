@@ -41,6 +41,11 @@ To deploy:
       <host>localhost</host>
       <port>8529</port>
     </properties>
+    <extensions>
+      <allows>
+        <allow>tp:gremlin</allow>
+      </allows>
+    </extensions>
   </graph>
 ```
 
