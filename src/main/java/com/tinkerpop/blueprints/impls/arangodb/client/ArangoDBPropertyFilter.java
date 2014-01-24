@@ -17,7 +17,7 @@ import org.codehaus.jettison.json.JSONObject;
 
 public class ArangoDBPropertyFilter {
 	
-    public enum Compare {EQUAL, NOT_EQUAL, GREATER_THAN, GREATER_THAN_EQUAL, LESS_THAN, LESS_THAN_EQUAL};
+    public enum Compare {EQUAL, NOT_EQUAL, GREATER_THAN, GREATER_THAN_EQUAL, LESS_THAN, LESS_THAN_EQUAL, HAS, HAS_NOT};
 	
     private List<PropertyContainer> propertyContainers = new ArrayList<PropertyContainer>();
     
@@ -52,6 +52,12 @@ public class ArangoDBPropertyFilter {
             	break;
             case LESS_THAN_EQUAL:
             	o.put("compare", "<=");
+            	break;
+            case HAS:
+            	o.put("compare", "HAS");
+            	break;
+            case HAS_NOT:
+            	o.put("compare", "HAS_NOT");
             	break;
             }
             result.put(o);

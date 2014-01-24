@@ -11,17 +11,15 @@ package com.tinkerpop.blueprints.impls.arangodb;
 import java.util.Iterator;
 import java.util.Vector;
 
-import com.tinkerpop.blueprints.Direction;
 import com.tinkerpop.blueprints.Edge;
+import com.tinkerpop.blueprints.GraphQuery;
 import com.tinkerpop.blueprints.Predicate;
 import com.tinkerpop.blueprints.Vertex;
-import com.tinkerpop.blueprints.VertexQuery;
 import com.tinkerpop.blueprints.impls.arangodb.client.ArangoDBBaseQuery;
 import com.tinkerpop.blueprints.impls.arangodb.client.ArangoDBException;
 import com.tinkerpop.blueprints.impls.arangodb.client.ArangoDBPropertyFilter;
 import com.tinkerpop.blueprints.impls.arangodb.client.ArangoDBSimpleEdgeCursor;
 import com.tinkerpop.blueprints.impls.arangodb.client.ArangoDBSimpleEdgeQuery;
-import com.tinkerpop.blueprints.impls.arangodb.client.ArangoDBSimpleVertex;
 import com.tinkerpop.blueprints.impls.arangodb.client.ArangoDBSimpleVertexQuery;
 
 /**
@@ -30,34 +28,20 @@ import com.tinkerpop.blueprints.impls.arangodb.client.ArangoDBSimpleVertexQuery;
  * @author Guido Schwab (http://www.triagens.de)
  */
 
-public class ArangoDBVertexQuery implements VertexQuery {
+public class ArangoDBGraphQuery implements GraphQuery {
 
 	private final ArangoDBGraph graph;
-	private final ArangoDBSimpleVertex vertex;
 	private ArangoDBBaseQuery.Direction direction = ArangoDBBaseQuery.Direction.ALL;
-	private Vector<String> labels = null;
 	private Long limit = null;
 	private ArangoDBPropertyFilter propertyFilter = new ArangoDBPropertyFilter();
 	private boolean count;
 
-	public ArangoDBVertexQuery(final ArangoDBGraph graph, final ArangoDBVertex vertex) {
+	public ArangoDBGraphQuery(final ArangoDBGraph graph) {
 		this.graph = graph;
-
-		if (vertex != null) {
-			this.vertex = vertex.getRawVertex();
-		} else {
-			this.vertex = null;
-		}
-		this.labels = new Vector<String>();
 		this.count = false;
 	}
 
-	public VertexQuery has(final String key, final Object value) {
-		propertyFilter.has(key, value, ArangoDBPropertyFilter.Compare.EQUAL);
-		return this;
-	}
-
-	public <T extends Comparable<T>> VertexQuery has(final String key, final T value, final Compare compare) {
+	public <T extends Comparable<T>> GraphQuery has(final String key, final T value, final Compare compare) {
 		switch (compare) {
 		case EQUAL:
 			propertyFilter.has(key, value, ArangoDBPropertyFilter.Compare.EQUAL);
@@ -81,48 +65,10 @@ public class ArangoDBVertexQuery implements VertexQuery {
 		return this;
 	}
 
-	// public <T extends Comparable<T>> VertexQuery interval(final String key,
-	// final T startValue, final T endValue) {
-	// propertyFilter.has(key, startValue,
-	// ArangoDBPropertyFilter.Compare.GREATER_THAN_EQUAL);
-	// propertyFilter.has(key, endValue,
-	// ArangoDBPropertyFilter.Compare.LESS_THAN);
-	// return this;
-	// }
-	//
-	public VertexQuery direction(final Direction direction) {
-		if (direction == Direction.IN) {
-			this.direction = ArangoDBBaseQuery.Direction.IN;
-		} else if (direction == Direction.OUT) {
-			this.direction = ArangoDBBaseQuery.Direction.OUT;
-		} else {
-			this.direction = ArangoDBBaseQuery.Direction.ALL;
-		}
-		return this;
-	}
-
-	public VertexQuery labels(final String... labels) {
-		if (labels == null) {
-			return this;
-		}
-		this.labels = new Vector<String>();
-
-		for (String label : labels) {
-			this.labels.add(label);
-		}
-
-		return this;
-	}
-
 	public Iterable<Edge> edges() {
 		ArangoDBSimpleEdgeQuery query;
 		try {
-			if (vertex == null) {
-				query = graph.client.getGraphEdges(graph.getRawGraph(), propertyFilter, labels, limit, count);
-			} else {
-				query = graph.client.getVertexEdges(graph.getRawGraph(), vertex, propertyFilter, labels, direction,
-						limit, count);
-			}
+			query = graph.client.getGraphEdges(graph.getRawGraph(), propertyFilter, new Vector<String>(), limit, count);
 			return new ArangoDBEdgeIterable(graph, query);
 		} catch (ArangoDBException e) {
 			return new ArangoDBEdgeIterable(graph, null);
@@ -132,12 +78,7 @@ public class ArangoDBVertexQuery implements VertexQuery {
 	public Iterable<Vertex> vertices() {
 		ArangoDBSimpleVertexQuery query;
 		try {
-			if (vertex == null) {
-				query = graph.client.getGraphVertices(graph.getRawGraph(), propertyFilter, limit, count);
-			} else {
-				query = graph.client.getVertexNeighbors(graph.getRawGraph(), vertex, propertyFilter, labels, direction,
-						limit, count);
-			}
+			query = graph.client.getGraphVertices(graph.getRawGraph(), propertyFilter, limit, count);
 			return new ArangoDBVertexIterable(graph, query);
 		} catch (ArangoDBException e) {
 			return new ArangoDBVertexIterable(graph, null);
@@ -150,12 +91,7 @@ public class ArangoDBVertexQuery implements VertexQuery {
 
 		ArangoDBSimpleEdgeQuery query;
 		try {
-			if (vertex == null) {
-				query = graph.client.getGraphEdges(graph.getRawGraph(), propertyFilter, labels, limit, count);
-			} else {
-				query = graph.client.getVertexEdges(graph.getRawGraph(), vertex, propertyFilter, labels, direction,
-						limit, count);
-			}
+			query = graph.client.getGraphEdges(graph.getRawGraph(), propertyFilter, new Vector<String>(), limit, count);
 
 			ArangoDBSimpleEdgeCursor cursor = query.getResult();
 
@@ -198,22 +134,27 @@ public class ArangoDBVertexQuery implements VertexQuery {
 		};
 	}
 
-	public VertexQuery has(String key) {
+	public GraphQuery has(String key) {
 		propertyFilter.has(key, null, ArangoDBPropertyFilter.Compare.HAS);
 		return this;
 	}
 
-	public VertexQuery hasNot(String key) {
+	public GraphQuery hasNot(String key) {
 		propertyFilter.has(key, null, ArangoDBPropertyFilter.Compare.HAS_NOT);
 		return this;
 	}
 
-	public VertexQuery hasNot(String key, Object value) {
+	public GraphQuery has(String key, Object value) {
+		propertyFilter.has(key, value, ArangoDBPropertyFilter.Compare.EQUAL);
+		return this;
+	}
+
+	public GraphQuery hasNot(String key, Object value) {
 		propertyFilter.has(key, value, ArangoDBPropertyFilter.Compare.NOT_EQUAL);
 		return this;
 	}
 
-	public VertexQuery has(String key, Predicate prdct, Object value) {
+	public GraphQuery has(String key, Predicate prdct, Object value) {
 		if (prdct instanceof com.tinkerpop.blueprints.Compare) {
 			com.tinkerpop.blueprints.Compare compare = (com.tinkerpop.blueprints.Compare) prdct;
 
@@ -243,13 +184,13 @@ public class ArangoDBVertexQuery implements VertexQuery {
 		return this;
 	}
 
-	public <T extends Comparable<?>> VertexQuery interval(String key, T startValue, T endValue) {
+	public <T extends Comparable<?>> GraphQuery interval(String key, T startValue, T endValue) {
 		propertyFilter.has(key, startValue, ArangoDBPropertyFilter.Compare.GREATER_THAN_EQUAL);
 		propertyFilter.has(key, endValue, ArangoDBPropertyFilter.Compare.LESS_THAN);
 		return this;
 	}
 
-	public VertexQuery limit(int limit) {
+	public GraphQuery limit(int limit) {
 		this.limit = new Long(limit);
 		return this;
 	}
