@@ -42,12 +42,7 @@ public class ArangoDBVertexQuery implements VertexQuery {
 
 	public ArangoDBVertexQuery(final ArangoDBGraph graph, final ArangoDBVertex vertex) {
 		this.graph = graph;
-
-		if (vertex != null) {
-			this.vertex = vertex.getRawVertex();
-		} else {
-			this.vertex = null;
-		}
+		this.vertex = vertex.getRawVertex();
 		this.labels = new Vector<String>();
 		this.count = false;
 	}
@@ -117,12 +112,8 @@ public class ArangoDBVertexQuery implements VertexQuery {
 	public Iterable<Edge> edges() {
 		ArangoDBSimpleEdgeQuery query;
 		try {
-			if (vertex == null) {
-				query = graph.client.getGraphEdges(graph.getRawGraph(), propertyFilter, labels, limit, count);
-			} else {
-				query = graph.client.getVertexEdges(graph.getRawGraph(), vertex, propertyFilter, labels, direction,
-						limit, count);
-			}
+			query = graph.client.getVertexEdges(graph.getRawGraph(), vertex, propertyFilter, labels, direction, limit,
+					count);
 			return new ArangoDBEdgeIterable(graph, query);
 		} catch (ArangoDBException e) {
 			return new ArangoDBEdgeIterable(graph, null);
@@ -132,12 +123,8 @@ public class ArangoDBVertexQuery implements VertexQuery {
 	public Iterable<Vertex> vertices() {
 		ArangoDBSimpleVertexQuery query;
 		try {
-			if (vertex == null) {
-				query = graph.client.getGraphVertices(graph.getRawGraph(), propertyFilter, limit, count);
-			} else {
-				query = graph.client.getVertexNeighbors(graph.getRawGraph(), vertex, propertyFilter, labels, direction,
-						limit, count);
-			}
+			query = graph.client.getVertexNeighbors(graph.getRawGraph(), vertex, propertyFilter, labels, direction,
+					limit, count);
 			return new ArangoDBVertexIterable(graph, query);
 		} catch (ArangoDBException e) {
 			return new ArangoDBVertexIterable(graph, null);
@@ -150,12 +137,8 @@ public class ArangoDBVertexQuery implements VertexQuery {
 
 		ArangoDBSimpleEdgeQuery query;
 		try {
-			if (vertex == null) {
-				query = graph.client.getGraphEdges(graph.getRawGraph(), propertyFilter, labels, limit, count);
-			} else {
-				query = graph.client.getVertexEdges(graph.getRawGraph(), vertex, propertyFilter, labels, direction,
-						limit, count);
-			}
+			query = graph.client.getVertexEdges(graph.getRawGraph(), vertex, propertyFilter, labels, direction, limit,
+					count);
 
 			ArangoDBSimpleEdgeCursor cursor = query.getResult();
 
