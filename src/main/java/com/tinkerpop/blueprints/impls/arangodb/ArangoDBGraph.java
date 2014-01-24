@@ -210,12 +210,12 @@ public class ArangoDBGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>, Key
 	}
 
 	public Iterable<Vertex> getVertices() {
-		ArangoDBVertexQuery q = new ArangoDBVertexQuery(this, null);
+		ArangoDBGraphQuery q = new ArangoDBGraphQuery(this);
 		return q.vertices();
 	}
 
 	public Iterable<Vertex> getVertices(String key, Object value) {
-		ArangoDBVertexQuery q = new ArangoDBVertexQuery(this, null);
+		ArangoDBGraphQuery q = new ArangoDBGraphQuery(this);
 		q.has(key, value);
 		return q.vertices();
 	}
@@ -236,12 +236,12 @@ public class ArangoDBGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>, Key
 	}
 
 	public Iterable<Edge> getEdges() {
-		ArangoDBVertexQuery q = new ArangoDBVertexQuery(this, null);
+		ArangoDBGraphQuery q = new ArangoDBGraphQuery(this);
 		return q.edges();
 	}
 
 	public Iterable<Edge> getEdges(String key, Object value) {
-		ArangoDBVertexQuery q = new ArangoDBVertexQuery(this, null);
+		ArangoDBGraphQuery q = new ArangoDBGraphQuery(this);
 		q.has(key, value);
 		return q.edges();
 	}
