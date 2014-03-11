@@ -26,8 +26,15 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.conn.ClientConnectionManager;
+import org.apache.http.conn.ConnectionKeepAliveStrategy;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.conn.PoolingClientConnectionManager;
+import org.apache.http.params.BasicHttpParams;
+import org.apache.http.params.HttpConnectionParams;
+import org.apache.http.params.HttpParams;
+import org.apache.http.params.HttpProtocolParams;
+import org.apache.http.protocol.RequestExpectContinue;
 import org.apache.log4j.Logger;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
@@ -53,7 +60,7 @@ public class ArangoDBSimpleGraphClient {
 	 * a connection manager (call shutdown!)
 	 */
 
-	private ClientConnectionManager connectionManager;
+	private static ClientConnectionManager connectionManager;
 
 	/**
 	 * a http client
@@ -78,8 +85,34 @@ public class ArangoDBSimpleGraphClient {
 
 	public ArangoDBSimpleGraphClient(ArangoDBConfiguration configuration) {
 		this.configuration = configuration;
-		this.connectionManager = this.configuration.createClientConnectionManager();
-		this.httpClient = new DefaultHttpClient();
+
+                if (connectionManager == null) {
+  		  connectionManager = this.configuration.createClientConnectionManager();
+                }
+			
+		int connectionTimeout = 3000;
+		int socketTimeout = 10000;
+		final long keepAliveTimeout = 90;
+		boolean useExpectContinue = false;
+		boolean staleConnectionCheck = false;
+                
+                HttpParams params = new BasicHttpParams();
+                params.setParameter(HttpConnectionParams.STALE_CONNECTION_CHECK, staleConnectionCheck);
+                params.setParameter(HttpProtocolParams.USE_EXPECT_CONTINUE, useExpectContinue);
+                params.setParameter(HttpConnectionParams.CONNECTION_TIMEOUT, connectionTimeout);
+                params.setParameter(HttpConnectionParams.SO_TIMEOUT, socketTimeout);
+                params.setParameter(HttpConnectionParams.TCP_NODELAY, true);
+                params.setParameter(HttpConnectionParams.SO_KEEPALIVE, false); // keep-alive on TCP level
+                        
+                ConnectionKeepAliveStrategy customKeepAliveStrategy = new ConnectionKeepAliveStrategy() {
+                  public long getKeepAliveDuration(org.apache.http.HttpResponse response, org.apache.http.protocol.HttpContext context) {
+                    return keepAliveTimeout * 1000;
+                  }
+                };
+		
+                this.httpClient = new DefaultHttpClient(connectionManager, params);
+                this.httpClient.setKeepAliveStrategy(customKeepAliveStrategy);
+                //this.httpClient = new DefaultHttpClient();
 	}
 
 	/**

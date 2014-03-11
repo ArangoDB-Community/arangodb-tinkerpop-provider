@@ -154,9 +154,14 @@ public class ArangoDBConfiguration {
 		         new Scheme("https", port, SSLSocketFactory.getSocketFactory()));
 		
 		PoolingClientConnectionManager cm = new PoolingClientConnectionManager(schemeRegistry);
-		cm.setDefaultMaxPerRoute(maxPerConnection);
 		cm.setMaxTotal(maxTotalConnection);        
-        
-        return cm;
+		cm.setDefaultMaxPerRoute(maxPerConnection);
+                
+                boolean cleanupIdleConnections = true;
+                if (cleanupIdleConnections) {
+		  IdleConnectionMonitor.monitor(cm);
+		}
+
+                return cm;
 	}	
 }

@@ -33,7 +33,7 @@ public abstract class BaseTestCase extends TestCase {
 	
 	protected void setUp() {
 		ArangoDBConfiguration configuration = new ArangoDBConfiguration();
-		
+	
 		client = new ArangoDBSimpleGraphClient(configuration);
 		
 		try {
@@ -65,7 +65,7 @@ public abstract class BaseTestCase extends TestCase {
 		} catch (ArangoDBException e) {
 		}
 
-		client.shutdown();
+                client = null;
 	}
 
 

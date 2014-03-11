@@ -191,7 +191,6 @@ public class ArangoDBGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>, Key
 
 	public void shutdown() {
 		save();
-		client.shutdown();
 	}
 
 	public Vertex addVertex(Object id) {

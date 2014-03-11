@@ -610,7 +610,7 @@ public class ArangoVertexTest extends ArangoDBTestCase {
 		}		
 	}	
 
-	public void testVertexCreateDelteManyVertices () {
+	public void testVertexCreateDeleteManyVertices () {
 		int num = 200;
 		
 		try {			

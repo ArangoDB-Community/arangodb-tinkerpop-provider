@@ -216,7 +216,6 @@ public abstract class ArangoDBTestCase extends BaseTest {
 
 	@After
 	protected void tearDown() {
-		tmpClient.shutdown();
 	}
 
 }

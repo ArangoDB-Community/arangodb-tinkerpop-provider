@@ -113,10 +113,12 @@ public class SimpleGraphTest extends BaseTestCase {
 			assertEquals(edges, graph.getEdgeCollection());
 			
 			graph2 = client.createGraph(graphName, vertices, edges);
-			assertTrue(false);		
+                        assertEquals(graphName, graph2.getName());
+                        assertEquals(vertices, graph2.getVertexCollection());
+                        assertEquals(edges, graph2.getEdgeCollection());
 
 		} catch (ArangoDBException e) {
-			assertTrue(true);		
+			assertTrue(false);		
 		}
 			
 	}
