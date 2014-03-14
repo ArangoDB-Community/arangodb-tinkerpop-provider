@@ -29,12 +29,10 @@ import org.apache.http.conn.ClientConnectionManager;
 import org.apache.http.conn.ConnectionKeepAliveStrategy;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.impl.conn.PoolingClientConnectionManager;
 import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
 import org.apache.http.params.HttpProtocolParams;
-import org.apache.http.protocol.RequestExpectContinue;
 import org.apache.log4j.Logger;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
@@ -86,33 +84,37 @@ public class ArangoDBSimpleGraphClient {
 	public ArangoDBSimpleGraphClient(ArangoDBConfiguration configuration) {
 		this.configuration = configuration;
 
-                if (connectionManager == null) {
-  		  connectionManager = this.configuration.createClientConnectionManager();
-                }
-			
+		if (connectionManager == null) {
+			connectionManager = this.configuration.createClientConnectionManager();
+		}
+
 		int connectionTimeout = 3000;
 		int socketTimeout = 10000;
 		final long keepAliveTimeout = 90;
 		boolean useExpectContinue = false;
 		boolean staleConnectionCheck = false;
-                
-                HttpParams params = new BasicHttpParams();
-                params.setParameter(HttpConnectionParams.STALE_CONNECTION_CHECK, staleConnectionCheck);
-                params.setParameter(HttpProtocolParams.USE_EXPECT_CONTINUE, useExpectContinue);
-                params.setParameter(HttpConnectionParams.CONNECTION_TIMEOUT, connectionTimeout);
-                params.setParameter(HttpConnectionParams.SO_TIMEOUT, socketTimeout);
-                params.setParameter(HttpConnectionParams.TCP_NODELAY, true);
-                params.setParameter(HttpConnectionParams.SO_KEEPALIVE, false); // keep-alive on TCP level
-                        
-                ConnectionKeepAliveStrategy customKeepAliveStrategy = new ConnectionKeepAliveStrategy() {
-                  public long getKeepAliveDuration(org.apache.http.HttpResponse response, org.apache.http.protocol.HttpContext context) {
-                    return keepAliveTimeout * 1000;
-                  }
-                };
-		
-                this.httpClient = new DefaultHttpClient(connectionManager, params);
-                this.httpClient.setKeepAliveStrategy(customKeepAliveStrategy);
-                //this.httpClient = new DefaultHttpClient();
+
+		HttpParams params = new BasicHttpParams();
+		params.setParameter(HttpConnectionParams.STALE_CONNECTION_CHECK, staleConnectionCheck);
+		params.setParameter(HttpProtocolParams.USE_EXPECT_CONTINUE, useExpectContinue);
+		params.setParameter(HttpConnectionParams.CONNECTION_TIMEOUT, connectionTimeout);
+		params.setParameter(HttpConnectionParams.SO_TIMEOUT, socketTimeout);
+		params.setParameter(HttpConnectionParams.TCP_NODELAY, true);
+		params.setParameter(HttpConnectionParams.SO_KEEPALIVE, false); // keep-alive
+																		// on
+																		// TCP
+																		// level
+
+		ConnectionKeepAliveStrategy customKeepAliveStrategy = new ConnectionKeepAliveStrategy() {
+			public long getKeepAliveDuration(org.apache.http.HttpResponse response,
+					org.apache.http.protocol.HttpContext context) {
+				return keepAliveTimeout * 1000;
+			}
+		};
+
+		this.httpClient = new DefaultHttpClient(connectionManager, params);
+		this.httpClient.setKeepAliveStrategy(customKeepAliveStrategy);
+		// this.httpClient = new DefaultHttpClient();
 	}
 
 	/**
@@ -466,6 +468,37 @@ public class ArangoDBSimpleGraphClient {
 		return false;
 	}
 
+	public JSONObject createVertices(ArangoDBSimpleGraph graph, List<ArangoDBSimpleVertex> vertices, boolean details)
+			throws ArangoDBException {
+
+		StringBuilder sb = new StringBuilder(4096);
+
+		for (ArangoDBSimpleVertex v : vertices) {
+			JSONObject j = v.getProperties();
+			sb.append(j.toString()).append("\n");
+		}
+
+		JSONObject result = postRequest("_api/import?collection=" + urlEncode(graph.getVertexCollection())
+				+ "&type=documents&details=" + (details ? "true" : "false"), sb.toString());
+
+		return result;
+	}
+
+	public JSONObject createEdges(ArangoDBSimpleGraph graph, List<ArangoDBSimpleEdge> edges, boolean details)
+			throws ArangoDBException {
+
+		StringBuilder sb = new StringBuilder(4096);
+
+		for (ArangoDBSimpleEdge e : edges) {
+			sb.append(e.getProperties().toString()).append("\n");
+		}
+
+		JSONObject result = postRequest("_api/import?collection=" + urlEncode(graph.getEdgeCollection())
+				+ "&type=documents&details=" + (details ? "true" : "false"), sb.toString());
+
+		return result;
+	}
+
 	/**
 	 * Delete cursor
 	 * 
@@ -797,6 +830,10 @@ public class ArangoDBSimpleGraphClient {
 	 */
 
 	public JSONObject postRequest(String path, JSONObject body) throws ArangoDBException {
+		return request(RequestType.POST, path, body == null ? null : body.toString());
+	}
+
+	public JSONObject postRequest(String path, String body) throws ArangoDBException {
 		return request(RequestType.POST, path, body);
 	}
 
@@ -812,7 +849,7 @@ public class ArangoDBSimpleGraphClient {
 	 */
 
 	public JSONObject putRequest(String path, JSONObject body) throws ArangoDBException {
-		return request(RequestType.PUT, path, body);
+		return request(RequestType.PUT, path, body == null ? null : body.toString());
 	}
 
 	/**
@@ -858,7 +895,7 @@ public class ArangoDBSimpleGraphClient {
 	 * @throws ArangoDBException
 	 */
 
-	private JSONObject request(RequestType type, String path, JSONObject body) throws ArangoDBException {
+	private JSONObject request(RequestType type, String path, String body) throws ArangoDBException {
 
 		HttpResponse response = null;
 		try {
@@ -875,8 +912,8 @@ public class ArangoDBSimpleGraphClient {
 				LOG.debug("Request: POST " + path);
 				HttpPost post = new HttpPost(path);
 				if (body != null) {
-					LOG.debug("Request-body: " + body.toString());
-					post.setEntity(new StringEntity(body.toString(), "application/json", "utf-8"));
+					LOG.debug("Request-body: " + body);
+					post.setEntity(new StringEntity(body, "application/json", "utf-8"));
 				}
 				request = post;
 				break;
@@ -884,8 +921,8 @@ public class ArangoDBSimpleGraphClient {
 				LOG.debug("Request: PUT " + path);
 				HttpPut put = new HttpPut(path);
 				if (body != null) {
-					LOG.debug("Request-body: " + body.toString());
-					put.setEntity(new StringEntity(body.toString(), "application/json", "utf-8"));
+					LOG.debug("Request-body: " + body);
+					put.setEntity(new StringEntity(body, "application/json", "utf-8"));
 				}
 				request = put;
 				break;

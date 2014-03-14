@@ -1,10 +1,13 @@
 package com.tinkerpop.blueprints.impls.arangodb.test;
 
+import org.junit.Test;
+
 import com.tinkerpop.blueprints.impls.arangodb.ArangoDBGraph;
 import com.tinkerpop.blueprints.impls.arangodb.ArangoDBGraphException;
 
 public class ArangoGraphTest extends ArangoDBTestCase {
 
+	@Test
 	public void testCreateGraph() {
 		String graph_id = null;
 		try {
@@ -40,6 +43,7 @@ public class ArangoGraphTest extends ArangoDBTestCase {
 		}
 	}
 
+	@Test
 	public void testCreateGraph2() {
 		String graph_id = null;
 		try {
