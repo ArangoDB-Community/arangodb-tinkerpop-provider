@@ -85,22 +85,27 @@ public class ArangoDBSimpleGraphClient {
 		this.configuration = configuration;
 
 		if (connectionManager == null) {
-			connectionManager = this.configuration.createClientConnectionManager();
+			connectionManager = configuration.createClientConnectionManager();
 		}
 
-		int connectionTimeout = 3000;
-		int socketTimeout = 10000;
-		final long keepAliveTimeout = 90;
+		int connectionTimeout = configuration.getConnectionTimeout();
+		int socketTimeout = configuration.getSocketTimeout();
+		final int keepAliveTimeout = configuration.getKeepAliveTimeout();
+		boolean staleConnectionCheck = configuration.getStaleConnectionCheck();
+		boolean socketKeepAlive = configuration.getSocketKeepAlive();
 		boolean useExpectContinue = false;
-		boolean staleConnectionCheck = false;
 
 		HttpParams params = new BasicHttpParams();
 		params.setParameter(HttpConnectionParams.STALE_CONNECTION_CHECK, staleConnectionCheck);
 		params.setParameter(HttpProtocolParams.USE_EXPECT_CONTINUE, useExpectContinue);
 		params.setParameter(HttpConnectionParams.CONNECTION_TIMEOUT, connectionTimeout);
-		params.setParameter(HttpConnectionParams.SO_TIMEOUT, socketTimeout);
+
+                if (socketTimeout > 0) {
+			params.setParameter(HttpConnectionParams.SO_TIMEOUT, socketTimeout);
+                }
+
 		params.setParameter(HttpConnectionParams.TCP_NODELAY, true);
-		params.setParameter(HttpConnectionParams.SO_KEEPALIVE, false); // keep-alive
+		params.setParameter(HttpConnectionParams.SO_KEEPALIVE, socketKeepAlive); // keep-alive
 																		// on
 																		// TCP
 																		// level
@@ -108,13 +113,15 @@ public class ArangoDBSimpleGraphClient {
 		ConnectionKeepAliveStrategy customKeepAliveStrategy = new ConnectionKeepAliveStrategy() {
 			public long getKeepAliveDuration(org.apache.http.HttpResponse response,
 					org.apache.http.protocol.HttpContext context) {
-				return keepAliveTimeout * 1000;
+				return (long) keepAliveTimeout;
 			}
 		};
 
 		this.httpClient = new DefaultHttpClient(connectionManager, params);
-		this.httpClient.setKeepAliveStrategy(customKeepAliveStrategy);
-		// this.httpClient = new DefaultHttpClient();
+
+                if (keepAliveTimeout > 0) {
+			this.httpClient.setKeepAliveStrategy(customKeepAliveStrategy);
+                }
 	}
 
 	/**

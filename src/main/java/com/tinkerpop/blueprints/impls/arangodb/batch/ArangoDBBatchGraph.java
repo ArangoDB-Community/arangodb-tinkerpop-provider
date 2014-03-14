@@ -116,12 +116,6 @@ public class ArangoDBBatchGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>
 	public HashMap<String, ArangoDBBatchEdge> edgeCache = null;
 
 	/**
-	 * Maximum number of changed and not saved elements
-	 */
-
-	private int maxChangedElements = 3000;
-
-	/**
 	 * Set of added vertices
 	 */
 
@@ -431,7 +425,7 @@ public class ArangoDBBatchGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>
 	 */
 
 	public void addCreatedVertex(ArangoDBBatchVertex element) throws ArangoDBException {
-		if (addedVertices.size() > maxChangedElements) {
+		if (addedVertices.size() > client.getConfiguration().getBatchSize()) {
 			saveVertices();
 		}
 		addedVertices.add(element);
@@ -447,7 +441,7 @@ public class ArangoDBBatchGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>
 	 */
 
 	public void addCreatedEdge(ArangoDBBatchEdge element) throws ArangoDBException {
-		if (addedEdges.size() > maxChangedElements) {
+		if (addedEdges.size() > client.getConfiguration().getBatchSize()) {
 			saveVertices();
 			saveEdges();
 		}
