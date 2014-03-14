@@ -500,9 +500,9 @@ public class ArangoDBSimpleGraphClient {
 	}
 
 	/**
-	 * Delete cursor
+	 * Get the next values from the cursor
 	 * 
-	 * @param cursorId
+	 * @param id
 	 *            The cursor id
 	 * 
 	 * @return JSONObject The result
@@ -516,9 +516,9 @@ public class ArangoDBSimpleGraphClient {
 	}
 
 	/**
-	 * Load next values
+	 * Dispose the cursor
 	 * 
-	 * @param cursorId
+	 * @param id
 	 *            The cursor id
 	 */
 
