@@ -8,6 +8,9 @@
 
 package com.tinkerpop.blueprints.impls.arangodb.client;
 
+import static org.apache.commons.lang3.StringUtils.EMPTY;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+
 import org.apache.http.conn.ClientConnectionManager;
 import org.apache.http.conn.scheme.PlainSocketFactory;
 import org.apache.http.conn.scheme.Scheme;
@@ -18,53 +21,53 @@ import org.apache.http.impl.conn.PoolingClientConnectionManager;
 public class ArangoDBConfiguration {
 
     /**
-     * the ArangoDB Port 
+     * the ArangoDB Port
      */
 
 	private int port;
 
 	/**
-     * the ArangoDB Hostname 
+     * the ArangoDB Hostname
      */
 
 	private String host;
-	
+
 	/**
-     * use https or not 
+     * use https or not
      */
 
 	private boolean https;
 
 	/**
-     * connection timeout 
+     * connection timeout
      */
 
 	private int connectionTimeout;
 
 	/**
-     * socket timeout (in milliseconds) 
+     * socket timeout (in milliseconds)
      */
 
 	private int socketTimeout;
 
 	/**
-     * keep-alive timeout (in milliseconds) 
+     * keep-alive timeout (in milliseconds)
      */
 
 	private int keepAliveTimeout;
-	
+
 	/**
-     * number of connections 
+     * number of connections
      */
 
 	private int maxTotalConnection;
 
 	/**
-     * number of requests per connection 
+     * number of requests per connection
      */
 
 	private int maxPerConnection;
-			
+
     /**
      * the ArangoDB database cursor batch size, also used as BatchGraph batch size
      */
@@ -82,9 +85,11 @@ public class ArangoDBConfiguration {
      * whether or not keep-alive should be enabled on socket level
      */
 	private boolean socketKeepAlive;
-	
+
+	private String db;
+
     /**
-     * the default constructor 
+     * the default constructor
      */
 
 	public ArangoDBConfiguration() {
@@ -104,15 +109,15 @@ public class ArangoDBConfiguration {
                 this.staleConnectionCheck = false;
                 this.socketKeepAlive = false;
 	}
-	
+
 	public String getBaseUrl() {
 		if (https) {
-			return "https://" + this.host + ":" + this.port;			
+			return "https://" + this.host + ":" + this.port;
 		}
-				
+
 		return "http://" + this.host + ":" + this.port;
 	}
-	
+
 
 	public int getPort() {
 		return port;
@@ -156,7 +161,7 @@ public class ArangoDBConfiguration {
 
 	/**
 	 * Sets the port number
-	 * 
+	 *
 	 * @param port
          */
 	public void setPort(int port) {
@@ -165,7 +170,7 @@ public class ArangoDBConfiguration {
 
 	/**
 	 * Sets the host name
-	 * 
+	 *
 	 * @param host
          */
 	public void setHost(String host) {
@@ -174,7 +179,7 @@ public class ArangoDBConfiguration {
 
 	/**
 	 * Sets the connection timeout (in milliseconds)
-	 * 
+	 *
 	 * @param connectionTimeout
          */
 	public void setConnectionTimeout(int connectionTimeout) {
@@ -183,7 +188,7 @@ public class ArangoDBConfiguration {
 
 	/**
 	 * Sets the socket timeout (in milliseconds)
-	 * 
+	 *
 	 * @param socketTimeout
          */
 	public void setSocketTimeout(int socketTimeout) {
@@ -192,7 +197,7 @@ public class ArangoDBConfiguration {
 
 	/**
 	 * Sets the keep-alive timeout (in milliseconds)
-	 * 
+	 *
 	 * @param keepAliveTimeout
          */
 	public void setKeepAliveTimeout(int keepAliveTimeout) {
@@ -209,7 +214,7 @@ public class ArangoDBConfiguration {
 
 	/**
 	 * Sets the batch size for cursor operations and for BatchGraph chunks
-	 * 
+	 *
 	 * @param batchSize
          */
 	public void setBatchSize(int batchSize) {
@@ -218,7 +223,7 @@ public class ArangoDBConfiguration {
 
 	/**
 	 * Enables or disables the stale connection checking
-	 * 
+	 *
 	 * @param staleConnectionCheck
          */
         public void setStaleConnectionCheck(boolean staleConnectionCheck) {
@@ -227,7 +232,7 @@ public class ArangoDBConfiguration {
 
 	/**
 	 * Enables or disables keep-alive on socket level
-	 * 
+	 *
 	 * @param socketKeepAlive
          */
         public void setSocketKeepAlive(boolean socketKeepAlive) {
@@ -240,16 +245,28 @@ public class ArangoDBConfiguration {
 		         new Scheme("http", port, PlainSocketFactory.getSocketFactory()));
 		schemeRegistry.register(
 		         new Scheme("https", port, SSLSocketFactory.getSocketFactory()));
-		
+
 		PoolingClientConnectionManager cm = new PoolingClientConnectionManager(schemeRegistry);
-		cm.setMaxTotal(maxTotalConnection);        
+		cm.setMaxTotal(maxTotalConnection);
 		cm.setDefaultMaxPerRoute(maxPerConnection);
-                
+
                 boolean cleanupIdleConnections = true;
                 if (cleanupIdleConnections) {
 		  IdleConnectionMonitor.monitor(cm);
 		}
 
                 return cm;
-	}	
+	}
+
+	public void setDb(String db){
+		this.db = db;
+	}
+
+	public String requestDbPrefix(){
+		String dbPrefix = EMPTY;
+		if (isNotBlank(db)) {
+			dbPrefix = "_db/" + db + "/";
+		}
+		return dbPrefix;
+	}
 }
