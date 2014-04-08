@@ -8,7 +8,7 @@
   <properties>
       <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <blueprints.version>2.4.0</blueprints.version>
-        <rexster.version>2.4.0</rexster.version>      
+        <rexster.version>2.4.0</rexster.version>
   </properties>
   <dependencies>
         <dependency>
@@ -46,8 +46,18 @@
         <artifactId>blueprints-test</artifactId>
         <version>${blueprints.version}</version>
         <scope>test</scope>
-    </dependency>  	
-  </dependencies>    
+    </dependency>
+    <dependency>
+    	<groupId>com.google.guava</groupId>
+    	<artifactId>guava</artifactId>
+    	<version>16.0.1</version>
+    </dependency>
+    <dependency>
+    	<groupId>org.apache.commons</groupId>
+    	<artifactId>commons-lang3</artifactId>
+    	<version>3.2.1</version>
+    </dependency>
+  </dependencies>
     <build>
         <directory>${basedir}/target</directory>
         <pluginManagement>
@@ -134,8 +144,8 @@
                         <descriptorRef>jar-with-dependencies</descriptorRef>
                     </descriptorRefs>
                 </configuration>
-            </plugin>            
-        </plugins>        
+            </plugin>
+        </plugins>
     </build>
     <reporting>
         <plugins>
@@ -147,6 +157,6 @@
                     <aggregate>true</aggregate>
                 </configuration>
             </plugin>
-        </plugins>        
+        </plugins>
     </reporting>
 </project>
