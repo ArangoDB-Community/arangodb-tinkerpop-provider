@@ -7,8 +7,8 @@
   <description>An implementation of the Blueprints API for ArangoDB</description>
   <properties>
       <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <blueprints.version>2.4.0</blueprints.version>
-        <rexster.version>2.4.0</rexster.version>
+        <blueprints.version>2.5.0</blueprints.version>
+        <rexster.version>2.5.0</rexster.version>
   </properties>
   <dependencies>
         <dependency>
