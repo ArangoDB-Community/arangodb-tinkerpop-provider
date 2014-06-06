@@ -25,6 +25,8 @@ import com.tinkerpop.blueprints.impls.arangodb.client.ArangoDBSimpleVertex;
 import com.tinkerpop.blueprints.impls.arangodb.client.ArangoDBSimpleVertexQuery;
 
 /**
+ * The arangodb vertex query class
+ * 
  * @author Achim Brandt (http://www.triagens.de)
  * @author Johannes Gocke (http://www.triagens.de)
  * @author Guido Schwab (http://www.triagens.de)
@@ -40,6 +42,14 @@ public class ArangoDBVertexQuery implements VertexQuery {
 	private ArangoDBPropertyFilter propertyFilter = new ArangoDBPropertyFilter();
 	private boolean count;
 
+	/**
+	 * Creates a arangodb vertex query for a graph and a vertex
+	 * 
+	 * @param graph
+	 *            the arangodb graph
+	 * @param vertex
+	 *            the vertex
+	 */
 	public ArangoDBVertexQuery(final ArangoDBGraph graph, final ArangoDBVertex vertex) {
 		this.graph = graph;
 		this.vertex = vertex.getRawVertex();
@@ -76,15 +86,6 @@ public class ArangoDBVertexQuery implements VertexQuery {
 		return this;
 	}
 
-	// public <T extends Comparable<T>> VertexQuery interval(final String key,
-	// final T startValue, final T endValue) {
-	// propertyFilter.has(key, startValue,
-	// ArangoDBPropertyFilter.Compare.GREATER_THAN_EQUAL);
-	// propertyFilter.has(key, endValue,
-	// ArangoDBPropertyFilter.Compare.LESS_THAN);
-	// return this;
-	// }
-	//
 	public VertexQuery direction(final Direction direction) {
 		if (direction == Direction.IN) {
 			this.direction = ArangoDBBaseQuery.Direction.IN;

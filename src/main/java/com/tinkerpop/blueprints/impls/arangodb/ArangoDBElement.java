@@ -11,66 +11,83 @@ import com.tinkerpop.blueprints.impls.arangodb.utils.ArangoDBUtil;
 import com.tinkerpop.blueprints.util.ExceptionFactory;
 import com.tinkerpop.blueprints.util.StringFactory;
 
+/**
+ * The arangodb base element class (used by edges and vertices)
+ * 
+ * @author Achim Brandt (http://www.triagens.de)
+ * @author Johannes Gocke (http://www.triagens.de)
+ * @author Guido Schwab (http://www.triagens.de)
+ */
+
 abstract public class ArangoDBElement implements Element {
 
 	/**
 	 * the graph of the document
 	 */
-	
+
 	protected ArangoDBGraph graph;
 
 	/**
 	 * the vertex/edge document
 	 */
-	
+
 	protected ArangoDBBaseDocument document;
-	
+
 	/**
 	 * true if the element was changed
 	 */
-	
-	protected boolean changed = false; 
-	
+
+	protected boolean changed = false;
+
 	/**
-	 * Save the vertex or the edge in ArangoDB 
+	 * Save the vertex or the edge in ArangoDB
+	 * 
+	 * @throws ArangoDBException
+	 *             if an error occurs
 	 */
-	
-	abstract public void save () throws ArangoDBException;
-	
+
+	abstract public void save() throws ArangoDBException;
+
 	/**
-	 * @inheritDoc
+	 * Return the object value associated with the provided string key. If no
+	 * value exists for that key, return null.
+	 * 
+	 * @param key
+	 *            the key of the key/value property
+	 * @return the object value related to the string key
 	 */
-	
 	public Object getProperty(String key) {
 		return document.getProperty(ArangoDBUtil.normalizeKey(key));
 	}
-	
+
 	/**
 	 * Set/Reset the vertex/edge document
+	 * 
+	 * @param document
+	 *            the new internal data of the element
 	 */
-	
-	public void setDocument (ArangoDBBaseDocument document) {
+	public void setDocument(ArangoDBBaseDocument document) {
 		this.document = document;
 	}
 
 	public Set<String> getPropertyKeys() {
-		Set<String> ps = document.getPropertyKeys();		
-		HashSet<String> result = new HashSet<String>(); 
-		for (String key: ps) {
+		Set<String> ps = document.getPropertyKeys();
+		HashSet<String> result = new HashSet<String>();
+		for (String key : ps) {
 			result.add(ArangoDBUtil.denormalizeKey(key));
 		}
 		return result;
 	}
 
 	public void setProperty(String key, Object value) {
-		
-        if (key == null || key.equals(StringFactory.EMPTY_STRING))
-            throw ExceptionFactory.propertyKeyCanNotBeEmpty();
-        if (key.equals(StringFactory.ID))
-            throw ExceptionFactory.propertyKeyIdIsReserved();
-		
+
+		if (key == null || key.equals(StringFactory.EMPTY_STRING))
+			throw ExceptionFactory.propertyKeyCanNotBeEmpty();
+		if (key.equals(StringFactory.ID))
+			throw ExceptionFactory.propertyKeyIdIsReserved();
+
 		try {
-			document.setProperty(ArangoDBUtil.normalizeKey(key), value);	
+			document.setProperty(ArangoDBUtil.normalizeKey(key), value);
 			graph.addChangedElement(this);
 		} catch (ArangoDBException e) {
 			throw new IllegalArgumentException(e.getMessage());
@@ -78,13 +95,13 @@ abstract public class ArangoDBElement implements Element {
 	}
 
 	public Object removeProperty(String key) {
-        if (key == null || key.equals(StringFactory.EMPTY_STRING))
-            throw ExceptionFactory.propertyKeyCanNotBeEmpty();
-        if (key.equals(StringFactory.ID))
-            throw ExceptionFactory.propertyKeyIdIsReserved();
-        if (key.equals(StringFactory.LABEL) && this instanceof Edge)
-            throw ExceptionFactory.propertyKeyLabelIsReservedForEdges();
-        
+		if (key == null || key.equals(StringFactory.EMPTY_STRING))
+			throw ExceptionFactory.propertyKeyCanNotBeEmpty();
+		if (key.equals(StringFactory.ID))
+			throw ExceptionFactory.propertyKeyIdIsReserved();
+		if (key.equals(StringFactory.LABEL) && this instanceof Edge)
+			throw ExceptionFactory.propertyKeyLabelIsReservedForEdges();
+
 		Object o = null;
 		try {
 			o = document.removeProperty(ArangoDBUtil.normalizeKey(key));
@@ -98,9 +115,14 @@ abstract public class ArangoDBElement implements Element {
 	public Object getId() {
 		return document.getDocumentKey();
 	}
-	
-	public ArangoDBBaseDocument getRaw () {
+
+	/**
+	 * Returns the internal data of the element
+	 * 
+	 * @return the internal data
+	 */
+	public ArangoDBBaseDocument getRaw() {
 		return document;
 	}
-	
+
 }

@@ -21,6 +21,8 @@ import com.tinkerpop.blueprints.util.ExceptionFactory;
 import com.tinkerpop.blueprints.util.StringFactory;
 
 /**
+ * The arangodb batch edge class
+ * 
  * @author Achim Brandt (http://www.triagens.de)
  * @author Johannes Gocke (http://www.triagens.de)
  * @author Guido Schwab (http://www.triagens.de)
@@ -123,9 +125,6 @@ public class ArangoDBBatchEdge extends ArangoDBBatchElement implements Edge {
 		this.inVertex = inVertex;
 	}
 
-	/**
-	 * @throws UnsupportedOperationException
-	 */
 	public Vertex getVertex(Direction direction) throws IllegalArgumentException {
 		throw new UnsupportedOperationException();
 	}
@@ -139,6 +138,11 @@ public class ArangoDBBatchEdge extends ArangoDBBatchElement implements Edge {
 		return null;
 	}
 
+	/**
+	 * Returns the arangodb raw edge
+	 * 
+	 * @return a ArangoDBSimpleEdge
+	 */
 	public ArangoDBSimpleEdge getRawEdge() {
 		return (ArangoDBSimpleEdge) document;
 	}
@@ -148,17 +152,14 @@ public class ArangoDBBatchEdge extends ArangoDBBatchElement implements Edge {
 		return StringFactory.edgeString(this);
 	}
 
-	/**
-	 * @throws UnsupportedOperationException
-	 */
 	public void remove() {
 		throw new UnsupportedOperationException();
 	}
 
 	/**
-	 * @throws UnsupportedOperationException
+	 * not supported in batch mode
 	 */
-	public void save() throws ArangoDBException {
+	public void save() {
 		throw new UnsupportedOperationException();
 	}
 

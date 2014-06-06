@@ -8,9 +8,6 @@
 
 package com.tinkerpop.blueprints.impls.arangodb.client;
 
-import static org.apache.commons.lang3.StringUtils.EMPTY;
-import static org.apache.commons.lang3.StringUtils.isNotBlank;
-
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
@@ -19,7 +16,6 @@ import java.net.URLEncoder;
 import java.util.List;
 import java.util.Vector;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.StatusLine;
@@ -43,6 +39,15 @@ import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 
 import com.tinkerpop.blueprints.impls.arangodb.client.ArangoDBBaseQuery.Direction;
+
+/**
+ * The arangodb graph client class (handles the HTTP connection to arangodb)
+ * 
+ * @author Achim Brandt (http://www.triagens.de)
+ * @author Johannes Gocke (http://www.triagens.de)
+ * @author Guido Schwab (http://www.triagens.de)
+ * @author Jan Steemann (http://www.triagens.de)
+ */
 
 public class ArangoDBSimpleGraphClient {
 
@@ -80,7 +85,7 @@ public class ArangoDBSimpleGraphClient {
 
 	/**
 	 * Create a simple graph client
-	 *
+	 * 
 	 * @param configuration
 	 *            the ArangoDB configuration
 	 */
@@ -104,15 +109,15 @@ public class ArangoDBSimpleGraphClient {
 		params.setParameter(HttpProtocolParams.USE_EXPECT_CONTINUE, useExpectContinue);
 		params.setParameter(HttpConnectionParams.CONNECTION_TIMEOUT, connectionTimeout);
 
-                if (socketTimeout > 0) {
+		if (socketTimeout > 0) {
 			params.setParameter(HttpConnectionParams.SO_TIMEOUT, socketTimeout);
-                }
+		}
 
 		params.setParameter(HttpConnectionParams.TCP_NODELAY, true);
 		params.setParameter(HttpConnectionParams.SO_KEEPALIVE, socketKeepAlive); // keep-alive
-																		// on
-																		// TCP
-																		// level
+		// on
+		// TCP
+		// level
 
 		ConnectionKeepAliveStrategy customKeepAliveStrategy = new ConnectionKeepAliveStrategy() {
 			public long getKeepAliveDuration(org.apache.http.HttpResponse response,
@@ -123,9 +128,9 @@ public class ArangoDBSimpleGraphClient {
 
 		this.httpClient = new DefaultHttpClient(connectionManager, params);
 
-                if (keepAliveTimeout > 0) {
+		if (keepAliveTimeout > 0) {
 			this.httpClient.setKeepAliveStrategy(customKeepAliveStrategy);
-                }
+		}
 	}
 
 	/**
@@ -138,11 +143,11 @@ public class ArangoDBSimpleGraphClient {
 
 	/**
 	 * Request the version of ArangoDB
-	 *
+	 * 
 	 * @return the Version number
-	 *
+	 * 
 	 * @throws ArangoDBException
-	 *             on
+	 *             if an error occurs
 	 */
 
 	public String getVersion() throws ArangoDBException {
@@ -161,20 +166,21 @@ public class ArangoDBSimpleGraphClient {
 
 	/**
 	 * Create a new graph
-	 *
+	 * 
 	 * @param name
 	 *            the name of the new graph
 	 * @param vertexCollectionName
 	 *            the name of the vertex collection
 	 * @param EdgeCollectionName
 	 *            the name of the edge collection
-	 *
+	 * 
 	 * @return the graph
-	 *
+	 * 
 	 * @throws ArangoDBException
 	 *             if the graph could not be created
 	 */
-	public ArangoDBSimpleGraph createGraph(String name, String vertexCollectionName, String EdgeCollectionName) throws ArangoDBException {
+	public ArangoDBSimpleGraph createGraph(String name, String vertexCollectionName, String EdgeCollectionName)
+			throws ArangoDBException {
 		JSONObject body = new JSONObject();
 		try {
 			body.put(ArangoDBSimpleGraph._KEY, name);
@@ -190,12 +196,12 @@ public class ArangoDBSimpleGraphClient {
 
 	/**
 	 * Get a graph by name
-	 *
+	 * 
 	 * @param name
 	 *            the name of the new graph
-	 *
+	 * 
 	 * @return the graph
-	 *
+	 * 
 	 * @throws ArangoDBException
 	 *             if the graph could not be created
 	 */
@@ -208,17 +214,18 @@ public class ArangoDBSimpleGraphClient {
 
 	/**
 	 * Delete a graph by name
-	 *
+	 * 
 	 * @param graph
 	 *            the graph
-	 *
+	 * 
 	 * @return true if the graph was deleted
 	 * @throws ArangoDBException
 	 *             if the graph could be deleted
 	 */
 
 	public boolean deleteGraph(ArangoDBSimpleGraph graph) throws ArangoDBException {
-		JSONObject result = deleteRequest(configuration.requestDbPrefix() + "_api/graph/" + urlEncode(graph.getDocumentKey()));
+		JSONObject result = deleteRequest(configuration.requestDbPrefix() + "_api/graph/"
+				+ urlEncode(graph.getDocumentKey()));
 		try {
 			if (result.has("deleted")) {
 				boolean b = result.getBoolean("deleted");
@@ -238,16 +245,16 @@ public class ArangoDBSimpleGraphClient {
 
 	/**
 	 * Create a new vertex
-	 *
+	 * 
 	 * @param graph
 	 *            the simple graph of the new vertex
 	 * @param name
 	 *            the name of the new vertex
 	 * @param properties
 	 *            the pre defined properties of the vertex
-	 *
+	 * 
 	 * @return the vertex
-	 *
+	 * 
 	 * @throws ArangoDBException
 	 *             if creation failed
 	 */
@@ -268,49 +275,53 @@ public class ArangoDBSimpleGraphClient {
 			throw new ArangoDBException("JSON error: " + e.getMessage());
 		}
 
-		JSONObject result = postRequest(configuration.requestDbPrefix() + "_api/graph/" + urlEncode(graph.getDocumentKey()) + "/vertex", properties);
+		JSONObject result = postRequest(
+				configuration.requestDbPrefix() + "_api/graph/" + urlEncode(graph.getDocumentKey()) + "/vertex",
+				properties);
 		JSONObject vertex = getResultJsonObject(result, "vertex");
 		return new ArangoDBSimpleVertex(vertex);
 	}
 
 	/**
 	 * Get a vertex
-	 *
+	 * 
 	 * @param graph
 	 *            the simple graph of the new vertex
 	 * @param name
 	 *            the name of the vertex
-	 *
+	 * 
 	 * @return the vertex
-	 *
+	 * 
 	 * @throws ArangoDBException
 	 *             if creation failed
 	 */
 
 	public ArangoDBSimpleVertex getVertex(ArangoDBSimpleGraph graph, String name) throws ArangoDBException {
-		JSONObject result = getRequest(configuration.requestDbPrefix() + "_api/graph/" + urlEncode(graph.getDocumentKey()) + "/vertex/" + urlEncode(name));
+		JSONObject result = getRequest(configuration.requestDbPrefix() + "_api/graph/"
+				+ urlEncode(graph.getDocumentKey()) + "/vertex/" + urlEncode(name));
 		JSONObject vertex = getResultJsonObject(result, "vertex");
 		return new ArangoDBSimpleVertex(vertex);
 	}
 
 	/**
 	 * Save a vertex
-	 *
+	 * 
 	 * @param graph
 	 *            the simple graph of the vertex
 	 * @param vertex
 	 *            the vertex to save
-	 *
+	 * 
 	 * @return the vertex
-	 *
+	 * 
 	 * @throws ArangoDBException
 	 *             if creation failed
 	 */
 
 	public ArangoDBSimpleVertex saveVertex(ArangoDBSimpleGraph graph, ArangoDBSimpleVertex vertex)
 			throws ArangoDBException {
-		JSONObject result = putRequest(configuration.requestDbPrefix() + "_api/graph/" + urlEncode(graph.getDocumentKey()) + "/vertex/"
-				+ urlEncode(vertex.getDocumentKey()), vertex.getProperties());
+		JSONObject result = putRequest(
+				configuration.requestDbPrefix() + "_api/graph/" + urlEncode(graph.getDocumentKey()) + "/vertex/"
+						+ urlEncode(vertex.getDocumentKey()), vertex.getProperties());
 		JSONObject newProperties = getResultJsonObject(result, "vertex");
 		vertex.setProperties(newProperties);
 		return vertex;
@@ -318,20 +329,20 @@ public class ArangoDBSimpleGraphClient {
 
 	/**
 	 * Delete a vertex by name
-	 *
+	 * 
 	 * @param graph
 	 *            the simple graph of the vertex
 	 * @param vertex
 	 *            the vertex to save
-	 *
+	 * 
 	 * @return true if the vertex was deleted
 	 * @throws ArangoDBException
 	 *             if deletion failed
 	 */
 
 	public boolean deleteVertex(ArangoDBSimpleGraph graph, ArangoDBSimpleVertex vertex) throws ArangoDBException {
-		JSONObject result = deleteRequest(configuration.requestDbPrefix() + "_api/graph/" + urlEncode(graph.getDocumentKey()) + "/vertex/"
-				+ urlEncode(vertex.getDocumentKey()));
+		JSONObject result = deleteRequest(configuration.requestDbPrefix() + "_api/graph/"
+				+ urlEncode(graph.getDocumentKey()) + "/vertex/" + urlEncode(vertex.getDocumentKey()));
 		try {
 			if (result.has("deleted")) {
 				boolean b = result.getBoolean("deleted");
@@ -351,7 +362,7 @@ public class ArangoDBSimpleGraphClient {
 
 	/**
 	 * Create a new edge
-	 *
+	 * 
 	 * @param graph
 	 *            the simple graph
 	 * @param name
@@ -364,9 +375,9 @@ public class ArangoDBSimpleGraphClient {
 	 *            the end vertex
 	 * @param properties
 	 *            the pre defined properties of the edge
-	 *
+	 * 
 	 * @return the edge
-	 *
+	 * 
 	 * @throws ArangoDBException
 	 *             if creation failed
 	 */
@@ -395,49 +406,52 @@ public class ArangoDBSimpleGraphClient {
 			throw new ArangoDBException("JSON error: " + e.getMessage());
 		}
 
-		JSONObject result = postRequest(configuration.requestDbPrefix() + "_api/graph/" + urlEncode(graph.getDocumentKey()) + "/edge", properties);
+		JSONObject result = postRequest(
+				configuration.requestDbPrefix() + "_api/graph/" + urlEncode(graph.getDocumentKey()) + "/edge",
+				properties);
 		JSONObject edge = getResultJsonObject(result, "edge");
 		return new ArangoDBSimpleEdge(edge);
 	}
 
 	/**
 	 * Get an edge
-	 *
+	 * 
 	 * @param graph
 	 *            the simple graph
 	 * @param name
 	 *            the name of the edge
-	 *
+	 * 
 	 * @return the edge
-	 *
+	 * 
 	 * @throws ArangoDBException
 	 *             if creation failed
 	 */
 
 	public ArangoDBSimpleEdge getEdge(ArangoDBSimpleGraph graph, String name) throws ArangoDBException {
-		JSONObject result = getRequest(configuration.requestDbPrefix() + "_api/graph/" + urlEncode(graph.getDocumentKey()) + "/edge/" + urlEncode(name));
+		JSONObject result = getRequest(configuration.requestDbPrefix() + "_api/graph/"
+				+ urlEncode(graph.getDocumentKey()) + "/edge/" + urlEncode(name));
 		JSONObject edge = getResultJsonObject(result, "edge");
 		return new ArangoDBSimpleEdge(edge);
 	}
 
 	/**
 	 * Save an edge
-	 *
+	 * 
 	 * @param graph
 	 *            the simple graph
 	 * @param edge
 	 *            the edge
-	 *
+	 * 
 	 * @return the edge
-	 *
+	 * 
 	 * @throws ArangoDBException
 	 *             if creation failed
 	 */
 
 	public ArangoDBSimpleEdge saveEdge(ArangoDBSimpleGraph graph, ArangoDBSimpleEdge edge) throws ArangoDBException {
 		JSONObject result = putRequest(
-				configuration.requestDbPrefix() + "_api/graph/" + urlEncode(graph.getDocumentKey()) + "/edge/" + urlEncode(edge.getDocumentKey()),
-				edge.getProperties());
+				configuration.requestDbPrefix() + "_api/graph/" + urlEncode(graph.getDocumentKey()) + "/edge/"
+						+ urlEncode(edge.getDocumentKey()), edge.getProperties());
 		JSONObject properties = getResultJsonObject(result, "edge");
 		edge.setProperties(properties);
 		return edge;
@@ -445,20 +459,20 @@ public class ArangoDBSimpleGraphClient {
 
 	/**
 	 * Detete an edge
-	 *
+	 * 
 	 * @param graph
 	 *            the simple graph
 	 * @param edge
 	 *            the edge
-	 *
+	 * 
 	 * @return true if the edge was deleted
 	 * @throws ArangoDBException
 	 *             if deletion failed
 	 */
 
 	public boolean deleteEdge(ArangoDBSimpleGraph graph, ArangoDBSimpleEdge edge) throws ArangoDBException {
-		JSONObject result = deleteRequest(configuration.requestDbPrefix() + "_api/graph/" + urlEncode(graph.getDocumentKey()) + "/edge/"
-				+ urlEncode(edge.getDocumentKey()));
+		JSONObject result = deleteRequest(configuration.requestDbPrefix() + "_api/graph/"
+				+ urlEncode(graph.getDocumentKey()) + "/edge/" + urlEncode(edge.getDocumentKey()));
 		try {
 			if (result.has("deleted")) {
 				boolean b = result.getBoolean("deleted");
@@ -476,6 +490,21 @@ public class ArangoDBSimpleGraphClient {
 		return false;
 	}
 
+	/**
+	 * Creates vertices (bulk import)
+	 * 
+	 * @param graph
+	 *            The graph
+	 * @param vertices
+	 *            The list of new vertices
+	 * @param details
+	 *            True, for details
+	 * 
+	 * @return the result JSON document
+	 * 
+	 * @throws ArangoDBException
+	 *             if an error occurs
+	 */
 	public JSONObject createVertices(ArangoDBSimpleGraph graph, List<ArangoDBSimpleVertex> vertices, boolean details)
 			throws ArangoDBException {
 
@@ -486,12 +515,28 @@ public class ArangoDBSimpleGraphClient {
 			sb.append(j.toString()).append("\n");
 		}
 
-		JSONObject result = postRequest(configuration.requestDbPrefix() + "_api/import?collection=" + urlEncode(graph.getVertexCollection())
-				+ "&type=documents&details=" + (details ? "true" : "false"), sb.toString());
+		JSONObject result = postRequest(
+				configuration.requestDbPrefix() + "_api/import?collection=" + urlEncode(graph.getVertexCollection())
+						+ "&type=documents&details=" + (details ? "true" : "false"), sb.toString());
 
 		return result;
 	}
 
+	/**
+	 * Creates edges (bulk import)
+	 * 
+	 * @param graph
+	 *            The graph
+	 * @param edges
+	 *            The list of new edges
+	 * @param details
+	 *            True, for details
+	 * 
+	 * @return the result JSON document
+	 * 
+	 * @throws ArangoDBException
+	 *             if an error occurs
+	 */
 	public JSONObject createEdges(ArangoDBSimpleGraph graph, List<ArangoDBSimpleEdge> edges, boolean details)
 			throws ArangoDBException {
 
@@ -501,20 +546,21 @@ public class ArangoDBSimpleGraphClient {
 			sb.append(e.getProperties().toString()).append("\n");
 		}
 
-		JSONObject result = postRequest(configuration.requestDbPrefix() + "_api/import?collection=" + urlEncode(graph.getEdgeCollection())
-				+ "&type=documents&details=" + (details ? "true" : "false"), sb.toString());
+		JSONObject result = postRequest(
+				configuration.requestDbPrefix() + "_api/import?collection=" + urlEncode(graph.getEdgeCollection())
+						+ "&type=documents&details=" + (details ? "true" : "false"), sb.toString());
 
 		return result;
 	}
 
 	/**
 	 * Get the next values from the cursor
-	 *
+	 * 
 	 * @param id
 	 *            The cursor id
-	 *
+	 * 
 	 * @return JSONObject The result
-	 *
+	 * 
 	 * @throws ArangoDBException
 	 *             if creation failed
 	 */
@@ -525,9 +571,10 @@ public class ArangoDBSimpleGraphClient {
 
 	/**
 	 * Dispose the cursor
-	 *
+	 * 
 	 * @param id
 	 *            The cursor id
+	 * @return true, if the cursor was deleted
 	 */
 
 	public boolean deleteCursor(String id) {
@@ -540,7 +587,7 @@ public class ArangoDBSimpleGraphClient {
 
 	/**
 	 * Create a query to get all vertices of a graph
-	 *
+	 * 
 	 * @param graph
 	 *            the simple graph
 	 * @param propertyFilter
@@ -549,32 +596,36 @@ public class ArangoDBSimpleGraphClient {
 	 *            limit the number of results
 	 * @param count
 	 *            query total number of results
-	 *
+	 * 
 	 * @return ArangoDBSimpleVertexQuery the query object
-	 *
+	 * 
 	 * @throws ArangoDBException
 	 *             if creation failed
 	 */
 
 	public ArangoDBSimpleVertexQuery getGraphVertices(ArangoDBSimpleGraph graph, ArangoDBPropertyFilter propertyFilter,
 			Long limit, boolean count) throws ArangoDBException {
-		String path = configuration.requestDbPrefix() +  "_api/graph/" + urlEncode(graph.getDocumentKey()) + "/vertices";
+		String path = configuration.requestDbPrefix() + "_api/graph/" + urlEncode(graph.getDocumentKey()) + "/vertices";
 
 		return new ArangoDBSimpleVertexQuery(this, path, propertyFilter, null, null, limit, count);
 	}
 
 	/**
 	 * Create a query to get all edges of a graph
-	 *
+	 * 
 	 * @param graph
 	 *            the simple graph
 	 * @param propertyFilter
 	 *            a property filter
+	 * @param labelsFilter
+	 *            a labels filter
+	 * @param limit
+	 *            maximum number of results
 	 * @param count
 	 *            query total number of results
-	 *
+	 * 
 	 * @return ArangoDBSimpleVertexQuery the query object
-	 *
+	 * 
 	 * @throws ArangoDBException
 	 *             if creation failed
 	 */
@@ -588,7 +639,7 @@ public class ArangoDBSimpleGraphClient {
 
 	/**
 	 * Create a query to get all neighbors of a vertex
-	 *
+	 * 
 	 * @param graph
 	 *            the simple graph
 	 * @param vertex
@@ -603,9 +654,9 @@ public class ArangoDBSimpleGraphClient {
 	 *            the maximum number of results
 	 * @param count
 	 *            query total number of results
-	 *
+	 * 
 	 * @return ArangoDBSimpleVertexQuery the query object
-	 *
+	 * 
 	 * @throws ArangoDBException
 	 *             if creation failed
 	 */
@@ -613,15 +664,15 @@ public class ArangoDBSimpleGraphClient {
 	public ArangoDBSimpleVertexQuery getVertexNeighbors(ArangoDBSimpleGraph graph, ArangoDBSimpleVertex vertex,
 			ArangoDBPropertyFilter propertyFilter, List<String> labelsFilter, Direction direction, Long limit,
 			boolean count) throws ArangoDBException {
-		String path = configuration.requestDbPrefix() +  "_api/graph/" + urlEncode(graph.getDocumentKey()) + "/vertices/"
-				+ urlEncode(vertex.getDocumentKey());
+		String path = configuration.requestDbPrefix() + "_api/graph/" + urlEncode(graph.getDocumentKey())
+				+ "/vertices/" + urlEncode(vertex.getDocumentKey());
 
 		return new ArangoDBSimpleVertexQuery(this, path, propertyFilter, labelsFilter, direction, limit, count);
 	}
 
 	/**
 	 * Create a query to get all edges of a vertex
-	 *
+	 * 
 	 * @param graph
 	 *            the simple graph
 	 * @param vertex
@@ -636,9 +687,9 @@ public class ArangoDBSimpleGraphClient {
 	 *            the maximum number of results
 	 * @param count
 	 *            query total number of results
-	 *
+	 * 
 	 * @return ArangoDBSimpleVertexQuery the query object
-	 *
+	 * 
 	 * @throws ArangoDBException
 	 *             if creation failed
 	 */
@@ -646,7 +697,7 @@ public class ArangoDBSimpleGraphClient {
 	public ArangoDBSimpleEdgeQuery getVertexEdges(ArangoDBSimpleGraph graph, ArangoDBSimpleVertex vertex,
 			ArangoDBPropertyFilter propertyFilter, List<String> labelsFilter, Direction direction, Long limit,
 			boolean count) throws ArangoDBException {
-		String path = configuration.requestDbPrefix() +  "_api/graph/" + urlEncode(graph.getDocumentKey()) + "/edges/"
+		String path = configuration.requestDbPrefix() + "_api/graph/" + urlEncode(graph.getDocumentKey()) + "/edges/"
 				+ urlEncode(vertex.getDocumentKey());
 
 		return new ArangoDBSimpleEdgeQuery(this, path, propertyFilter, labelsFilter, direction, limit, count);
@@ -654,7 +705,7 @@ public class ArangoDBSimpleGraphClient {
 
 	/**
 	 * Create an index on collection keys
-	 *
+	 * 
 	 * @param graph
 	 *            the simple graph
 	 * @param type
@@ -663,9 +714,9 @@ public class ArangoDBSimpleGraphClient {
 	 *            true for a unique key
 	 * @param fields
 	 *            a list of key fields
-	 *
+	 * 
 	 * @return ArangoDBIndex the index
-	 *
+	 * 
 	 * @throws ArangoDBException
 	 *             if creation failed
 	 */
@@ -677,7 +728,7 @@ public class ArangoDBSimpleGraphClient {
 
 	/**
 	 * Create an index on collection keys
-	 *
+	 * 
 	 * @param graph
 	 *            the simple graph
 	 * @param type
@@ -686,9 +737,9 @@ public class ArangoDBSimpleGraphClient {
 	 *            true for a unique key
 	 * @param fields
 	 *            a list of key fields
-	 *
+	 * 
 	 * @return ArangoDBIndex the index
-	 *
+	 * 
 	 * @throws ArangoDBException
 	 *             if creation failed
 	 */
@@ -700,18 +751,18 @@ public class ArangoDBSimpleGraphClient {
 
 	/**
 	 * Get an index
-	 *
+	 * 
 	 * @param id
 	 *            id of the index
-	 *
+	 * 
 	 * @return ArangoDBIndex the index, or null if the index was not found
-	 *
+	 * 
 	 * @throws ArangoDBException
 	 *             if creation failed
 	 */
 
 	public ArangoDBIndex getIndex(String id) throws ArangoDBException {
-		String path = configuration.requestDbPrefix() +  "_api/index/" + id;
+		String path = configuration.requestDbPrefix() + "_api/index/" + id;
 
 		JSONObject result = null;
 
@@ -728,14 +779,47 @@ public class ArangoDBSimpleGraphClient {
 		return new ArangoDBIndex(result);
 	}
 
+	/**
+	 * Returns the indices of the vertex collection
+	 * 
+	 * @param graph
+	 *            The graph
+	 * 
+	 * @return List of indices
+	 * 
+	 * @throws ArangoDBException
+	 *             if an error occurs
+	 */
 	public List<ArangoDBIndex> getVertexIndices(ArangoDBSimpleGraph graph) throws ArangoDBException {
 		return getIndices(graph.getVertexCollection());
 	}
 
+	/**
+	 * Returns the indices of the edge collection
+	 * 
+	 * @param graph
+	 *            The graph
+	 * 
+	 * @return List of indices
+	 * 
+	 * @throws ArangoDBException
+	 *             if an error occurs
+	 */
 	public List<ArangoDBIndex> getEdgeIndices(ArangoDBSimpleGraph graph) throws ArangoDBException {
 		return getIndices(graph.getEdgeCollection());
 	}
 
+	/**
+	 * Deletes an index
+	 * 
+	 * @param id
+	 *            The identifier of the index
+	 * 
+	 * @return true, if the index was deleted
+	 * 
+	 * @throws ArangoDBException
+	 *             if an error occurs
+	 */
 	public boolean deleteIndex(String id) throws ArangoDBException {
 		String path = configuration.requestDbPrefix() + "_api/index/" + id;
 		deleteRequest(path);
@@ -744,13 +828,8 @@ public class ArangoDBSimpleGraphClient {
 	}
 
 	/**
-	 * #########################################################################
-	 * ######
-	 */
-
-	/**
 	 * Create an index on collection keys
-	 *
+	 * 
 	 * @param collectionName
 	 *            the collection name
 	 * @param type
@@ -759,9 +838,9 @@ public class ArangoDBSimpleGraphClient {
 	 *            true for a unique key
 	 * @param fields
 	 *            a list of key fields
-	 *
+	 * 
 	 * @return ArangoDBIndex the index
-	 *
+	 * 
 	 * @throws ArangoDBException
 	 *             if creation failed
 	 */
@@ -789,12 +868,12 @@ public class ArangoDBSimpleGraphClient {
 
 	/**
 	 * Get the List of indices of a collection
-	 *
+	 * 
 	 * @param collectionName
 	 *            the collection name
-	 *
+	 * 
 	 * @return Vector<ArangoDBIndex> List of indices
-	 *
+	 * 
 	 * @throws ArangoDBException
 	 *             if creation failed
 	 */
@@ -828,18 +907,35 @@ public class ArangoDBSimpleGraphClient {
 
 	/**
 	 * Execute POST request
-	 *
+	 * 
 	 * @param path
 	 *            the request path
 	 * @param body
 	 *            an optional request body
+	 * 
 	 * @return JSONObject the request result
+	 * 
 	 * @throws ArangoDBException
+	 *             if an error occurs
 	 */
 
 	public JSONObject postRequest(String path, JSONObject body) throws ArangoDBException {
 		return request(RequestType.POST, path, body == null ? null : body.toString());
 	}
+
+	/**
+	 * Execute POST request
+	 * 
+	 * @param path
+	 *            the request path
+	 * @param body
+	 *            an optional request body
+	 * 
+	 * @return JSONObject the request result
+	 * 
+	 * @throws ArangoDBException
+	 *             if an error occurs
+	 */
 
 	public JSONObject postRequest(String path, String body) throws ArangoDBException {
 		return request(RequestType.POST, path, body);
@@ -847,13 +943,16 @@ public class ArangoDBSimpleGraphClient {
 
 	/**
 	 * Execute PUT request
-	 *
+	 * 
 	 * @param path
 	 *            the request path
 	 * @param body
 	 *            an optional request body
+	 * 
 	 * @return JSONObject the request result
+	 * 
 	 * @throws ArangoDBException
+	 *             if an error occurs
 	 */
 
 	public JSONObject putRequest(String path, JSONObject body) throws ArangoDBException {
@@ -862,24 +961,29 @@ public class ArangoDBSimpleGraphClient {
 
 	/**
 	 * Execute GET request
-	 *
+	 * 
 	 * @param path
 	 *            the request path
+	 * 
 	 * @return JSONObject the request result
+	 * 
 	 * @throws ArangoDBException
+	 *             if an error occurs
 	 */
-
 	public JSONObject getRequest(String path) throws ArangoDBException {
 		return request(RequestType.GET, path, null);
 	}
 
 	/**
 	 * Execute DELETE request
-	 *
+	 * 
 	 * @param path
 	 *            the request path
+	 * 
 	 * @return JSONObject the request result
+	 * 
 	 * @throws ArangoDBException
+	 *             if an error occurs
 	 */
 
 	public JSONObject deleteRequest(String path) throws ArangoDBException {
@@ -892,15 +996,18 @@ public class ArangoDBSimpleGraphClient {
 
 	/**
 	 * Execute request and return result as a JSON object.
-	 *
+	 * 
 	 * @param type
 	 *            the request type (one of "GET", "POST", "PUT", "DELETE")
 	 * @param path
 	 *            the request path
 	 * @param body
 	 *            an optional request body (only for "POST" and "PUT")
+	 * 
 	 * @return JSONObject the request result
+	 * 
 	 * @throws ArangoDBException
+	 *             if an error occurs
 	 */
 
 	private JSONObject request(RequestType type, String path, String body) throws ArangoDBException {
@@ -1040,6 +1147,11 @@ public class ArangoDBSimpleGraphClient {
 		throw new ArangoDBException("Attribute '" + attributeName + "' not found in request result.");
 	}
 
+	/**
+	 * Returns the current connection configuration
+	 * 
+	 * @return the configuration
+	 */
 	public ArangoDBConfiguration getConfiguration() {
 		return configuration;
 	}

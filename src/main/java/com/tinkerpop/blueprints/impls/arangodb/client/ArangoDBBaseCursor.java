@@ -13,125 +13,136 @@ import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 
+/**
+ * The arangodb database cursor class
+ * 
+ * @author Achim Brandt (http://www.triagens.de)
+ * @author Johannes Gocke (http://www.triagens.de)
+ * @author Guido Schwab (http://www.triagens.de)
+ * @author Jan Steemann (http://www.triagens.de)
+ */
+
 public class ArangoDBBaseCursor {
 
 	/**
 	 * the logger
 	 */
 
-	private static Logger LOG = Logger
-			.getLogger(ArangoDBBaseCursor.class);
-	
-    /**
-     * the ArangoDB client
-     *
-     */
+	private static Logger LOG = Logger.getLogger(ArangoDBBaseCursor.class);
+
+	/**
+	 * the ArangoDB client
+	 * 
+	 */
 
 	private ArangoDBSimpleGraphClient client;
-	
-    /**
-     * the cached results
-     *
-     */
+
+	/**
+	 * the cached results
+	 * 
+	 */
 
 	private JSONArray result = null;
 
-    /**
-     * has more results property 
-     *
-     */
+	/**
+	 * has more results property
+	 * 
+	 */
 
 	private boolean hasNext = false;
-	
-    /**
-     * cursor identifier 
-     *
-     */
+
+	/**
+	 * cursor identifier
+	 * 
+	 */
 
 	private String id = "";
-	
-    /**
-     * next result 
-     *
-     */
 
-	private int index = 0; 
-	
-    /**
-     * count result 
-     *
-     */
+	/**
+	 * next result
+	 * 
+	 */
 
-	private int count = 0; 
-		
-    /**
-     * Create a ArangoDB cursor
-     *
-     * @param client       the ArangoDB client
-     * @param json         the result of a query in cursor structure 
-     */
+	private int index = 0;
 
-	public ArangoDBBaseCursor (ArangoDBSimpleGraphClient client, JSONObject json) {
+	/**
+	 * count result
+	 * 
+	 */
+
+	private int count = 0;
+
+	/**
+	 * Create a ArangoDB cursor
+	 * 
+	 * @param client
+	 *            the ArangoDB client
+	 * @param json
+	 *            the result of a query in cursor structure
+	 */
+
+	public ArangoDBBaseCursor(ArangoDBSimpleGraphClient client, JSONObject json) {
 		this.client = client;
 		setValues(json);
 	}
-	
-    /**
-     * returns true, if there a more results
-     *  
-     * @return true, if there are more results 
-     */
 
-	public boolean hasNext () {
+	/**
+	 * returns true, if there a more results
+	 * 
+	 * @return true, if there are more results
+	 */
+
+	public boolean hasNext() {
 		if (index < result.length()) {
 			return true;
 		}
-		
+
 		if (hasNext) {
 			// get more results from the server
-			
+
 			try {
 				JSONObject json = client.getNextCursorValues(id);
-				setValues(json);			
+				setValues(json);
 			} catch (ArangoDBException e) {
 				LOG.error("Cursor update failed!: " + e);
 				e.printStackTrace();
 				setValues(null);
-			}		
-			
+			}
+
 			if (index < result.length()) {
 				return true;
 			}
 		}
-		
+
 		return false;
 	}
 
-    /**
-     * returns the next result
-     *  
-     * @return Object 
-     */
+	/**
+	 * returns the next result
+	 * 
+	 * @return Object
+	 */
 
-	public Object next () {
-		if (hasNext()) {			
+	public Object next() {
+		if (hasNext()) {
 			try {
 				return result.get(index++);
 			} catch (JSONException e) {
 			}
 		}
-		
+
 		return null;
 	}
-	
-    /**
-     * updates the state
-     *  
-     * @param json         json in cursor data structure 
-     * @return true,       if the state was updated successfully 
-     */
 
-	private boolean setValues (JSONObject json) {
+	/**
+	 * updates the state
+	 * 
+	 * @param json
+	 *            the cursor in JSON data structure
+	 * @return true, if the state was updated successfully
+	 */
+
+	private boolean setValues(JSONObject json) {
 		if (json == null) {
 			result = new JSONArray();
 			hasNext = false;
@@ -140,7 +151,7 @@ public class ArangoDBBaseCursor {
 			count = 0;
 			return false;
 		}
-		
+
 		if (json.has("result")) {
 			try {
 				result = json.getJSONArray("result");
@@ -153,7 +164,7 @@ public class ArangoDBBaseCursor {
 				hasNext = json.getBoolean("hasMore");
 			} catch (JSONException e) {
 				hasNext = false;
-			}			
+			}
 		}
 		if (json.has("id")) {
 			try {
@@ -161,45 +172,47 @@ public class ArangoDBBaseCursor {
 			} catch (JSONException e) {
 				id = "";
 				hasNext = false;
-			}			
+			}
 		}
 		if (json.has("count")) {
 			try {
 				count = json.getInt("count");
 			} catch (JSONException e) {
 				count = 0;
-			}			
+			}
 		}
-		
+
 		if (result == null) {
 			result = new JSONArray();
 		}
-		
+
 		index = 0;
 		return true;
 	}
-	
-    /**
-     * deletes the cursor on the server
-     */
-	
-	public void close () {
+
+	/**
+	 * deletes the cursor on the server
+	 */
+
+	public void close() {
 		if (!hasNext()) {
-			return;			
+			return;
 		}
-		
+
 		client.deleteCursor(id);
-		
+
 		result = new JSONArray();
 		hasNext = false;
 		id = "";
 		index = 0;
 	}
-	
-    /**
-     * Returns the count value
-     */
-	
+
+	/**
+	 * Returns the count value
+	 * 
+	 * @return number of results
+	 */
+
 	public int count() {
 		return this.count;
 	}

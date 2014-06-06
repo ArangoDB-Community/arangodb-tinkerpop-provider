@@ -36,11 +36,12 @@ import com.tinkerpop.blueprints.impls.arangodb.utils.ArangoDBUtil;
 import com.tinkerpop.blueprints.util.StringFactory;
 
 /**
+ * <p>
  * A Blueprints implementation of the ArangoDB batch inserter for bulk loading
  * data into a ArangoDB graph. This is a single threaded, non-transactional bulk
  * loader and should not be used for any other reason than for massive initial
  * data loads.
- * <p/>
+ * </p>
  * ArangoDBBatchGraph is <b>not</b> a completely faithful Blueprints
  * implementation. Many methods throw UnsupportedOperationExceptions and take
  * unique arguments. Be sure to review each method's JavaDoc.
@@ -220,21 +221,21 @@ public class ArangoDBBatchGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>
 	}
 
 	/**
-	 * @throws UnsupportedOperationException
+	 * not supported in batch mode
 	 */
 	public void removeVertex(Vertex vertex) {
 		throw new UnsupportedOperationException();
 	}
 
 	/**
-	 * @throws UnsupportedOperationException
+	 * not supported in batch mode
 	 */
 	public Iterable<Vertex> getVertices() {
 		throw new UnsupportedOperationException();
 	}
 
 	/**
-	 * @throws UnsupportedOperationException
+	 * not supported in batch mode
 	 */
 	public Iterable<Vertex> getVertices(String key, Object value) {
 		throw new UnsupportedOperationException();
@@ -249,26 +250,31 @@ public class ArangoDBBatchGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>
 	}
 
 	/**
-	 * @throws UnsupportedOperationException
+	 * not supported in batch mode
 	 */
 	public void removeEdge(Edge edge) {
 		throw new UnsupportedOperationException();
 	}
 
 	/**
-	 * @throws UnsupportedOperationException
+	 * not supported in batch mode
 	 */
 	public Iterable<Edge> getEdges() {
 		throw new UnsupportedOperationException();
 	}
 
-	/**
-	 * @throws UnsupportedOperationException
-	 */
 	public Iterable<Edge> getEdges(String key, Object value) {
 		throw new UnsupportedOperationException();
 	}
 
+	/**
+	 * Return the object value associated with the provided string key. If no
+	 * value exists for that key, return null.
+	 * 
+	 * @param key
+	 *            the key of the key/value property
+	 * @return the object value related to the string key
+	 */
 	public Object getProperty(String key) {
 		return this.rawGraph.getProperty(key);
 	}
@@ -370,8 +376,6 @@ public class ArangoDBBatchGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>
 	/**
 	 * Save changed vertices. This functions has to be called in the shutdown
 	 * function.
-	 * 
-	 * @throws ArangoDBException
 	 */
 
 	private void saveVertices() {
@@ -396,6 +400,7 @@ public class ArangoDBBatchGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>
 	 * function.
 	 * 
 	 * @throws ArangoDBException
+	 *             if an error occurs
 	 */
 
 	private void saveEdges() {
@@ -422,6 +427,7 @@ public class ArangoDBBatchGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>
 	 *            the added Element
 	 * 
 	 * @throws ArangoDBException
+	 *             if an error occurs
 	 */
 
 	public void addCreatedVertex(ArangoDBBatchVertex element) throws ArangoDBException {
@@ -438,6 +444,7 @@ public class ArangoDBBatchGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>
 	 *            the added Element
 	 * 
 	 * @throws ArangoDBException
+	 *             if an error occurs
 	 */
 
 	public void addCreatedEdge(ArangoDBBatchEdge element) throws ArangoDBException {
@@ -448,13 +455,15 @@ public class ArangoDBBatchGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>
 		addedEdges.add(element);
 	}
 
-	/**
-	 * @throws UnsupportedOperationException
-	 */
 	public GraphQuery query() {
 		throw new UnsupportedOperationException();
 	}
 
+	/**
+	 * Internal function to create a new element identifier
+	 * 
+	 * @return a new identifier number
+	 */
 	synchronized public Long getNewId() {
 		return ++idCounter;
 	}

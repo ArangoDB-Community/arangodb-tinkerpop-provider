@@ -11,6 +11,14 @@ import com.tinkerpop.blueprints.impls.arangodb.utils.ArangoDBUtil;
 import com.tinkerpop.blueprints.util.ExceptionFactory;
 import com.tinkerpop.blueprints.util.StringFactory;
 
+/**
+ * The arangodb base batch element class (used by edges and vertices)
+ * 
+ * @author Achim Brandt (http://www.triagens.de)
+ * @author Johannes Gocke (http://www.triagens.de)
+ * @author Guido Schwab (http://www.triagens.de)
+ */
+
 abstract public class ArangoDBBatchElement implements Element {
 
 	/**
@@ -33,22 +41,31 @@ abstract public class ArangoDBBatchElement implements Element {
 
 	/**
 	 * Save the vertex or the edge in ArangoDB
+	 * 
+	 * @throws ArangoDBException
+	 *             if an error occurs
 	 */
 
 	abstract public void save() throws ArangoDBException;
 
 	/**
-	 * @inheritDoc
+	 * Return the object value associated with the provided string key. If no
+	 * value exists for that key, return null.
+	 * 
+	 * @param key
+	 *            the key of the key/value property
+	 * @return the object value related to the string key
 	 */
-
 	public Object getProperty(String key) {
 		return document.getProperty(ArangoDBUtil.normalizeKey(key));
 	}
 
 	/**
 	 * Set/Reset the vertex/edge document
+	 * 
+	 * @param document
+	 *            the new internal data of the element
 	 */
-
 	public void setDocument(ArangoDBBaseDocument document) {
 		this.document = document;
 	}
@@ -104,6 +121,11 @@ abstract public class ArangoDBBatchElement implements Element {
 		return document.getDocumentKey();
 	}
 
+	/**
+	 * Returns the internal data of the element
+	 * 
+	 * @return the internal data
+	 */
 	public ArangoDBBaseDocument getRaw() {
 		return document;
 	}

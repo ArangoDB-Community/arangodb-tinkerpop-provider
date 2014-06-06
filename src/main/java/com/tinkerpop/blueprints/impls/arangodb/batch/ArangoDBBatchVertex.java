@@ -22,6 +22,8 @@ import com.tinkerpop.blueprints.util.ExceptionFactory;
 import com.tinkerpop.blueprints.util.StringFactory;
 
 /**
+ * The arangodb batch vertex class
+ * 
  * @author Achim Brandt (http://www.triagens.de)
  * @author Johannes Gocke (http://www.triagens.de)
  * @author Guido Schwab (http://www.triagens.de)
@@ -36,8 +38,6 @@ public class ArangoDBBatchVertex extends ArangoDBBatchElement implements Vertex 
 	 *            a ArangoDBBatchGraph
 	 * @param id
 	 *            the id (key) of the vertex (can be null)
-	 * 
-	 * @throws IllegalArgumentException
 	 */
 
 	static ArangoDBBatchVertex create(ArangoDBBatchGraph graph, Object id) {
@@ -70,8 +70,6 @@ public class ArangoDBBatchVertex extends ArangoDBBatchElement implements Vertex 
 	 *            a ArangoDBGraph
 	 * @param id
 	 *            the id (key) of the vertex (can be null)
-	 * 
-	 * @throws IllegalArgumentException
 	 */
 
 	static ArangoDBBatchVertex load(ArangoDBBatchGraph graph, Object id) {
@@ -116,26 +114,23 @@ public class ArangoDBBatchVertex extends ArangoDBBatchElement implements Vertex 
 		this.document = vertex;
 	}
 
-	/**
-	 * @throws UnsupportedOperationException
-	 */
 	public Iterable<Edge> getEdges(Direction direction, String... labels) {
 		throw new UnsupportedOperationException();
 	}
 
-	/**
-	 * @throws UnsupportedOperationException
-	 */
 	public Iterable<Vertex> getVertices(Direction direction, String... labels) {
 		throw new UnsupportedOperationException();
 	}
 
-	/**
-	 * @throws UnsupportedOperationException
-	 */
 	public VertexQuery query() {
 		throw new UnsupportedOperationException();
 	}
+
+	/**
+	 * Returns the arangodb raw vertex
+	 * 
+	 * @return a ArangoDBSimpleVertex
+	 */
 
 	public ArangoDBSimpleVertex getRawVertex() {
 		return (ArangoDBSimpleVertex) document;
@@ -145,16 +140,10 @@ public class ArangoDBBatchVertex extends ArangoDBBatchElement implements Vertex 
 		return StringFactory.vertexString(this);
 	}
 
-	/**
-	 * @throws UnsupportedOperationException
-	 */
 	public void remove() {
 		throw new UnsupportedOperationException();
 	}
 
-	/**
-	 * @throws UnsupportedOperationException
-	 */
 	public void save() throws ArangoDBException {
 		throw new UnsupportedOperationException();
 	}

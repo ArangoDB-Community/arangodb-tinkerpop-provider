@@ -23,6 +23,8 @@ import com.tinkerpop.blueprints.impls.arangodb.client.ArangoDBSimpleEdgeQuery;
 import com.tinkerpop.blueprints.impls.arangodb.client.ArangoDBSimpleVertexQuery;
 
 /**
+ * The arangodb graph query class
+ * 
  * @author Achim Brandt (http://www.triagens.de)
  * @author Johannes Gocke (http://www.triagens.de)
  * @author Guido Schwab (http://www.triagens.de)
@@ -36,6 +38,12 @@ public class ArangoDBGraphQuery implements GraphQuery {
 	private ArangoDBPropertyFilter propertyFilter = new ArangoDBPropertyFilter();
 	private boolean count;
 
+	/**
+	 * Creates a graph query for a arangodb graph
+	 * 
+	 * @param graph
+	 *            the arangodb graph
+	 */
 	public ArangoDBGraphQuery(final ArangoDBGraph graph) {
 		this.graph = graph;
 		this.count = false;
@@ -85,6 +93,11 @@ public class ArangoDBGraphQuery implements GraphQuery {
 		}
 	}
 
+	/**
+	 * Executes the query and returns the number of result elements
+	 * 
+	 * @return number of elements
+	 */
 	public long count() {
 		this.count = true;
 		long result = 0;
@@ -103,6 +116,11 @@ public class ArangoDBGraphQuery implements GraphQuery {
 		return result;
 	}
 
+	/**
+	 * Executes the query and returns the identifiers of result elements
+	 * 
+	 * @return the identifiers of result elements
+	 */
 	public Iterator<String> vertexIds() {
 
 		return new Iterator<String>() {

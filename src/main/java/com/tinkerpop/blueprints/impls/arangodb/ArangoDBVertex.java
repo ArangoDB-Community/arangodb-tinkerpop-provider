@@ -8,34 +8,38 @@
 
 package com.tinkerpop.blueprints.impls.arangodb;
 
-import com.tinkerpop.blueprints.impls.arangodb.client.*;
-
 import com.tinkerpop.blueprints.Direction;
 import com.tinkerpop.blueprints.Edge;
-import com.tinkerpop.blueprints.VertexQuery;
 import com.tinkerpop.blueprints.Vertex;
+import com.tinkerpop.blueprints.VertexQuery;
+import com.tinkerpop.blueprints.impls.arangodb.client.ArangoDBException;
+import com.tinkerpop.blueprints.impls.arangodb.client.ArangoDBSimpleVertex;
 import com.tinkerpop.blueprints.util.ExceptionFactory;
 import com.tinkerpop.blueprints.util.StringFactory;
 
 /**
+ * The arangodb vertex class
+ * 
  * @author Achim Brandt (http://www.triagens.de)
  * @author Johannes Gocke (http://www.triagens.de)
+ * @author Guido Schwab (http://www.triagens.de)
  */
 
-public class ArangoDBVertex extends ArangoDBElement implements Vertex 
-{	
+public class ArangoDBVertex extends ArangoDBElement implements Vertex {
 	/**
-     *  Creates a vertex
-     *  
-     *  @param graph                      a ArangoDBGraph
-     *  @param id                         the id (key) of the vertex (can be null)
-     *  
-     *  @throws IllegalArgumentException  
-     */
-    
-	static ArangoDBVertex create (ArangoDBGraph graph, Object id) {		
-		String key = (id != null) ? id.toString() : null; 
-				
+	 * Creates a vertex
+	 * 
+	 * @param graph
+	 *            a ArangoDBGraph
+	 * @param id
+	 *            the id (key) of the vertex (can be null)
+	 * 
+	 * @throws IllegalArgumentException
+	 */
+
+	static ArangoDBVertex create(ArangoDBGraph graph, Object id) {
+		String key = (id != null) ? id.toString() : null;
+
 		try {
 			ArangoDBSimpleVertex v = graph.client.createVertex(graph.getRawGraph(), key, null);
 			return build(graph, v);
@@ -44,56 +48,56 @@ public class ArangoDBVertex extends ArangoDBElement implements Vertex
 				throw ExceptionFactory.vertexWithIdAlreadyExists(id);
 			}
 			throw new IllegalArgumentException(e.getMessage());
-		}		
+		}
 	}
-	
+
 	/**
-     *  Creates a vertex by loading it 
-     *  
-     *  @param graph                      a ArangoDBGraph
-     *  @param id                         the id (key) of the vertex (can be null)
-     *  
-     *  @throws IllegalArgumentException  
-     */
-    
-	static ArangoDBVertex load (ArangoDBGraph graph, Object id) {	
+	 * Creates a vertex by loading it
+	 * 
+	 * @param graph
+	 *            a ArangoDBGraph
+	 * @param id
+	 *            the id (key) of the vertex (can be null)
+	 * 
+	 * @throws IllegalArgumentException
+	 */
+
+	static ArangoDBVertex load(ArangoDBGraph graph, Object id) {
 		if (id == null) {
 			throw ExceptionFactory.vertexIdCanNotBeNull();
 		}
-		
-		String key = id.toString(); 
+
+		String key = id.toString();
 
 		ArangoDBVertex vert = graph.vertexCache.get(key);
 		if (vert != null) {
 			return vert;
 		}
-		
-		try {			
-			ArangoDBSimpleVertex v = graph.client.getVertex(graph.getRawGraph(), key);			
+
+		try {
+			ArangoDBSimpleVertex v = graph.client.getVertex(graph.getRawGraph(), key);
 			return build(graph, v);
 		} catch (ArangoDBException e) {
 			// nothing found
 			return null;
-		}		
+		}
 	}
 
-	static ArangoDBVertex build (ArangoDBGraph graph, ArangoDBSimpleVertex simpleVertex) {
+	static ArangoDBVertex build(ArangoDBGraph graph, ArangoDBSimpleVertex simpleVertex) {
 		String id = simpleVertex.getDocumentKey();
-		
+
 		ArangoDBVertex vert = graph.vertexCache.get(id);
 		if (vert != null) {
 			vert.setDocument(simpleVertex);
 			return vert;
 		}
-		
+
 		ArangoDBVertex newVertex = new ArangoDBVertex(graph, simpleVertex);
 		graph.vertexCache.put(newVertex.getRaw().getDocumentKey(), newVertex);
-		return newVertex;							
+		return newVertex;
 	}
-	
-	
-	private ArangoDBVertex(ArangoDBGraph graph, ArangoDBSimpleVertex vertex) 
-	{
+
+	private ArangoDBVertex(ArangoDBGraph graph, ArangoDBSimpleVertex vertex) {
 		this.graph = graph;
 		this.document = vertex;
 	}
@@ -105,7 +109,7 @@ public class ArangoDBVertex extends ArangoDBElement implements Vertex
 		ArangoDBVertexQuery q = new ArangoDBVertexQuery(graph, this);
 		q.direction(direction);
 		q.labels(labels);
-				
+
 		return q.edges();
 	}
 
@@ -116,7 +120,7 @@ public class ArangoDBVertex extends ArangoDBElement implements Vertex
 		ArangoDBVertexQuery q = new ArangoDBVertexQuery(graph, this);
 		q.direction(direction);
 		q.labels(labels);
-				
+
 		return q.vertices();
 	}
 
@@ -127,15 +131,21 @@ public class ArangoDBVertex extends ArangoDBElement implements Vertex
 		return new ArangoDBVertexQuery(graph, this);
 	}
 
-	public ArangoDBSimpleVertex getRawVertex () {
+	/**
+	 * Returns the arangodb raw vertex
+	 * 
+	 * @return a ArangoDBSimpleVertex
+	 */
+
+	public ArangoDBSimpleVertex getRawVertex() {
 		return (ArangoDBSimpleVertex) document;
 	}
-	
-    public String toString() {
-        return StringFactory.vertexString(this);
-    }
-	
-	public void remove () {
+
+	public String toString() {
+		return StringFactory.vertexString(this);
+	}
+
+	public void remove() {
 		if (document.isDeleted()) {
 			return;
 		}
@@ -147,8 +157,8 @@ public class ArangoDBVertex extends ArangoDBElement implements Vertex
 		}
 		graph.vertexCache.remove(key);
 	}
-	
-	public void save () throws ArangoDBException {
+
+	public void save() throws ArangoDBException {
 		if (document.isDeleted()) {
 			return;
 		}

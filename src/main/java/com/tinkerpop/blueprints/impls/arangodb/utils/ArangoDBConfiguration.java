@@ -12,8 +12,7 @@ import com.tinkerpop.rexster.config.GraphConfigurationException;
 
 /**
  * Rexster configuration for ArangoDB graphs. Accepts configuration in
- * rexster.xml as follows:
- * 
+ * rexster.xml as follows: {@code
  * <code>
  *  <graph>
  *     <graph-name>arangodb</graph-name>
@@ -32,7 +31,7 @@ import com.tinkerpop.rexster.config.GraphConfigurationException;
  *     </extensions>
  *   </graph>
  * </code>
- * 
+ * }
  * 
  * @author Achim Brandt (http://www.triagens.de)
  */

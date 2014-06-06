@@ -32,6 +32,8 @@ import com.tinkerpop.blueprints.impls.arangodb.utils.ArangoDBUtil;
 import com.tinkerpop.blueprints.util.StringFactory;
 
 /**
+ * The arangodb graph class
+ * 
  * @author Achim Brandt (http://www.triagens.de)
  * @author Johannes Gocke (http://www.triagens.de)
  * @author Guido Schwab (http://www.triagens.de)
@@ -245,6 +247,14 @@ public class ArangoDBGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>, Key
 		return q.edges();
 	}
 
+	/**
+	 * Return the object value associated with the provided string key. If no
+	 * value exists for that key, return null.
+	 * 
+	 * @param key
+	 *            the key of the key/value property
+	 * @return the object value related to the string key
+	 */
 	public Object getProperty(String key) {
 		return this.rawGraph.getProperty(key);
 	}
@@ -346,8 +356,6 @@ public class ArangoDBGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>, Key
 	/**
 	 * Save changed vertices and edges This functions has to be called in the
 	 * shutdown function and before a query creates the cursor.
-	 * 
-	 * @throws ArangoDBException
 	 */
 
 	public void save() {
@@ -370,6 +378,7 @@ public class ArangoDBGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>, Key
 	 *            the changed Element
 	 * 
 	 * @throws ArangoDBException
+	 *             if an error occurs
 	 */
 
 	public void addChangedElement(ArangoDBElement element) throws ArangoDBException {
