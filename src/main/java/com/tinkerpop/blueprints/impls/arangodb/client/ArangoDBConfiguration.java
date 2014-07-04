@@ -96,6 +96,9 @@ public class ArangoDBConfiguration {
 	 */
 	private boolean socketKeepAlive;
 
+	/**
+	 * ArangoDB database name
+	 */
 	private String db;
 
 	/**
@@ -128,6 +131,7 @@ public class ArangoDBConfiguration {
 		this.batchSize = 100;
 		this.staleConnectionCheck = false;
 		this.socketKeepAlive = false;
+		this.db = null;
 	}
 
 	/**
