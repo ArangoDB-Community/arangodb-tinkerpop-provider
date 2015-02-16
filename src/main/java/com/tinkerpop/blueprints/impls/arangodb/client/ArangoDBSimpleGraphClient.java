@@ -14,6 +14,7 @@ import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Vector;
 
 import org.apache.http.HttpEntity;
@@ -33,10 +34,21 @@ import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 
+import com.arangodb.ArangoConfigure;
+import com.arangodb.ArangoDriver;
+import com.arangodb.ArangoException;
+import com.arangodb.entity.EdgeDefinitionEntity;
+import com.arangodb.entity.GraphEntity;
 import com.tinkerpop.blueprints.impls.arangodb.client.ArangoDBBaseQuery.Direction;
 
 public class ArangoDBSimpleGraphClient {
 
+	/**
+	 * the driver
+	 */
+	private ArangoDriver arangoDriver;
+	
+	
 	/**
 	 * the logger
 	 */
@@ -82,6 +94,10 @@ public class ArangoDBSimpleGraphClient {
 		this.connectionManager = this.configuration
 				.createClientConnectionManager();
 		this.httpClient = new DefaultHttpClient();
+		
+		ArangoConfigure arangoConfigure = new ArangoConfigure();
+		this.arangoDriver = new ArangoDriver(arangoConfigure);
+			
 	}
 
 	/**
@@ -133,19 +149,40 @@ public class ArangoDBSimpleGraphClient {
 	 */
 
 	public ArangoDBSimpleGraph createGraph(String name,
-			String vertexCollectionName, String EdgeCollectionName)
+			String vertexCollectionName, String edgeCollectionName)
 			throws ArangoDBException {
-		JSONObject body = new JSONObject();
+		ArangoConfigure arangoConfigure = new ArangoConfigure();
+		ArangoDriver arangoDriver = new ArangoDriver(arangoConfigure);
+		
+		List<EdgeDefinitionEntity> edgeDefinitions = new ArrayList<EdgeDefinitionEntity>();
+		EdgeDefinitionEntity edgeDefinitionEntity = new EdgeDefinitionEntity();
+		edgeDefinitionEntity.setCollection(edgeCollectionName);
+		List<String> from = new ArrayList<String>();
+		from.add(vertexCollectionName);
+		edgeDefinitionEntity.setFrom(from);
+		List<String> to = new ArrayList<String>();
+		to.add(vertexCollectionName);
+		edgeDefinitionEntity.setTo(to);
+		edgeDefinitions.add(edgeDefinitionEntity);
+		GraphEntity graph = null;
 		try {
-			body.put(ArangoDBSimpleGraph._KEY, name);
-			body.put(ArangoDBSimpleGraph._VERTICES, vertexCollectionName);
-			body.put(ArangoDBSimpleGraph._EDGES, EdgeCollectionName);
-		} catch (JSONException e) {
-			throw new ArangoDBException("JSON error: " + e.getMessage());
+			graph = arangoDriver.createGraph(name, edgeDefinitions, new ArrayList<String>(), true);
+		} catch (ArangoException e) {
+			throw new ArangoDBException("Graph creation error: " + e.getMessage());
 		}
-
-		JSONObject result = postRequest("_api/graph", body);
-		JSONObject graph = getResultJsonObject(result, "graph");
+		
+//		JSONObject body = new JSONObject();
+//		try {
+//			body.put(ArangoDBSimpleGraph._KEY, name);
+//			body.put(ArangoDBSimpleGraph._VERTICES, vertexCollectionName);
+//			body.put(ArangoDBSimpleGraph._EDGES, edgeCollectionName);
+//		} catch (JSONException e) {
+//			throw new ArangoDBException("JSON error: " + e.getMessage());
+//		}
+//
+//		JSONObject result = postRequest("_api/graph", body);
+//		JSONObject graph = getResultJsonObject(result, "graph");
+//		ArangoDBSimpleGraph simpleGraph = new ArangoDBSimpleGraph(properties);
 		return new ArangoDBSimpleGraph(graph);
 	}
 
@@ -161,12 +198,24 @@ public class ArangoDBSimpleGraphClient {
 	 *             if the graph could not be created
 	 */
 
-	public ArangoDBSimpleGraph getGraph(String name) throws ArangoDBException {
-		JSONObject result = getRequest("_api/graph/" + urlEncode(name));
-		JSONObject graph = getResultJsonObject(result, "graph");
-		return new ArangoDBSimpleGraph(graph);
-	}
+//	public ArangoDBSimpleGraph getGraph(String name) throws ArangoDBException {
+//		JSONObject result = getRequest("_api/graph/" + urlEncode(name));
+//		JSONObject graph = getResultJsonObject(result, "graph");
+//		return new ArangoDBSimpleGraph(graph);
+//	}
 
+	public ArangoDBSimpleGraph getGraph(String name, Boolean waitForSync) throws ArangoDBException {
+		
+		try {
+			GraphEntity graphEntity = this.arangoDriver.getGraph(name);
+			return new ArangoDBSimpleGraph(graphEntity);
+		} catch (ArangoException e) {
+			throw new ArangoDBException(e.getMessage(), e.getErrorNumber());
+		}
+	} 
+	
+	
+	
 	/**
 	 * Delete a graph by name
 	 * 

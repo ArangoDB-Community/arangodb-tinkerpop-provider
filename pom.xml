@@ -46,7 +46,11 @@
         <artifactId>blueprints-test</artifactId>
         <version>${blueprints.version}</version>
         <scope>test</scope>
-    </dependency>  	
+    </dependency>
+    <dependency>
+    	<groupId>com.arangodb</groupId>
+    	<artifactId>arangodb-java-driver</artifactId>
+    </dependency>
   </dependencies>    
     <build>
         <directory>${basedir}/target</directory>
@@ -149,4 +153,13 @@
             </plugin>
         </plugins>        
     </reporting>
+    <dependencyManagement>
+    	<dependencies>
+    		<dependency>
+    			<groupId>com.arangodb</groupId>
+    			<artifactId>arangodb-java-driver</artifactId>
+    			<version>2.4.2</version>
+    		</dependency>
+    	</dependencies>
+    </dependencyManagement>
 </project>

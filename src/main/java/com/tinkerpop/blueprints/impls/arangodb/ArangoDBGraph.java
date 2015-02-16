@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.Vector;
 
+import com.arangodb.entity.GraphEntity;
 import com.tinkerpop.blueprints.impls.arangodb.client.*;
 import com.tinkerpop.blueprints.impls.arangodb.utils.ArangoDBUtil;
 import com.tinkerpop.blueprints.Edge;
@@ -153,7 +154,7 @@ public class ArangoDBGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>, Key
 		client = new ArangoDBSimpleGraphClient(configuration);						
 		changedElements = new HashSet<ArangoDBElement>();
 		try {
-			rawGraph = this.client.getGraph(name);			
+			rawGraph = this.client.getGraph(name, true);			
 			if (verticesCollectionName != null && edgesCollectionName != null) {
 				// check names
 				if (!rawGraph.getVertexCollection().equals(verticesCollectionName)) {
