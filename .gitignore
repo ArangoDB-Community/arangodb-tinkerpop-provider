@@ -2,6 +2,9 @@
 *.iml
 .idea
 target
+.classpath
+.project
+.settings/
 
 # Package Files #
 *.war
