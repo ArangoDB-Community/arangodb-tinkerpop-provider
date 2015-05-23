@@ -5,8 +5,19 @@
 	<groupId>com.arangodb</groupId>
 	<artifactId>blueprints-arangodb-graph</artifactId>
 	<version>1.0.10</version>
+	<packaging>jar</packaging>
+	
 	<name>Blueprints-ArangoDB-Graph</name>
 	<description>An implementation of the Blueprints API for ArangoDB</description>
+	<url>http://maven.apache.org</url>
+
+	<licenses>
+		<license>
+			<name>Apache License 2.0</name>
+			<url>http://www.apache.org/licenses/LICENSE-2.0</url>
+			<distribution>repo</distribution>
+		</license>
+	</licenses>
 
 	<distributionManagement>
 		<snapshotRepository>
@@ -18,6 +29,24 @@
 			<url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
 		</repository>
 	</distributionManagement>
+
+	<developers>
+		<developer>
+			<id>gschwab</id>
+			<name>gschwab</name>
+			<url>https://github.com/gschwab</url>
+		</developer>
+		<developer>
+			<id>scottashton</id>
+			<name>scottashton</name>
+			<url>https://github.com/scottashton</url>
+		</developer>
+		<developer>
+			<id>a-brandt</id>
+			<name>a-brandt</name>
+			<url>https://github.com/a-brandt</url>
+		</developer>
+	</developers>
 
 	<profiles>
 		<profile>
