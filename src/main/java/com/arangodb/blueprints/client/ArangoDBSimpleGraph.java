@@ -73,4 +73,9 @@ public class ArangoDBSimpleGraph {
 		return graphEntity;
 	}
 
+	public String toString() {
+		return "{\"name\":\"" + getName() + "\",\"vertices\":\"" + getVertexCollection() + "\",\"edges\":\""
+				+ getEdgeCollection() + "\"}";
+	}
+
 }

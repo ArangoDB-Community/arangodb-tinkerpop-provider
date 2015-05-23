@@ -378,5 +378,4 @@ public class ArangoDBGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>, Key
 	public String getId() {
 		return simpleGraph.getGraphEntity().getDocumentKey();
 	}
-
 }
