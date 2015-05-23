@@ -3,6 +3,12 @@ package com.tinkerpop.blueprints.impls.arangodb.client.test;
 import java.util.List;
 import java.util.Vector;
 
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+
+import com.arangodb.ArangoException;
+import com.arangodb.entity.IndexType;
 import com.tinkerpop.blueprints.impls.arangodb.client.ArangoDBException;
 import com.tinkerpop.blueprints.impls.arangodb.client.ArangoDBIndex;
 import com.tinkerpop.blueprints.impls.arangodb.client.ArangoDBSimpleGraph;
@@ -10,112 +16,95 @@ import com.tinkerpop.blueprints.impls.arangodb.client.ArangoDBSimpleGraph;
 public class SimpleGraphIndexTest extends BaseTestCase {
 
 	ArangoDBSimpleGraph graph = null;
-	
-	protected void setUp() {
+
+	@Before
+	public void setUp() {
 		super.setUp();
-		try {			
+		try {
 			graph = client.createGraph(graphName, vertices, edges);
-						
-		} catch (ArangoDBException e) {
+
+		} catch (ArangoException e) {
 			e.printStackTrace();
-			assertTrue(false);		
+			Assert.assertTrue(false);
 		}
 	}
 
-	protected void tearDown() {
-		super.tearDown();
+	@Test
+	public void test_CreateIndex() throws ArangoDBException {
+		Vector<String> fields = new Vector<String>();
+		fields.add("name");
+		ArangoDBIndex i = client.createVertexIndex(graph, IndexType.HASH, true, fields);
+		Assert.assertNotNull(i);
 	}
 
-	public void test_CreateIndex () {
+	@Test
+	public void test_CreateIndexFails() throws ArangoDBException {
 		Vector<String> fields = new Vector<String>();
-		
 		try {
-			// fails
-			client.createVertexIndex(graph, "hash", true, fields);
-			assertTrue(false);		
-		} catch (ArangoDBException e) {			
+			// empty field list
+			client.createVertexIndex(graph, IndexType.HASH, true, fields);
+			Assert.fail("ArangoDBException not thrown");
+		} catch (ArangoDBException e) {
+
 		}
-
-		try {
-			fields.add("name");
-			ArangoDBIndex i = client.createVertexIndex(graph, "hash", true, fields);
-			assertNotNull(i);						
-		} catch (ArangoDBException e) {
-			assertTrue(false);		
-		}		
 	}
 
-	public void test_CreateIndex2 () {
+	@Test
+	public void test_CreateIndexSkiplist() throws ArangoDBException {
 		Vector<String> fields = new Vector<String>();
-		
+		fields.add("name");
+		ArangoDBIndex i = client.createVertexIndex(graph, IndexType.SKIPLIST, false, fields);
+		Assert.assertNotNull(i);
+	}
+
+	@Test
+	public void test_CreateIndexSkiplistFails() {
+		Vector<String> fields = new Vector<String>();
 		try {
-			// fails
-			client.createVertexIndex(graph, "skiplist", false, fields);
-			assertTrue(false);		
-		} catch (ArangoDBException e) {			
+			client.createVertexIndex(graph, IndexType.SKIPLIST, false, fields);
+			Assert.fail("ArangoDBException not thrown");
+		} catch (ArangoDBException e) {
 		}
-
-		try {
-			fields.add("name");
-			ArangoDBIndex i = client.createVertexIndex(graph, "skiplist", false, fields);
-			assertNotNull(i);						
-		} catch (ArangoDBException e) {
-			assertTrue(false);		
-		}		
 	}
 
-	public void test_GetIndex () {
+	@Test
+	public void test_GetIndex() throws ArangoDBException {
 		Vector<String> fields = new Vector<String>();
-		
-		try {
-			fields.add("name");
-			ArangoDBIndex i = client.createVertexIndex(graph, "hash", true, fields);
-			assertNotNull(i);
-			
-			ArangoDBIndex e = client.getIndex(i.getId());
-			assertNotNull(e);
-			
-		} catch (ArangoDBException e) {
-			assertTrue(false);		
-		}		
+		fields.add("name");
+		ArangoDBIndex i = client.createVertexIndex(graph, IndexType.HASH, true, fields);
+		Assert.assertNotNull(i);
+
+		ArangoDBIndex e = client.getIndex(i.getId());
+		Assert.assertNotNull(e);
 	}
 
-	public void test_DeleteIndex () {
+	@Test
+	public void test_DeleteIndex() throws ArangoDBException {
 		Vector<String> fields = new Vector<String>();
-		
-		try {
-			fields.add("name");
-			ArangoDBIndex i = client.createVertexIndex(graph, "hash", true, fields);
-			assertNotNull(i);
-			
-			boolean deleted = client.deleteIndex(i.getId());
-			assertTrue(deleted);
-			
-			ArangoDBIndex e = client.getIndex(i.getId());
-			assertNull(e);
-			
-		} catch (ArangoDBException e) {
-			assertTrue(false);		
-		}		
+
+		fields.add("name");
+		ArangoDBIndex i = client.createVertexIndex(graph, IndexType.HASH, true, fields);
+		Assert.assertNotNull(i);
+
+		boolean deleted = client.deleteIndex(i.getId());
+		Assert.assertTrue(deleted);
+
+		ArangoDBIndex e = client.getIndex(i.getId());
+		Assert.assertNull(e);
 	}
 
-	public void test_GetIndices () {
+	@Test
+	public void test_GetIndices() throws ArangoDBException {
 		Vector<String> fields = new Vector<String>();
-		
-		try {
-			fields.add("name");
-			client.createVertexIndex(graph, "hash", true, fields);
-			fields.clear();
-			
-			fields.add("street");
-			client.createVertexIndex(graph, "hash", true, fields);
-			
-			List<ArangoDBIndex> v = client.getVertexIndices(graph);
-			assertEquals(3, v.size());
-			
-		} catch (ArangoDBException e) {
-			assertTrue(false);		
-		}		
+		fields.add("name");
+		client.createVertexIndex(graph, IndexType.HASH, true, fields);
+		fields.clear();
+
+		fields.add("street");
+		client.createVertexIndex(graph, IndexType.HASH, true, fields);
+
+		List<ArangoDBIndex> v = client.getVertexIndices(graph);
+		Assert.assertEquals(3, v.size());
 	}
-	
+
 }

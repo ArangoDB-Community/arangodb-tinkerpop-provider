@@ -8,12 +8,18 @@
 
 package com.tinkerpop.blueprints.impls.arangodb;
 
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.Vector;
 
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+
+import com.arangodb.ArangoException;
+import com.arangodb.entity.EdgeDefinitionEntity;
+import com.arangodb.entity.GraphEntity;
+import com.arangodb.entity.IndexType;
 import com.tinkerpop.blueprints.Edge;
 import com.tinkerpop.blueprints.Element;
 import com.tinkerpop.blueprints.Features;
@@ -32,7 +38,7 @@ import com.tinkerpop.blueprints.impls.arangodb.utils.ArangoDBUtil;
 import com.tinkerpop.blueprints.util.StringFactory;
 
 /**
- * The arangodb graph class
+ * The ArangoDB graph class
  * 
  * @author Achim Brandt (http://www.triagens.de)
  * @author Johannes Gocke (http://www.triagens.de)
@@ -83,44 +89,12 @@ public class ArangoDBGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>, Key
 	/**
 	 * ArangoDBSimpleGraph
 	 */
-
-	private ArangoDBSimpleGraph rawGraph = null;
+	private ArangoDBSimpleGraph simpleGraph = null;
 
 	/**
 	 * A ArangoDBSimpleGraphClient to handle the connection to the Database
 	 */
-
-	public ArangoDBSimpleGraphClient client = null;
-
-	/**
-	 * A cache for all created vertices
-	 */
-
-	public HashMap<String, ArangoDBVertex> vertexCache = null;
-
-	/**
-	 * A cache for all created edges
-	 */
-
-	public HashMap<String, ArangoDBEdge> edgeCache = null;
-
-	/**
-	 * Maximum number of changed and not saved elements
-	 */
-
-	private int maxChangedElements = 30;
-
-	/**
-	 * Delay the saving of vertex and edge updates
-	 */
-
-	private boolean delaySaveUpdates = true;
-
-	/**
-	 * Set of changed Elements
-	 */
-
-	private HashSet<ArangoDBElement> changedElements = null;
+	private ArangoDBSimpleGraphClient client = null;
 
 	/**
 	 * Creates a Graph (simple configuration)
@@ -162,27 +136,51 @@ public class ArangoDBGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>, Key
 	 */
 
 	public ArangoDBGraph(ArangoDBConfiguration configuration, String name, String verticesCollectionName,
-			String edgesCollectionName) throws ArangoDBGraphException {
-		vertexCache = new HashMap<String, ArangoDBVertex>();
-		edgeCache = new HashMap<String, ArangoDBEdge>();
+		String edgesCollectionName) throws ArangoDBGraphException {
+
+		if (StringUtils.isBlank(name)) {
+			throw new ArangoDBGraphException("graph name must not be null.");
+		}
+
+		if (StringUtils.isBlank(verticesCollectionName)) {
+			throw new ArangoDBGraphException("vertex collection name must not be null.");
+		}
+
+		if (StringUtils.isBlank(edgesCollectionName)) {
+			throw new ArangoDBGraphException("edge collection name must not be null.");
+		}
+
 		client = new ArangoDBSimpleGraphClient(configuration);
-		changedElements = new HashSet<ArangoDBElement>();
 		try {
-			rawGraph = this.client.getGraph(name);
-			if (verticesCollectionName != null && edgesCollectionName != null) {
-				// check names
-				if (!rawGraph.getVertexCollection().equals(verticesCollectionName)) {
-					throw new ArangoDBGraphException("Graph with that name already exists with other vertex collection");
+			GraphEntity graph = client.getGraph(name);
+			if (graph != null) {
+				boolean error = false;
+
+				List<EdgeDefinitionEntity> edgeDefinitions = graph.getEdgeDefinitions();
+
+				if (edgeDefinitions.size() != 1 || CollectionUtils.isNotEmpty(graph.getOrphanCollections())) {
+					error = true;
+				} else {
+					EdgeDefinitionEntity edgeDefinitionEntity = edgeDefinitions.get(0);
+					if (!edgesCollectionName.equals(edgeDefinitionEntity.getCollection())
+							|| edgeDefinitionEntity.getFrom().size() != 1 || edgeDefinitionEntity.getTo().size() != 1
+							|| !verticesCollectionName.equals(edgeDefinitionEntity.getFrom().get(0))
+							|| !verticesCollectionName.equals(edgeDefinitionEntity.getTo().get(0))) {
+						error = true;
+					}
 				}
-				if (!rawGraph.getEdgeCollection().equals(edgesCollectionName)) {
-					throw new ArangoDBGraphException("Graph with that name already exists with other edge collection");
+				if (error) {
+					throw new ArangoDBGraphException("Graph with that name already exists but with other settings");
 				}
+				simpleGraph = new ArangoDBSimpleGraph(graph, verticesCollectionName, edgesCollectionName);
 			}
-		} catch (ArangoDBException e_gal) {
+		} catch (ArangoException e1) {
+		}
+		if (simpleGraph == null) {
 			try {
-				rawGraph = this.client.createGraph(name, verticesCollectionName, edgesCollectionName);
-			} catch (ArangoDBException e) {
-				throw new ArangoDBGraphException(e.getMessage());
+				simpleGraph = this.client.createGraph(name, verticesCollectionName, edgesCollectionName);
+			} catch (ArangoException e2) {
+				throw new ArangoDBGraphException(e2);
 			}
 		}
 	}
@@ -192,7 +190,7 @@ public class ArangoDBGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>, Key
 	}
 
 	public void shutdown() {
-		save();
+		client.shutdown();
 	}
 
 	public Vertex addVertex(Object id) {
@@ -247,24 +245,12 @@ public class ArangoDBGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>, Key
 		return q.edges();
 	}
 
-	/**
-	 * Return the object value associated with the provided string key. If no
-	 * value exists for that key, return null.
-	 * 
-	 * @param key
-	 *            the key of the key/value property
-	 * @return the object value related to the string key
-	 */
-	public Object getProperty(String key) {
-		return this.rawGraph.getProperty(key);
-	}
-
 	public ArangoDBSimpleGraph getRawGraph() {
-		return rawGraph;
+		return simpleGraph;
 	}
 
 	public String toString() {
-		return StringFactory.graphString(this, this.rawGraph.toString());
+		return StringFactory.graphString(this, this.simpleGraph.toString());
 	}
 
 	public <T extends Element> void dropKeyIndex(String key, Class<T> elementClass) {
@@ -272,9 +258,9 @@ public class ArangoDBGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>, Key
 		List<ArangoDBIndex> indices = null;
 		try {
 			if (elementClass.isAssignableFrom(Vertex.class)) {
-				indices = client.getVertexIndices(rawGraph);
+				indices = client.getVertexIndices(simpleGraph);
 			} else if (elementClass.isAssignableFrom(Edge.class)) {
-				indices = client.getEdgeIndices(rawGraph);
+				indices = client.getEdgeIndices(simpleGraph);
 			}
 		} catch (ArangoDBException e) {
 		}
@@ -284,7 +270,7 @@ public class ArangoDBGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>, Key
 		if (indices != null) {
 			for (ArangoDBIndex i : indices) {
 				if (i.getFields().size() == 1) {
-					String field = i.getFields().elementAt(0);
+					String field = i.getFields().get(0);
 
 					if (field.equals(n)) {
 						try {
@@ -298,9 +284,10 @@ public class ArangoDBGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>, Key
 
 	}
 
+	@SuppressWarnings("rawtypes")
 	public <T extends Element> void createKeyIndex(String key, Class<T> elementClass, Parameter... indexParameters) {
 
-		String type = "skiplist";
+		IndexType type = IndexType.SKIPLIST;
 		boolean unique = false;
 		Vector<String> fields = new Vector<String>();
 
@@ -309,7 +296,7 @@ public class ArangoDBGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>, Key
 
 		for (Parameter p : indexParameters) {
 			if (p.getKey().equals("type")) {
-				type = p.getValue().toString();
+				type = object2IndexType(p.getValue());
 			}
 			if (p.getKey().equals("unique")) {
 				unique = (Boolean) p.getValue();
@@ -318,12 +305,29 @@ public class ArangoDBGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>, Key
 
 		try {
 			if (elementClass.isAssignableFrom(Vertex.class)) {
-				client.createVertexIndex(rawGraph, type, unique, fields);
+				getClient().createVertexIndex(simpleGraph, type, unique, fields);
 			} else if (elementClass.isAssignableFrom(Edge.class)) {
-				client.createEdgeIndex(rawGraph, type, unique, fields);
+				getClient().createEdgeIndex(simpleGraph, type, unique, fields);
 			}
 		} catch (ArangoDBException e) {
 		}
+	}
+
+	private IndexType object2IndexType(Object obj) {
+		if (obj instanceof IndexType) {
+			return (IndexType) obj;
+		}
+
+		if (obj != null) {
+			String str = obj.toString();
+			for (IndexType indexType : IndexType.values()) {
+				if (indexType.toString().equalsIgnoreCase(str)) {
+					return indexType;
+				}
+			}
+		}
+
+		return IndexType.SKIPLIST;
 	}
 
 	public <T extends Element> Set<String> getIndexedKeys(Class<T> elementClass) {
@@ -331,14 +335,14 @@ public class ArangoDBGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>, Key
 		List<ArangoDBIndex> indices = null;
 		try {
 			if (elementClass.isAssignableFrom(Vertex.class)) {
-				indices = client.getVertexIndices(rawGraph);
+				indices = client.getVertexIndices(simpleGraph);
 			} else if (elementClass.isAssignableFrom(Edge.class)) {
-				indices = client.getEdgeIndices(rawGraph);
+				indices = client.getEdgeIndices(simpleGraph);
 			}
 
 			for (ArangoDBIndex i : indices) {
 				if (i.getFields().size() == 1) {
-					String key = i.getFields().elementAt(0);
+					String key = i.getFields().get(0);
 
 					// ignore system index
 					if (key.charAt(0) != '_') {
@@ -353,59 +357,26 @@ public class ArangoDBGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>, Key
 		return result;
 	}
 
-	/**
-	 * Save changed vertices and edges This functions has to be called in the
-	 * shutdown function and before a query creates the cursor.
-	 */
-
-	public void save() {
-
-		for (ArangoDBElement element : changedElements) {
-			try {
-				element.save();
-			} catch (ArangoDBException e) {
-				// could not save an element
-			}
-		}
-
-		changedElements.clear();
-	}
-
-	/**
-	 * Add a changed element to the set of changed elements
-	 * 
-	 * @param element
-	 *            the changed Element
-	 * 
-	 * @throws ArangoDBException
-	 *             if an error occurs
-	 */
-
-	public void addChangedElement(ArangoDBElement element) throws ArangoDBException {
-		if (delaySaveUpdates) {
-			changedElements.add(element);
-
-			if (changedElements.size() > maxChangedElements) {
-				save();
-			}
-		} else {
-			element.save();
-		}
-	}
-
-	/**
-	 * Set delay of saving updates
-	 * 
-	 * @param delaySaveUpdates
-	 *            set the delay on saving
-	 */
-
-	public void setDelaySaveUpdates(boolean delaySaveUpdates) {
-		this.delaySaveUpdates = delaySaveUpdates;
-	}
-
 	public GraphQuery query() {
 		return new ArangoDBGraphQuery(this);
+	}
+
+	/**
+	 * Returns the ArangoDBSimpleGraphClient object
+	 * 
+	 * @return the ArangoDBSimpleGraphClient object
+	 */
+	public ArangoDBSimpleGraphClient getClient() {
+		return client;
+	}
+
+	/**
+	 * Returns the identifier of the graph
+	 * 
+	 * @return the identifier of the graph
+	 */
+	public String getId() {
+		return simpleGraph.getGraphEntity().getDocumentKey();
 	}
 
 }

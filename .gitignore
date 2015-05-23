@@ -6,3 +6,4 @@ target
 # Package Files #
 *.war
 *.ear
+/bin/

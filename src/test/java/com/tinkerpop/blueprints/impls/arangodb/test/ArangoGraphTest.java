@@ -1,5 +1,7 @@
 package com.tinkerpop.blueprints.impls.arangodb.test;
 
+import org.apache.commons.lang3.StringUtils;
+import org.junit.Assert;
 import org.junit.Test;
 
 import com.tinkerpop.blueprints.impls.arangodb.ArangoDBGraph;
@@ -8,74 +10,33 @@ import com.tinkerpop.blueprints.impls.arangodb.ArangoDBGraphException;
 public class ArangoGraphTest extends ArangoDBTestCase {
 
 	@Test
-	public void testCreateGraph() {
-		String graph_id = null;
-		try {
-			ArangoDBGraph graph = new ArangoDBGraph(host, port, graphName, vertices, edges);
+	public void testCreateGraph() throws ArangoDBGraphException {
+		ArangoDBGraph graph = new ArangoDBGraph(host, port, graphName, vertices, edges);
 
-			assertTrue(hasGraph(graphName));
+		assertTrue(hasGraph(graphName));
 
-			Object x = graph.getProperty("_id");
-			assertNotNull(x);
+		String graphId = graph.getId();
+		assertNotNull(StringUtils.isNotEmpty(graphId));
 
-			graph_id = x.toString();
-			assertFalse(graph_id.equals(""));
+		graph.shutdown();
 
-			graph.shutdown();
-		} catch (ArangoDBGraphException e) {
-			e.printStackTrace();
-			fail("Could not create graph");
-		}
+		graph = new ArangoDBGraph(host, port, graphName, vertices, edges);
 
-		try {
-			ArangoDBGraph graph = new ArangoDBGraph(host, port, graphName, vertices, edges);
+		String x = graph.getId();
+		assertNotNull(StringUtils.isNotEmpty(x));
 
-			Object x = graph.getProperty("_id");
-			assertNotNull(x);
+		assertEquals(graphId, x);
 
-			assertEquals(graph_id, x.toString());
-
-			graph.shutdown();
-
-		} catch (ArangoDBGraphException e) {
-			e.printStackTrace();
-			fail("Could not create graph");
-		}
+		graph.shutdown();
 	}
 
 	@Test
-	public void testCreateGraph2() {
-		String graph_id = null;
+	public void testCreateGraphFail() {
 		try {
-			ArangoDBGraph graph = new ArangoDBGraph(host, port, graphName, vertices, edges);
-
-			assertTrue(hasGraph(graphName));
-
-			Object x = graph.getProperty("_id");
-			assertNotNull(x);
-
-			graph_id = x.toString();
-			assertFalse(graph_id.equals(""));
-
-			graph.shutdown();
+			new ArangoDBGraph(host, port, graphName, null, null);
+			Assert.fail("This should throw an exception");
 		} catch (ArangoDBGraphException e) {
-			e.printStackTrace();
-			fail("Could not create graph");
-		}
 
-		try {
-			ArangoDBGraph graph = new ArangoDBGraph(host, port, graphName, null, null);
-
-			Object x = graph.getProperty("_id");
-			assertNotNull(x);
-
-			assertEquals(graph_id, x.toString());
-
-			graph.shutdown();
-
-		} catch (ArangoDBGraphException e) {
-			e.printStackTrace();
-			fail("Could not create graph");
 		}
 	}
 

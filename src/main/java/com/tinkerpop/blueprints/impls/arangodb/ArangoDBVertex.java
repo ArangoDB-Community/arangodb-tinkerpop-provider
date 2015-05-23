@@ -18,7 +18,7 @@ import com.tinkerpop.blueprints.util.ExceptionFactory;
 import com.tinkerpop.blueprints.util.StringFactory;
 
 /**
- * The arangodb vertex class
+ * The ArangoDB vertex class
  * 
  * @author Achim Brandt (http://www.triagens.de)
  * @author Johannes Gocke (http://www.triagens.de)
@@ -41,7 +41,7 @@ public class ArangoDBVertex extends ArangoDBElement implements Vertex {
 		String key = (id != null) ? id.toString() : null;
 
 		try {
-			ArangoDBSimpleVertex v = graph.client.createVertex(graph.getRawGraph(), key, null);
+			ArangoDBSimpleVertex v = graph.getClient().createVertex(graph.getRawGraph(), key, null);
 			return build(graph, v);
 		} catch (ArangoDBException e) {
 			if (e.errorNumber() == 1210) {
@@ -69,13 +69,8 @@ public class ArangoDBVertex extends ArangoDBElement implements Vertex {
 
 		String key = id.toString();
 
-		ArangoDBVertex vert = graph.vertexCache.get(key);
-		if (vert != null) {
-			return vert;
-		}
-
 		try {
-			ArangoDBSimpleVertex v = graph.client.getVertex(graph.getRawGraph(), key);
+			ArangoDBSimpleVertex v = graph.getClient().getVertex(graph.getRawGraph(), key);
 			return build(graph, v);
 		} catch (ArangoDBException e) {
 			// nothing found
@@ -84,17 +79,7 @@ public class ArangoDBVertex extends ArangoDBElement implements Vertex {
 	}
 
 	static ArangoDBVertex build(ArangoDBGraph graph, ArangoDBSimpleVertex simpleVertex) {
-		String id = simpleVertex.getDocumentKey();
-
-		ArangoDBVertex vert = graph.vertexCache.get(id);
-		if (vert != null) {
-			vert.setDocument(simpleVertex);
-			return vert;
-		}
-
-		ArangoDBVertex newVertex = new ArangoDBVertex(graph, simpleVertex);
-		graph.vertexCache.put(newVertex.getRaw().getDocumentKey(), newVertex);
-		return newVertex;
+		return new ArangoDBVertex(graph, simpleVertex);
 	}
 
 	private ArangoDBVertex(ArangoDBGraph graph, ArangoDBSimpleVertex vertex) {
@@ -132,7 +117,7 @@ public class ArangoDBVertex extends ArangoDBElement implements Vertex {
 	}
 
 	/**
-	 * Returns the arangodb raw vertex
+	 * Returns the ArangoDBSimpleVertex
 	 * 
 	 * @return a ArangoDBSimpleVertex
 	 */
@@ -149,20 +134,19 @@ public class ArangoDBVertex extends ArangoDBElement implements Vertex {
 		if (document.isDeleted()) {
 			return;
 		}
-		String key = document.getDocumentKey();
+
 		try {
-			graph.client.deleteVertex(graph.getRawGraph(), (ArangoDBSimpleVertex) document);
+			graph.getClient().deleteVertex(graph.getRawGraph(), (ArangoDBSimpleVertex) document);
 		} catch (ArangoDBException ex) {
 			// ignore error
 		}
-		graph.vertexCache.remove(key);
 	}
 
 	public void save() throws ArangoDBException {
 		if (document.isDeleted()) {
 			return;
 		}
-		graph.client.saveVertex(graph.getRawGraph(), (ArangoDBSimpleVertex) document);
+		graph.getClient().saveVertex(graph.getRawGraph(), (ArangoDBSimpleVertex) document);
 	}
 
 	public Edge addEdge(String label, Vertex inVertex) {

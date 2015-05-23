@@ -8,8 +8,8 @@
 
 package com.tinkerpop.blueprints.impls.arangodb.batch;
 
-import org.codehaus.jettison.json.JSONException;
-import org.codehaus.jettison.json.JSONObject;
+import java.util.HashMap;
+import java.util.Map;
 
 import com.tinkerpop.blueprints.Direction;
 import com.tinkerpop.blueprints.Edge;
@@ -46,26 +46,23 @@ public class ArangoDBBatchEdge extends ArangoDBBatchElement implements Edge {
 			key = graph.getNewId().toString();
 		}
 
-		JSONObject properties = new JSONObject();
+		Map<String, Object> properties = new HashMap<String, Object>();
 
 		if (outVertex instanceof ArangoDBBatchVertex && inVertex instanceof ArangoDBBatchVertex) {
 			ArangoDBBatchVertex from = (ArangoDBBatchVertex) outVertex;
 			ArangoDBBatchVertex to = (ArangoDBBatchVertex) inVertex;
 
-			try {
-				properties.put(ArangoDBBaseDocument._REV, "");
-				properties.put(ArangoDBBaseDocument._ID, "");
-				properties.put(ArangoDBBaseDocument._KEY, key);
-				if (label != null) {
-					properties.put(ArangoDBSimpleEdge._LABEL, label);
-				}
-
-				properties.put(ArangoDBSimpleEdge._FROM, graph.getRawGraph().getVertexCollection() + "/"
-						+ from.getRawVertex().getDocumentKey());
-				properties.put(ArangoDBSimpleEdge._TO, graph.getRawGraph().getVertexCollection() + "/"
-						+ to.getRawVertex().getDocumentKey());
-			} catch (JSONException e1) {
+			properties.put(ArangoDBBaseDocument._REV, "");
+			properties.put(ArangoDBBaseDocument._ID, "");
+			properties.put(ArangoDBBaseDocument._KEY, key);
+			if (label != null) {
+				properties.put(ArangoDBSimpleEdge._LABEL, label);
 			}
+
+			properties.put(ArangoDBSimpleEdge._FROM, graph.getRawGraph().getVertexCollection() + "/"
+					+ from.getRawVertex().getDocumentKey());
+			properties.put(ArangoDBSimpleEdge._TO, graph.getRawGraph().getVertexCollection() + "/"
+					+ to.getRawVertex().getDocumentKey());
 
 			try {
 				ArangoDBSimpleEdge v = new ArangoDBSimpleEdge(properties);
@@ -102,8 +99,11 @@ public class ArangoDBBatchEdge extends ArangoDBBatchElement implements Edge {
 		}
 	}
 
-	static ArangoDBBatchEdge build(ArangoDBBatchGraph graph, ArangoDBSimpleEdge simpleEdge, Vertex outVertex,
-			Vertex inVertex) throws ArangoDBException {
+	static ArangoDBBatchEdge build(
+		ArangoDBBatchGraph graph,
+		ArangoDBSimpleEdge simpleEdge,
+		Vertex outVertex,
+		Vertex inVertex) throws ArangoDBException {
 		String id = simpleEdge.getDocumentKey();
 
 		ArangoDBBatchEdge vert = graph.edgeCache.get(id);
@@ -161,6 +161,14 @@ public class ArangoDBBatchEdge extends ArangoDBBatchElement implements Edge {
 	 */
 	public void save() {
 		throw new UnsupportedOperationException();
+	}
+
+	public Vertex getOutVertex() {
+		return outVertex;
+	}
+
+	public Vertex getInVertex() {
+		return inVertex;
 	}
 
 }

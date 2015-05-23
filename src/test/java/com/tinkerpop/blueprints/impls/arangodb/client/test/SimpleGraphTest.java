@@ -1,126 +1,79 @@
 package com.tinkerpop.blueprints.impls.arangodb.client.test;
 
-import com.tinkerpop.blueprints.impls.arangodb.client.*;
+import org.junit.Assert;
+import org.junit.Test;
+
+import com.arangodb.ArangoException;
+import com.arangodb.ErrorNums;
+import com.arangodb.entity.EdgeDefinitionEntity;
+import com.arangodb.entity.GraphEntity;
+import com.tinkerpop.blueprints.impls.arangodb.client.ArangoDBSimpleGraph;
 
 public class SimpleGraphTest extends BaseTestCase {
-	
-	protected void setUp() {
-		super.setUp();
+
+	@Test
+	public void test_CreateSimpleGraph() throws ArangoException {
+
+		ArangoDBSimpleGraph graph = client.createGraph(graphName, vertices, edges);
+
+		Assert.assertNotNull(graph);
+		Assert.assertEquals(graphName, graph.getName());
+		Assert.assertEquals(vertices, graph.getVertexCollection());
+		Assert.assertEquals(edges, graph.getEdgeCollection());
 	}
 
-	protected void tearDown() {
-		super.tearDown();
+	@Test
+	public void test_GetSimpleGraph() throws ArangoException {
+
+		ArangoDBSimpleGraph graph = client.createGraph(graphName, vertices, edges);
+
+		Assert.assertNotNull(graph);
+		Assert.assertEquals(graphName, graph.getName());
+		Assert.assertEquals(vertices, graph.getVertexCollection());
+		Assert.assertEquals(edges, graph.getEdgeCollection());
+
+		GraphEntity graph2 = client.getGraph(graphName);
+		Assert.assertNotNull(graph2);
+
+		Assert.assertEquals(graphName, graph2.getName());
+		Assert.assertEquals(1, graph2.getEdgeDefinitions().size());
+		EdgeDefinitionEntity edgeDefinitionEntity = graph2.getEdgeDefinitions().get(0);
+		Assert.assertEquals(1, edgeDefinitionEntity.getTo().size());
+		Assert.assertEquals(1, edgeDefinitionEntity.getFrom().size());
+		Assert.assertEquals(vertices, edgeDefinitionEntity.getFrom().get(0));
+		Assert.assertEquals(vertices, edgeDefinitionEntity.getTo().get(0));
+		Assert.assertEquals(edges, edgeDefinitionEntity.getCollection());
+
 	}
 
-	public void test_CreateSimpleGraph () {
-		
-		ArangoDBSimpleGraph graph = null;
-		try {
-			
-			graph = client.createGraph(graphName, vertices, edges);
-			
-			assertNotNull(graph);		
-			assertEquals(graphName, graph.getName());
-			assertEquals(vertices, graph.getVertexCollection());
-			assertEquals(edges, graph.getEdgeCollection());
-						
-		} catch (ArangoDBException e) {
-			e.printStackTrace();
-			assertTrue(false);		
-		}
-		
-		assertNotNull(graph);		
+	@Test
+	public void test_DeleteSimpleGraph() throws ArangoException {
+
+		ArangoDBSimpleGraph graph = client.createGraph(graphName, vertices, edges);
+
+		boolean b = client.deleteGraph(graph.getGraphEntity());
+		Assert.assertTrue(b);
+
+		GraphEntity graph2 = client.getGraph(graphName);
+		Assert.assertNull(graph2);
 	}
 
-	
-	public void test_GetSimpleGraph () {
-		
-		ArangoDBSimpleGraph graph = null;
-		ArangoDBSimpleGraph graph2 = null;
-		try {
-			
-			graph = client.createGraph(graphName, vertices, edges);
-			
-			assertNotNull(graph);		
-			assertEquals(graphName, graph.getName());
-			assertEquals(vertices, graph.getVertexCollection());
-			assertEquals(edges, graph.getEdgeCollection());
-			
-			graph2 = client.getGraph(graphName);
-			assertNotNull(graph2);		
-			assertEquals(graphName, graph2.getName());
-			assertEquals(vertices, graph2.getVertexCollection());
-			assertEquals(edges, graph2.getEdgeCollection());
-						
-		} catch (ArangoDBException e) {
-			e.printStackTrace();
-			assertTrue(false);		
-		}
-		
-		assertNotNull(graph);		
-		assertNotNull(graph2);		
-	}
+	@Test
+	public void test_ReCreateGraph() throws ArangoException {
 
-	
-	public void test_DeleteSimpleGraph () {
-		
-		ArangoDBSimpleGraph graph = null;
-		ArangoDBSimpleGraph graph2 = null;
+		ArangoDBSimpleGraph graph = client.createGraph(graphName, vertices, edges);
+
+		Assert.assertNotNull(graph);
+		Assert.assertEquals(graphName, graph.getName());
+		Assert.assertEquals(vertices, graph.getVertexCollection());
+		Assert.assertEquals(edges, graph.getEdgeCollection());
 
 		try {
-			
-			graph = client.createGraph(graphName, vertices, edges);
-			
-			assertNotNull(graph);		
-			assertEquals(graphName, graph.getName());
-			assertEquals(vertices, graph.getVertexCollection());
-			assertEquals(edges, graph.getEdgeCollection());
-			
-			graph2 = client.getGraph(graphName);
-			assertNotNull(graph2);		
-			assertEquals(graphName, graph2.getName());
-			assertEquals(vertices, graph2.getVertexCollection());
-			assertEquals(edges, graph2.getEdgeCollection());
-
-			boolean b = client.deleteGraph(graph2);
-			assertTrue(b);
-
-		} catch (ArangoDBException e) {
-			e.printStackTrace();
-			assertTrue(false);		
+			client.createGraph(graphName, vertices, edges);
+		} catch (ArangoException e) {
+			Assert.assertEquals(ErrorNums.ERROR_GRAPH_DUPLICATE, e.getErrorNumber());
 		}
-			
-		try {
-			graph2 = client.getGraph(graphName);
-			assertNull(graph2);		
-		} catch (ArangoDBException e) {
-			assertTrue(true);
-		}
+
 	}
 
-	public void test_ReCreateGraph () {
-		
-		ArangoDBSimpleGraph graph = null;
-		ArangoDBSimpleGraph graph2 = null;
-
-		try {
-			
-			graph = client.createGraph(graphName, vertices, edges);
-			
-			assertNotNull(graph);		
-			assertEquals(graphName, graph.getName());
-			assertEquals(vertices, graph.getVertexCollection());
-			assertEquals(edges, graph.getEdgeCollection());
-			
-			graph2 = client.createGraph(graphName, vertices, edges);
-                        assertEquals(graphName, graph2.getName());
-                        assertEquals(vertices, graph2.getVertexCollection());
-                        assertEquals(edges, graph2.getEdgeCollection());
-
-		} catch (ArangoDBException e) {
-			assertTrue(false);		
-		}
-			
-	}
-	
 }

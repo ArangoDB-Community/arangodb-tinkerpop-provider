@@ -15,6 +15,12 @@ import java.util.List;
 import java.util.Set;
 import java.util.Vector;
 
+import org.apache.commons.collections4.CollectionUtils;
+
+import com.arangodb.ArangoException;
+import com.arangodb.entity.EdgeDefinitionEntity;
+import com.arangodb.entity.GraphEntity;
+import com.arangodb.entity.IndexType;
 import com.tinkerpop.blueprints.Edge;
 import com.tinkerpop.blueprints.Element;
 import com.tinkerpop.blueprints.Features;
@@ -153,7 +159,7 @@ public class ArangoDBBatchGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>
 	 */
 
 	public ArangoDBBatchGraph(String host, int port, String name, String verticesCollectionName,
-			String edgesCollectionName) throws ArangoDBGraphException {
+		String edgesCollectionName) throws ArangoDBGraphException {
 		this(new ArangoDBConfiguration(host, port), name, verticesCollectionName, edgesCollectionName);
 	}
 
@@ -174,7 +180,7 @@ public class ArangoDBBatchGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>
 	 */
 
 	public ArangoDBBatchGraph(ArangoDBConfiguration configuration, String name, String verticesCollectionName,
-			String edgesCollectionName) throws ArangoDBGraphException {
+		String edgesCollectionName) throws ArangoDBGraphException {
 
 		vertexCache = new HashMap<String, ArangoDBBatchVertex>();
 		edgeCache = new HashMap<String, ArangoDBBatchEdge>();
@@ -184,20 +190,34 @@ public class ArangoDBBatchGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>
 		addedEdges = new HashSet<ArangoDBBatchEdge>();
 
 		try {
-			rawGraph = this.client.getGraph(name);
-			if (verticesCollectionName != null && edgesCollectionName != null) {
-				// check names
-				if (!rawGraph.getVertexCollection().equals(verticesCollectionName)) {
-					throw new ArangoDBGraphException("Graph with that name already exists with other vertex collection");
+			GraphEntity graph = client.getGraph(name);
+			if (graph != null) {
+				boolean error = false;
+
+				List<EdgeDefinitionEntity> edgeDefinitions = graph.getEdgeDefinitions();
+
+				if (edgeDefinitions.size() != 1 || CollectionUtils.isNotEmpty(graph.getOrphanCollections())) {
+					error = true;
+				} else {
+					EdgeDefinitionEntity edgeDefinitionEntity = edgeDefinitions.get(0);
+					if (!edgesCollectionName.equals(edgeDefinitionEntity.getCollection())
+							|| edgeDefinitionEntity.getFrom().size() != 1 || edgeDefinitionEntity.getTo().size() != 1
+							|| !verticesCollectionName.equals(edgeDefinitionEntity.getFrom().get(0))
+							|| !verticesCollectionName.equals(edgeDefinitionEntity.getTo().get(0))) {
+						error = true;
+					}
 				}
-				if (!rawGraph.getEdgeCollection().equals(edgesCollectionName)) {
-					throw new ArangoDBGraphException("Graph with that name already exists with other edge collection");
+				if (error) {
+					throw new ArangoDBGraphException("Graph with that name already exists but with other settings");
 				}
+				rawGraph = new ArangoDBSimpleGraph(graph, verticesCollectionName, edgesCollectionName);
 			}
-		} catch (ArangoDBException e_gal) {
+		} catch (ArangoException e1) {
+		}
+		if (rawGraph == null) {
 			try {
 				rawGraph = this.client.createGraph(name, verticesCollectionName, edgesCollectionName);
-			} catch (ArangoDBException e) {
+			} catch (ArangoException e) {
 				throw new ArangoDBGraphException(e.getMessage());
 			}
 		}
@@ -267,18 +287,6 @@ public class ArangoDBBatchGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>
 		throw new UnsupportedOperationException();
 	}
 
-	/**
-	 * Return the object value associated with the provided string key. If no
-	 * value exists for that key, return null.
-	 * 
-	 * @param key
-	 *            the key of the key/value property
-	 * @return the object value related to the string key
-	 */
-	public Object getProperty(String key) {
-		return this.rawGraph.getProperty(key);
-	}
-
 	public ArangoDBSimpleGraph getRawGraph() {
 		return rawGraph;
 	}
@@ -304,7 +312,7 @@ public class ArangoDBBatchGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>
 		if (indices != null) {
 			for (ArangoDBIndex i : indices) {
 				if (i.getFields().size() == 1) {
-					String field = i.getFields().elementAt(0);
+					String field = i.getFields().get(0);
 
 					if (field.equals(n)) {
 						try {
@@ -318,9 +326,10 @@ public class ArangoDBBatchGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>
 
 	}
 
+	@SuppressWarnings("rawtypes")
 	public <T extends Element> void createKeyIndex(String key, Class<T> elementClass, Parameter... indexParameters) {
 
-		String type = "skiplist";
+		IndexType type = IndexType.SKIPLIST;
 		boolean unique = false;
 		Vector<String> fields = new Vector<String>();
 
@@ -329,7 +338,7 @@ public class ArangoDBBatchGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>
 
 		for (Parameter p : indexParameters) {
 			if (p.getKey().equals("type")) {
-				type = p.getValue().toString();
+				type = object2IndexType(p.getValue());
 			}
 			if (p.getKey().equals("unique")) {
 				unique = (Boolean) p.getValue();
@@ -346,6 +355,23 @@ public class ArangoDBBatchGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>
 		}
 	}
 
+	private IndexType object2IndexType(Object obj) {
+		if (obj instanceof IndexType) {
+			return (IndexType) obj;
+		}
+
+		if (obj != null) {
+			String str = obj.toString();
+			for (IndexType indexType : IndexType.values()) {
+				if (indexType.toString().equalsIgnoreCase(str)) {
+					return indexType;
+				}
+			}
+		}
+
+		return IndexType.SKIPLIST;
+	}
+
 	public <T extends Element> Set<String> getIndexedKeys(Class<T> elementClass) {
 		HashSet<String> result = new HashSet<String>();
 		List<ArangoDBIndex> indices = null;
@@ -358,7 +384,7 @@ public class ArangoDBBatchGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>
 
 			for (ArangoDBIndex i : indices) {
 				if (i.getFields().size() == 1) {
-					String key = i.getFields().elementAt(0);
+					String key = i.getFields().get(0);
 
 					// ignore system index
 					if (key.charAt(0) != '_') {
@@ -466,6 +492,10 @@ public class ArangoDBBatchGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>
 	 */
 	synchronized public Long getNewId() {
 		return ++idCounter;
+	}
+
+	public String getId() {
+		return rawGraph.getGraphEntity().getDocumentKey();
 	}
 
 }

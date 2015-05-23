@@ -9,13 +9,17 @@
 package com.tinkerpop.blueprints.impls.arangodb;
 
 import java.util.Iterator;
+import java.util.Map;
 import java.util.NoSuchElementException;
 
+import org.apache.log4j.Logger;
+
+import com.arangodb.ArangoException;
+import com.arangodb.CursorResult;
 import com.tinkerpop.blueprints.Edge;
+import com.tinkerpop.blueprints.impls.arangodb.client.ArangoDBBaseQuery;
 import com.tinkerpop.blueprints.impls.arangodb.client.ArangoDBException;
 import com.tinkerpop.blueprints.impls.arangodb.client.ArangoDBSimpleEdge;
-import com.tinkerpop.blueprints.impls.arangodb.client.ArangoDBSimpleEdgeCursor;
-import com.tinkerpop.blueprints.impls.arangodb.client.ArangoDBSimpleEdgeQuery;
 
 /**
  * The edge iterable
@@ -24,14 +28,17 @@ import com.tinkerpop.blueprints.impls.arangodb.client.ArangoDBSimpleEdgeQuery;
  * @author Johannes Gocke (http://www.triagens.de)
  * @author Guido Schwab (http://www.triagens.de)
  * 
- * @param <T>
- *            The edge class
  */
 
-public class ArangoDBEdgeIterable<T extends Edge> implements Iterable<ArangoDBEdge> {
+public class ArangoDBEdgeIterable implements Iterable<Edge> {
+
+	/**
+	 * the logger
+	 */
+	private static Logger LOG = Logger.getLogger(ArangoDBEdgeIterable.class);
 
 	private final ArangoDBGraph graph;
-	private final ArangoDBSimpleEdgeQuery query;
+	private final ArangoDBBaseQuery query;
 
 	/**
 	 * Creates the edge iterable by a graph and a query
@@ -41,53 +48,57 @@ public class ArangoDBEdgeIterable<T extends Edge> implements Iterable<ArangoDBEd
 	 * @param query
 	 *            the query
 	 */
-	public ArangoDBEdgeIterable(final ArangoDBGraph graph, final ArangoDBSimpleEdgeQuery query) {
+	public ArangoDBEdgeIterable(final ArangoDBGraph graph, final ArangoDBBaseQuery query) {
 		this.graph = graph;
 		this.query = query;
 	}
 
-	public Iterator<ArangoDBEdge> iterator() {
+	public Iterator<Edge> iterator() {
 
-		return new Iterator<ArangoDBEdge>() {
+		return new Iterator<Edge>() {
 
-			private ArangoDBSimpleEdgeCursor cursor;
+			@SuppressWarnings("rawtypes")
+			private CursorResult<Map> iter;
 
 			{
 				try {
-					// save changed edges and vertices
-					graph.save();
-
-					if (query == null) {
-						// create a dummy cursor
-						cursor = new ArangoDBSimpleEdgeCursor(graph.client, null);
-					} else {
-						cursor = query.getResult();
+					if (query != null) {
+						iter = query.getCursorResult();
 					}
 				} catch (ArangoDBException e) {
-					cursor = new ArangoDBSimpleEdgeCursor(graph.client, null);
+					LOG.error("error in AQL request", e);
 				}
 			}
 
 			public boolean hasNext() {
-				return cursor.hasNext();
+				if (iter == null) {
+					return false;
+				}
+				return iter.iterator().hasNext();
 			}
 
-			public ArangoDBEdge next() {
-				if (!cursor.hasNext()) {
+			@SuppressWarnings("unchecked")
+			public Edge next() {
+				if (iter == null || !iter.iterator().hasNext()) {
 					throw new NoSuchElementException();
 				}
 
-				ArangoDBSimpleEdge simpleEdge = cursor.next();
-
-				if (simpleEdge == null) {
+				try {
+					return ArangoDBEdge.build(graph, new ArangoDBSimpleEdge(iter.iterator().next()), null, null);
+				} catch (ArangoDBException e) {
+					LOG.error("iterator.next", e);
 					return null;
 				}
-
-				return ArangoDBEdge.build(graph, simpleEdge, null, null);
 			}
 
 			public void remove() {
-				cursor.close();
+				if (iter != null) {
+					try {
+						iter.close();
+					} catch (ArangoException e) {
+						LOG.error("could not close iterator", e);
+					}
+				}
 			}
 
 		};

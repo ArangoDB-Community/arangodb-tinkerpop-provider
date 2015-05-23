@@ -10,6 +10,7 @@ package com.tinkerpop.blueprints.impls.arangodb.client;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
@@ -27,7 +28,14 @@ import org.codehaus.jettison.json.JSONObject;
 public class ArangoDBPropertyFilter {
 
 	public enum Compare {
-		EQUAL, NOT_EQUAL, GREATER_THAN, GREATER_THAN_EQUAL, LESS_THAN, LESS_THAN_EQUAL, HAS, HAS_NOT
+		EQUAL,
+		NOT_EQUAL,
+		GREATER_THAN,
+		GREATER_THAN_EQUAL,
+		LESS_THAN,
+		LESS_THAN_EQUAL,
+		HAS,
+		HAS_NOT
 	};
 
 	private List<PropertyContainer> propertyContainers = new ArrayList<PropertyContainer>();
@@ -56,6 +64,7 @@ public class ArangoDBPropertyFilter {
 	 * @throws ArangoDBException
 	 *             if an error occurs
 	 */
+	@Deprecated
 	public JSONArray getAsJSON() throws ArangoDBException {
 		JSONArray result = new JSONArray();
 		try {
@@ -100,6 +109,50 @@ public class ArangoDBPropertyFilter {
 			e.printStackTrace();
 			throw new ArangoDBException("JSON error: " + e.getMessage());
 		}
+	}
+
+	public void addProperties(String prefix, List<String> filter, Map<String, Object> bindVars) {
+		int count = 0;
+		for (final PropertyContainer container : propertyContainers) {
+			String key = escapeKey(container.key);
+			switch (container.compare) {
+			case EQUAL:
+				filter.add(prefix + key + " == @property" + count);
+				bindVars.put("property" + count, container.value);
+				break;
+			case NOT_EQUAL:
+				filter.add(prefix + key + " != @property" + count);
+				bindVars.put("property" + count, container.value);
+				break;
+			case GREATER_THAN:
+				filter.add(prefix + key + " > @property" + count);
+				bindVars.put("property" + count, container.value);
+				break;
+			case LESS_THAN:
+				filter.add(prefix + key + " < @property" + count);
+				bindVars.put("property" + count, container.value);
+				break;
+			case GREATER_THAN_EQUAL:
+				filter.add(prefix + key + " >= @property" + count);
+				bindVars.put("property" + count, container.value);
+				break;
+			case LESS_THAN_EQUAL:
+				filter.add(prefix + key + " <= @property" + count);
+				bindVars.put("property" + count, container.value);
+				break;
+			case HAS:
+				filter.add(prefix + container.key + " != null");
+				break;
+			case HAS_NOT:
+				filter.add(prefix + container.key + " == null");
+				break;
+			}
+			count++;
+		}
+	}
+
+	private String escapeKey(String key) {
+		return "`" + key.replaceAll("`", "") + "`";
 	}
 
 	private class PropertyContainer {

@@ -8,8 +8,8 @@
 
 package com.tinkerpop.blueprints.impls.arangodb.batch;
 
-import org.codehaus.jettison.json.JSONException;
-import org.codehaus.jettison.json.JSONObject;
+import java.util.HashMap;
+import java.util.Map;
 
 import com.tinkerpop.blueprints.Direction;
 import com.tinkerpop.blueprints.Edge;
@@ -47,13 +47,10 @@ public class ArangoDBBatchVertex extends ArangoDBBatchElement implements Vertex 
 			key = graph.getNewId().toString();
 		}
 
-		JSONObject properties = new JSONObject();
-		try {
-			properties.put(ArangoDBBaseDocument._REV, "");
-			properties.put(ArangoDBBaseDocument._ID, "");
-			properties.put(ArangoDBBaseDocument._KEY, key);
-		} catch (JSONException e1) {
-		}
+		Map<String, Object> properties = new HashMap<String, Object>();
+		properties.put(ArangoDBBaseDocument._REV, "");
+		properties.put(ArangoDBBaseDocument._ID, "");
+		properties.put(ArangoDBBaseDocument._KEY, key);
 
 		try {
 			ArangoDBSimpleVertex v = new ArangoDBSimpleVertex(properties);

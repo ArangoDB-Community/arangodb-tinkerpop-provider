@@ -1,10 +1,10 @@
 package com.tinkerpop.blueprints.impls.arangodb.client;
 
-import java.util.Vector;
+import java.util.ArrayList;
+import java.util.List;
 
-import org.codehaus.jettison.json.JSONArray;
-import org.codehaus.jettison.json.JSONException;
-import org.codehaus.jettison.json.JSONObject;
+import com.arangodb.entity.IndexEntity;
+import com.arangodb.entity.IndexType;
 
 /**
  * The arangodb index class
@@ -27,7 +27,7 @@ public class ArangoDBIndex {
 	 * the index type
 	 */
 
-	private String type;
+	private IndexType type;
 
 	/**
 	 * is the index unique
@@ -39,69 +39,26 @@ public class ArangoDBIndex {
 	 * the fields of the index
 	 */
 
-	private Vector<String> fields = new Vector<String>();
+	private List<String> fields = new ArrayList<String>();
 
 	/**
 	 * Creates an index by a given JSON document
 	 * 
-	 * @param json
-	 *            The JSON document of the index
+	 * @param indexEntity
+	 *            The ArangoDB index entity
 	 * 
 	 * @throws ArangoDBException
 	 *             if an error occurs
 	 */
-	public ArangoDBIndex(JSONObject json) throws ArangoDBException {
-		if (json == null) {
-			throw new ArangoDBException("JSON data for index is empty.");
+	public ArangoDBIndex(IndexEntity indexEntity) throws ArangoDBException {
+		if (indexEntity == null) {
+			throw new ArangoDBException("No index data found.");
 		}
 
-		try {
-			if (json.has("id")) {
-				this.id = json.getString("id");
-			} else {
-				throw new ArangoDBException("JSON data for index has no 'id' attribute.");
-			}
-			if (json.has("type")) {
-				this.type = json.getString("type");
-			} else {
-				throw new ArangoDBException("JSON data for index has no 'type' attribute.");
-			}
-			if (json.has("unique")) {
-				this.unique = json.getBoolean("unique");
-			} else {
-				throw new ArangoDBException("JSON data for index has no 'unique' attribute.");
-			}
-			if (json.has("fields")) {
-				JSONArray a = json.getJSONArray("fields");
-				for (int i = 0; i < a.length(); i++) {
-					fields.add(a.getString(i));
-				}
-			} else {
-				throw new ArangoDBException("JSON data for index has no 'fields' attribute.");
-			}
-
-		} catch (JSONException e) {
-			throw new ArangoDBException("Error in JSON data. " + e.getMessage());
-		}
-	}
-
-	/**
-	 * Creates a new index
-	 * 
-	 * @param id
-	 *            The index identifier
-	 * @param type
-	 *            The index type
-	 * @param unique
-	 *            True, if the index should be unique
-	 * @param fields
-	 *            The index fields
-	 */
-	public ArangoDBIndex(String id, String type, boolean unique, Vector<String> fields) {
-		this.id = id;
-		this.type = type;
-		this.unique = unique;
-		this.fields = new Vector<String>(fields);
+		this.id = indexEntity.getId();
+		this.type = indexEntity.getType();
+		this.unique = indexEntity.isUnique();
+		this.fields = indexEntity.getFields();
 	}
 
 	/**
@@ -118,7 +75,7 @@ public class ArangoDBIndex {
 	 * 
 	 * @return the index type
 	 */
-	public String getType() {
+	public IndexType getType() {
 		return type;
 	}
 
@@ -136,7 +93,7 @@ public class ArangoDBIndex {
 	 * 
 	 * @return the list of fields
 	 */
-	public Vector<String> getFields() {
+	public List<String> getFields() {
 		return fields;
 	}
 

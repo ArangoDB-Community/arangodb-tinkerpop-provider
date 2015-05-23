@@ -11,6 +11,8 @@ package com.tinkerpop.blueprints.impls.arangodb;
 import java.util.Iterator;
 import java.util.Vector;
 
+import org.apache.log4j.Logger;
+
 import com.tinkerpop.blueprints.Edge;
 import com.tinkerpop.blueprints.GraphQuery;
 import com.tinkerpop.blueprints.Predicate;
@@ -18,12 +20,9 @@ import com.tinkerpop.blueprints.Vertex;
 import com.tinkerpop.blueprints.impls.arangodb.client.ArangoDBBaseQuery;
 import com.tinkerpop.blueprints.impls.arangodb.client.ArangoDBException;
 import com.tinkerpop.blueprints.impls.arangodb.client.ArangoDBPropertyFilter;
-import com.tinkerpop.blueprints.impls.arangodb.client.ArangoDBSimpleEdgeCursor;
-import com.tinkerpop.blueprints.impls.arangodb.client.ArangoDBSimpleEdgeQuery;
-import com.tinkerpop.blueprints.impls.arangodb.client.ArangoDBSimpleVertexQuery;
 
 /**
- * The arangodb graph query class
+ * The ArangoDB graph query class
  * 
  * @author Achim Brandt (http://www.triagens.de)
  * @author Johannes Gocke (http://www.triagens.de)
@@ -32,8 +31,12 @@ import com.tinkerpop.blueprints.impls.arangodb.client.ArangoDBSimpleVertexQuery;
 
 public class ArangoDBGraphQuery implements GraphQuery {
 
+	/**
+	 * the logger
+	 */
+	private static Logger LOG = Logger.getLogger(ArangoDBVertexIterable.class);
+
 	private final ArangoDBGraph graph;
-	private ArangoDBBaseQuery.Direction direction = ArangoDBBaseQuery.Direction.ALL;
 	private Long limit = null;
 	private ArangoDBPropertyFilter propertyFilter = new ArangoDBPropertyFilter();
 	private boolean count;
@@ -74,9 +77,10 @@ public class ArangoDBGraphQuery implements GraphQuery {
 	}
 
 	public Iterable<Edge> edges() {
-		ArangoDBSimpleEdgeQuery query;
+		ArangoDBBaseQuery query;
 		try {
-			query = graph.client.getGraphEdges(graph.getRawGraph(), propertyFilter, new Vector<String>(), limit, count);
+			query = graph.getClient().getGraphEdges(graph.getRawGraph(), propertyFilter, new Vector<String>(), limit,
+				count);
 			return new ArangoDBEdgeIterable(graph, query);
 		} catch (ArangoDBException e) {
 			return new ArangoDBEdgeIterable(graph, null);
@@ -84,9 +88,9 @@ public class ArangoDBGraphQuery implements GraphQuery {
 	}
 
 	public Iterable<Vertex> vertices() {
-		ArangoDBSimpleVertexQuery query;
+		ArangoDBBaseQuery query;
 		try {
-			query = graph.client.getGraphVertices(graph.getRawGraph(), propertyFilter, limit, count);
+			query = graph.getClient().getGraphVertices(graph.getRawGraph(), propertyFilter, limit, count);
 			return new ArangoDBVertexIterable(graph, query);
 		} catch (ArangoDBException e) {
 			return new ArangoDBVertexIterable(graph, null);
@@ -99,21 +103,18 @@ public class ArangoDBGraphQuery implements GraphQuery {
 	 * @return number of elements
 	 */
 	public long count() {
-		this.count = true;
-		long result = 0;
 
-		ArangoDBSimpleEdgeQuery query;
+		ArangoDBBaseQuery query;
 		try {
-			query = graph.client.getGraphEdges(graph.getRawGraph(), propertyFilter, new Vector<String>(), limit, count);
+			query = graph.getClient().getGraphEdges(graph.getRawGraph(), propertyFilter, new Vector<String>(), limit,
+				true);
 
-			ArangoDBSimpleEdgeCursor cursor = query.getResult();
-
-			result = cursor.count();
+			return query.getCursorResult().getCount();
 		} catch (ArangoDBException e) {
+			LOG.error("error in AQL query", e);
 		}
 
-		this.count = false;
-		return result;
+		return -1;
 	}
 
 	/**

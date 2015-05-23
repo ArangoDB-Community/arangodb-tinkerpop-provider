@@ -8,14 +8,19 @@
 
 package com.tinkerpop.blueprints.impls.arangodb.client;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
-import org.codehaus.jettison.json.JSONArray;
-import org.codehaus.jettison.json.JSONException;
-import org.codehaus.jettison.json.JSONObject;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
+
+import com.arangodb.CursorResult;
+import com.arangodb.util.AqlQueryOptions;
 
 /**
- * The arangodb base query class
+ * The ArangoDB base query class
  * 
  * @author Achim Brandt (http://www.triagens.de)
  * @author Johannes Gocke (http://www.triagens.de)
@@ -26,25 +31,26 @@ import org.codehaus.jettison.json.JSONObject;
 public class ArangoDBBaseQuery {
 
 	/**
-	 * the ArangoDB client
-	 * 
+	 * the ArangoDB graph
 	 */
+	protected ArangoDBSimpleGraph graph;
 
+	/**
+	 * the ArangoDB client
+	 */
 	protected ArangoDBSimpleGraphClient client;
 
 	/**
-	 * the cached results
-	 * 
+	 * query type
 	 */
+	protected QueryType queryType;
 
-	protected JSONObject queryBody;
-
-	/**
-	 * the request url
-	 * 
-	 */
-
-	protected String requestPath;
+	protected ArangoDBSimpleVertex startVertex;
+	protected ArangoDBPropertyFilter propertyFilter;
+	protected List<String> labelsFilter;
+	protected Direction direction;
+	protected Long limit;
+	protected boolean count;
 
 	/**
 	 * Direction
@@ -66,88 +72,171 @@ public class ArangoDBBaseQuery {
 		ALL
 	};
 
-	/**
-	 * Create a simple query
-	 * 
-	 * @param client
-	 *            a simple client
-	 * @param requestPath
-	 *            the http request path
-	 * @param propertyFilter
-	 *            a property filter (or null)
-	 * @param labelsFilter
-	 *            a list of edge labels (or null)
-	 * @param direction
-	 *            a direction of labels (default "all")
-	 * @param limit
-	 *            limit the number of results (default "null")
-	 * @param count
-	 *            return the number of results
-	 * 
-	 * @throws ArangoDBException
-	 *             if an error occurs
-	 */
-
-	public ArangoDBBaseQuery(ArangoDBSimpleGraphClient client, String requestPath,
-			ArangoDBPropertyFilter propertyFilter, List<String> labelsFilter, Direction direction, Long limit,
-			boolean count) throws ArangoDBException {
-
-		this.client = client;
-		this.requestPath = requestPath;
-
-		queryBody = new JSONObject();
-
-		try {
-			queryBody.put("batchSize", this.client.getConfiguration().getBatchSize());
-
-			JSONObject filter = new JSONObject();
-
-			if (propertyFilter != null) {
-				filter.put("properties", propertyFilter.getAsJSON());
-			}
-
-			if (direction != null) {
-				if (direction == Direction.IN) {
-					filter.put("direction", "in");
-				} else if (direction == Direction.OUT) {
-					filter.put("direction", "out");
-				}
-			}
-
-			if (labelsFilter != null && labelsFilter.size() > 0) {
-				JSONArray a = new JSONArray();
-				for (final String label : labelsFilter) {
-					a.put(label);
-				}
-				filter.put("labels", a);
-			}
-
-			if (limit != null && limit.longValue() >= 0) {
-				queryBody.put("limit", limit.longValue());
-			}
-
-			queryBody.put("count", count);
-
-			queryBody.put("filter", filter);
-		} catch (JSONException e) {
-			e.printStackTrace();
-			throw new ArangoDBException("JSON error: " + e.getMessage());
-		}
+	public enum QueryType {
+		GRAPH_VERTICES,
+		GRAPH_EDGES,
+		GRAPH_NEIGHBORS
 	}
 
 	/**
-	 * Executes the query and returns the result in a cursor
+	 * Constructor
 	 * 
-	 * @return ArangoDBBaseCursor the result cursor
+	 * @param graph
+	 *            the graph of the query
+	 * @param client
+	 *            the request client of the query
+	 * @param queryType
+	 *            a query type
+	 * @throws ArangoDBException
+	 */
+	public ArangoDBBaseQuery(ArangoDBSimpleGraph graph, ArangoDBSimpleGraphClient client, QueryType queryType)
+			throws ArangoDBException {
+		this.graph = graph;
+		this.client = client;
+		this.queryType = queryType;
+	}
+
+	/**
+	 * Executes the query and returns a result cursor
+	 * 
+	 * @return CursorResult<Map> the result cursor
+	 * 
 	 * @throws ArangoDBException
 	 *             if the query could not be executed
 	 */
+	@SuppressWarnings("rawtypes")
+	public CursorResult<Map> getCursorResult() throws ArangoDBException {
 
-	public ArangoDBBaseCursor getResult() throws ArangoDBException {
+		Map<String, Object> options = new HashMap<String, Object>();
+		options.put("direction", "any");
+		if (direction != null) {
+			if (direction == Direction.IN) {
+				options.put("direction", "inbound");
+			} else if (direction == Direction.OUT) {
+				options.put("direction", "outbound");
+			}
+		}
 
-		JSONObject json = client.postRequest(requestPath, queryBody);
+		Map<String, Object> bindVars = new HashMap<String, Object>();
+		bindVars.put("graphName", graph.getName());
+		bindVars.put("options", options);
 
-		return new ArangoDBBaseCursor(client, json);
+		if (startVertex != null) {
+			bindVars.put("vertexExample", startVertex.getDocumentId());
+		} else {
+			bindVars.put("vertexExample", new HashMap<String, String>());
+		}
+
+		StringBuilder sb = new StringBuilder();
+		String prefix = "i.";
+		String returnExp = " return i";
+
+		switch (queryType) {
+		case GRAPH_VERTICES:
+			sb.append("for i in GRAPH_VERTICES(@graphName , @vertexExample, @options)");
+			break;
+		case GRAPH_EDGES:
+			sb.append("for i in GRAPH_EDGES(@graphName , @vertexExample, @options)");
+			break;
+		case GRAPH_NEIGHBORS:
+			sb.append("for i in GRAPH_NEIGHBORS(@graphName , @vertexExample, @options)");
+			prefix = "i.path.edges[0].";
+			returnExp = " return i.vertex";
+			break;
+		default:
+			break;
+		}
+
+		List<String> andFilter = new ArrayList<String>();
+
+		if (propertyFilter == null) {
+			propertyFilter = new ArangoDBPropertyFilter();
+		}
+		propertyFilter.addProperties(prefix, andFilter, bindVars);
+
+		if (CollectionUtils.isNotEmpty(labelsFilter)) {
+			List<String> orFilter = new ArrayList<String>();
+			int count = 0;
+			for (String label : labelsFilter) {
+				orFilter.add(prefix + "`$label` == @label" + count);
+				bindVars.put("label" + count++, label);
+			}
+			if (CollectionUtils.isNotEmpty(orFilter)) {
+				andFilter.add("(" + StringUtils.join(orFilter, " OR ") + ")");
+			}
+		}
+
+		if (CollectionUtils.isNotEmpty(andFilter)) {
+			sb.append(" FILTER ");
+			sb.append(StringUtils.join(andFilter, " AND "));
+		}
+
+		if (limit != null) {
+			sb.append(" LIMIT " + limit.toString());
+		}
+
+		sb.append(returnExp);
+
+		String query = sb.toString();
+		AqlQueryOptions aqlQueryOptions = new AqlQueryOptions();
+		aqlQueryOptions.setBatchSize(client.getConfiguration().getBatchSize());
+		aqlQueryOptions.setCount(count);
+
+		return client.executeAqlQuery(query, bindVars, aqlQueryOptions);
+	}
+
+	public ArangoDBSimpleVertex getStartVertex() {
+		return startVertex;
+	}
+
+	public ArangoDBBaseQuery setStartVertex(ArangoDBSimpleVertex startVertex) {
+		this.startVertex = startVertex;
+		return this;
+	}
+
+	public ArangoDBPropertyFilter getPropertyFilter() {
+		return propertyFilter;
+	}
+
+	public ArangoDBBaseQuery setPropertyFilter(ArangoDBPropertyFilter propertyFilter) {
+		this.propertyFilter = propertyFilter;
+		return this;
+	}
+
+	public List<String> getLabelsFilter() {
+		return labelsFilter;
+	}
+
+	public ArangoDBBaseQuery setLabelsFilter(List<String> labelsFilter) {
+		this.labelsFilter = labelsFilter;
+		return this;
+	}
+
+	public Direction getDirection() {
+		return direction;
+	}
+
+	public ArangoDBBaseQuery setDirection(Direction direction) {
+		this.direction = direction;
+		return this;
+	}
+
+	public Long getLimit() {
+		return limit;
+	}
+
+	public ArangoDBBaseQuery setLimit(Long limit) {
+		this.limit = limit;
+		return this;
+	}
+
+	public boolean isCount() {
+		return count;
+	}
+
+	public ArangoDBBaseQuery setCount(boolean count) {
+		this.count = count;
+		return this;
 	}
 
 }

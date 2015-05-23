@@ -8,6 +8,8 @@
 
 package com.tinkerpop.blueprints.impls.arangodb.client;
 
+import com.arangodb.ArangoException;
+
 /**
  * The arangodb exception class
  * 
@@ -21,7 +23,7 @@ public class ArangoDBException extends Exception {
 
 	private static final long serialVersionUID = -163216237496410756L;
 
-	private Integer errorNum;
+	private Integer errorNum = 0;
 
 	/**
 	 * Creates an exception
@@ -45,6 +47,17 @@ public class ArangoDBException extends Exception {
 	public ArangoDBException(String message, Integer errorNum) {
 		super(message);
 		this.errorNum = errorNum;
+	}
+
+	/**
+	 * Creates an exception by an ArangoException
+	 * 
+	 * @param ex
+	 *            the ArangoException
+	 */
+	public ArangoDBException(ArangoException ex) {
+		super(ex.getErrorMessage(), ex);
+		this.errorNum = ex.getErrorNumber();
 	}
 
 	/**

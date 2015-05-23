@@ -9,29 +9,35 @@
 package com.tinkerpop.blueprints.impls.arangodb;
 
 import java.util.Iterator;
+import java.util.Map;
 import java.util.NoSuchElementException;
 
+import org.apache.log4j.Logger;
+
+import com.arangodb.ArangoException;
+import com.arangodb.CursorResult;
 import com.tinkerpop.blueprints.Vertex;
+import com.tinkerpop.blueprints.impls.arangodb.client.ArangoDBBaseQuery;
 import com.tinkerpop.blueprints.impls.arangodb.client.ArangoDBException;
 import com.tinkerpop.blueprints.impls.arangodb.client.ArangoDBSimpleVertex;
-import com.tinkerpop.blueprints.impls.arangodb.client.ArangoDBSimpleVertexCursor;
-import com.tinkerpop.blueprints.impls.arangodb.client.ArangoDBSimpleVertexQuery;
 
 /**
- * The arangodb vertex iterable class
+ * The ArangoDB vertex iterable class
  * 
  * @author Achim Brandt (http://www.triagens.de)
  * @author Johannes Gocke (http://www.triagens.de)
  * @author Guido Schwab (http://www.triagens.de)
  * 
- * @param <T>
- *            The vertex class
  */
+public class ArangoDBVertexIterable implements Iterable<Vertex> {
 
-public class ArangoDBVertexIterable<T extends Vertex> implements Iterable<ArangoDBVertex> {
+	/**
+	 * the logger
+	 */
+	private static Logger LOG = Logger.getLogger(ArangoDBVertexIterable.class);
 
 	private final ArangoDBGraph graph;
-	private final ArangoDBSimpleVertexQuery query;
+	private final ArangoDBBaseQuery query;
 
 	/**
 	 * Creates a vertex iterable for a graph and a query
@@ -41,53 +47,57 @@ public class ArangoDBVertexIterable<T extends Vertex> implements Iterable<Arango
 	 * @param query
 	 *            the query
 	 */
-	public ArangoDBVertexIterable(final ArangoDBGraph graph, final ArangoDBSimpleVertexQuery query) {
+	public ArangoDBVertexIterable(final ArangoDBGraph graph, final ArangoDBBaseQuery query) {
 		this.graph = graph;
 		this.query = query;
 	}
 
-	public Iterator<ArangoDBVertex> iterator() {
+	public Iterator<Vertex> iterator() {
 
-		return new Iterator<ArangoDBVertex>() {
+		return new Iterator<Vertex>() {
 
-			private ArangoDBSimpleVertexCursor cursor;
+			@SuppressWarnings("rawtypes")
+			private CursorResult<Map> iter;
 
 			{
 				try {
-					// save changed edges and vertices
-					graph.save();
-
-					if (query == null) {
-						// create a dummy cursor
-						cursor = new ArangoDBSimpleVertexCursor(graph.client, null);
-					} else {
-						cursor = query.getResult();
+					if (query != null) {
+						iter = query.getCursorResult();
 					}
 				} catch (ArangoDBException e) {
-					cursor = new ArangoDBSimpleVertexCursor(graph.client, null);
+					LOG.error("error in AQL request", e);
 				}
 			}
 
 			public boolean hasNext() {
-				return cursor.hasNext();
+				if (iter == null) {
+					return false;
+				}
+				return iter.iterator().hasNext();
 			}
 
-			public ArangoDBVertex next() {
-				if (!cursor.hasNext()) {
+			@SuppressWarnings("unchecked")
+			public Vertex next() {
+				if (iter == null || !iter.iterator().hasNext()) {
 					throw new NoSuchElementException();
 				}
 
-				ArangoDBSimpleVertex simpleVertex = cursor.next();
-
-				if (simpleVertex == null) {
+				try {
+					return ArangoDBVertex.build(graph, new ArangoDBSimpleVertex(iter.iterator().next()));
+				} catch (ArangoDBException e) {
+					LOG.error("iterator.next", e);
 					return null;
 				}
-
-				return ArangoDBVertex.build(graph, simpleVertex);
 			}
 
 			public void remove() {
-				cursor.close();
+				if (iter != null) {
+					try {
+						iter.close();
+					} catch (ArangoException e) {
+						LOG.error("could not close iterator", e);
+					}
+				}
 			}
 
 		};

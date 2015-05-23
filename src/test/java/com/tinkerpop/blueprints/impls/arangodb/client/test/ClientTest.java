@@ -1,27 +1,16 @@
 package com.tinkerpop.blueprints.impls.arangodb.client.test;
 
-import com.tinkerpop.blueprints.impls.arangodb.client.*;
+import org.junit.Assert;
+import org.junit.Test;
+
+import com.tinkerpop.blueprints.impls.arangodb.client.ArangoDBException;
 
 public class ClientTest extends BaseTestCase {
-	
-	protected void setUp() {
-		super.setUp();
-	}
 
-	protected void tearDown() {
-		super.tearDown();
-	}
-
-	public void test_ServerVersion () {
-		
-		String version = null;
-		try {
-			version = client.getVersion();
-		} catch (ArangoDBException e) {
-			e.printStackTrace();
-		}
-		
-		assertNotNull(version);		
+	@Test
+	public void test_ServerVersion() throws ArangoDBException {
+		String version = client.getVersion();
+		Assert.assertNotNull(version);
 	}
 
 }

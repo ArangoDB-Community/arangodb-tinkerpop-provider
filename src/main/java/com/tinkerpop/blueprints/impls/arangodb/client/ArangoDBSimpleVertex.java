@@ -8,7 +8,7 @@
 
 package com.tinkerpop.blueprints.impls.arangodb.client;
 
-import org.codehaus.jettison.json.JSONObject;
+import java.util.Map;
 
 /**
  * The arangodb vertex class
@@ -25,15 +25,14 @@ public class ArangoDBSimpleVertex extends ArangoDBBaseDocument {
 	 * Creates a new vertex by a JSON document
 	 * 
 	 * @param properties
-	 *            The JSON document
+	 *            The properties
 	 * 
 	 * @throws ArangoDBException
 	 *             if an error occurs
 	 */
 
-	public ArangoDBSimpleVertex(JSONObject properties) throws ArangoDBException {
-		this.properties = properties;
-		checkStdProperties();
+	public ArangoDBSimpleVertex(Map<String, Object> properties) throws ArangoDBException {
+		this.setProperties(properties);
 	}
 
 }

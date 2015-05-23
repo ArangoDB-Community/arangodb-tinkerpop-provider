@@ -3,9 +3,9 @@
 blueprints-arangodb-graph
 =========================
 
-[![Build Status](https://secure.travis-ci.org/triAGENS/blueprints-arangodb-graph.png)](http://travis-ci.org/triAGENS/blueprints-arangodb-graph)
+[![Build Status](https://secure.travis-ci.org/arangodb/blueprints-arangodb-graph.png)](http://travis-ci.org/triAGENS/blueprints-arangodb-graph)
 
-An implementation of the [Blueprints 2.5](https://github.com/tinkerpop/blueprints/wiki) API for ArangoDB
+An implementation of the [Blueprints 2.6](https://github.com/tinkerpop/blueprints/wiki) API for ArangoDB
 
 Installation & Testing
 =======================

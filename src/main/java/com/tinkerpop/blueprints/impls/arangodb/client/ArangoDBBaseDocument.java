@@ -8,19 +8,19 @@
 
 package com.tinkerpop.blueprints.impls.arangodb.client;
 
+import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.codehaus.jettison.json.JSONArray;
-import org.codehaus.jettison.json.JSONException;
-import org.codehaus.jettison.json.JSONObject;
-import org.codehaus.jettison.json.JSONString;
+import org.apache.commons.lang3.StringUtils;
+
+import com.arangodb.ErrorNums;
+import com.google.gson.Gson;
 
 /**
- * The arangodb document class
+ * The ArangoDB document class
  * 
  * @author Achim Brandt (http://www.triagens.de)
  * @author Johannes Gocke (http://www.triagens.de)
@@ -52,7 +52,7 @@ abstract public class ArangoDBBaseDocument {
 	 * all document properties
 	 */
 
-	protected JSONObject properties;
+	protected Map<String, Object> properties;
 
 	/**
 	 * true if the document is deleted
@@ -65,7 +65,7 @@ abstract public class ArangoDBBaseDocument {
 	 * 
 	 * @return the JSON object
 	 */
-	public JSONObject getProperties() {
+	public Map<String, Object> getProperties() {
 		return properties;
 	}
 
@@ -73,7 +73,7 @@ abstract public class ArangoDBBaseDocument {
 	 * Sets the document status to "deleted"
 	 */
 	public void setDeleted() {
-		properties = new JSONObject();
+		properties = new HashMap<String, Object>();
 		deleted = true;
 	}
 
@@ -95,13 +95,17 @@ abstract public class ArangoDBBaseDocument {
 	 * @throws ArangoDBException
 	 *             If the type is not supported
 	 */
-	public void setProperties(JSONObject properties) throws ArangoDBException {
-		this.properties = properties;
+	public void setProperties(Map<String, Object> properties) throws ArangoDBException {
+		if (properties != null) {
+			this.properties = properties;
+		} else {
+			this.properties = new HashMap<String, Object>();
+		}
 		checkStdProperties();
 	}
 
 	protected void checkHasProperty(String name) throws ArangoDBException {
-		if (!properties.has(name)) {
+		if (!properties.containsKey(name)) {
 			throw new ArangoDBException("Missing property '" + name + "'");
 		}
 	}
@@ -121,11 +125,7 @@ abstract public class ArangoDBBaseDocument {
 	 * @return the property value
 	 */
 	public Object getProperty(String key) {
-		try {
-			return this.properties.get(key);
-		} catch (JSONException e) {
-			return null;
-		}
+		return this.properties.get(key);
 	}
 
 	/**
@@ -136,9 +136,8 @@ abstract public class ArangoDBBaseDocument {
 	public Set<String> getPropertyKeys() {
 		Set<String> result = new HashSet<String>();
 
-		Iterator<?> iter = this.properties.keys();
-		while (iter.hasNext()) {
-			String key = iter.next().toString();
+		for (Map.Entry<String, Object> entry : properties.entrySet()) {
+			String key = entry.getKey();
 			if (key.charAt(0) != '_' && key.charAt(0) != '$') {
 				result.add(key);
 			}
@@ -149,8 +148,7 @@ abstract public class ArangoDBBaseDocument {
 
 	/**
 	 * Checks the document values and returns converted values. Supported value
-	 * types: Boolean, Integer, Long, String, Double, Float, JSONArray,
-	 * JSONObject, JSONString, Map, List
+	 * types: Boolean, Integer, Long, String, Double, Float, Map, List
 	 * 
 	 * @param value
 	 *            a value of an attribute
@@ -168,44 +166,33 @@ abstract public class ArangoDBBaseDocument {
 			return value;
 		} else if (value instanceof Double || value instanceof Float) {
 			return value;
-		} else if (value instanceof JSONArray || value instanceof JSONObject || value instanceof JSONString) {
-			return value;
 		} else if (value instanceof Map) {
-			Map m = (Map) value;
-			Set set = m.keySet();
+			Map<?, ?> m = (Map<?, ?>) value;
 
-			JSONObject obj = new JSONObject();
-
-			for (final Object k : set) {
-				if (k instanceof String) {
-					String key = (String) k;
-					try {
-						obj.put(key, toDocumentValue(m.get(key)));
-					} catch (JSONException e) {
-						throw new ArangoDBException("class of value not supported: " + m.get(key).getClass().toString()
-								+ ", " + e.getMessage());
-					}
+			for (Map.Entry<?, ?> entry : m.entrySet()) {
+				if (entry.getKey() instanceof String) {
+					toDocumentValue(entry.getValue());
 				} else {
-					throw new ArangoDBException("a key of a Map has be a String");
+					throw new ArangoDBException("a key of a Map has to be a String",
+							ErrorNums.ERROR_GRAPH_INVALID_PARAMETER);
 				}
 			}
 
-			return obj;
+			return value;
 
 		} else if (value instanceof List) {
-			List l = (List) value;
-
-			JSONArray obj = new JSONArray();
+			List<?> l = (List<?>) value;
 
 			for (final Object k : l) {
-				obj.put(toDocumentValue(k));
+				toDocumentValue(k);
 			}
 
-			return obj;
+			return value;
 		} else {
 			// TODO add more types
 
-			throw new ArangoDBException("class of value not supported: " + value.getClass().toString());
+			throw new ArangoDBException("class of value not supported: " + value.getClass().toString(),
+					ErrorNums.ERROR_GRAPH_INVALID_PARAMETER);
 		}
 
 	}
@@ -222,14 +209,9 @@ abstract public class ArangoDBBaseDocument {
 	 *             if an error occurs
 	 */
 	public void setProperty(String key, Object value) throws ArangoDBException {
-		if (key != null && key.length() > 0) {
-
+		if (StringUtils.isNotBlank(key)) {
 			if (key.charAt(0) != '_' && key.charAt(0) != '$') {
-				try {
-					properties.put(key, toDocumentValue(value));
-				} catch (JSONException e) {
-					throw new ArangoDBException("cannot set property. " + e.getMessage());
-				}
+				properties.put(key, toDocumentValue(value));
 			} else {
 				throw new ArangoDBException("property key is reserved");
 			}
@@ -239,12 +221,8 @@ abstract public class ArangoDBBaseDocument {
 	}
 
 	protected void setSystemProperty(String key, Object value) throws ArangoDBException {
-		if (key != null && key.length() > 0) {
-			try {
-				properties.put(key, toDocumentValue(value));
-			} catch (JSONException e) {
-				throw new ArangoDBException("cannot set property");
-			}
+		if (StringUtils.isNotBlank(key)) {
+			properties.put(key, toDocumentValue(value));
 		} else {
 			throw new ArangoDBException("property value cannot be empty");
 		}
@@ -262,7 +240,7 @@ abstract public class ArangoDBBaseDocument {
 	 *             if an error occurs
 	 */
 	public Object removeProperty(String key) throws ArangoDBException {
-		if (key != null && key.length() > 0) {
+		if (StringUtils.isNotBlank(key)) {
 			if (key.charAt(0) != '_' && key.charAt(0) != '$') {
 				return properties.remove(key);
 			} else {
@@ -316,18 +294,39 @@ abstract public class ArangoDBBaseDocument {
 	}
 
 	@Override
-	public boolean equals(Object other) {
-
-		if (other == null)
-			return false;
-		if (other == this)
-			return true;
-		if (other.getClass() != getClass())
-			return false;
-
-		ArangoDBBaseDocument document = (ArangoDBBaseDocument) other;
-
-		return properties.toString().equals(document.getProperties().toString());
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + (deleted ? 1231 : 1237);
+		result = prime * result + ((properties == null) ? 0 : properties.hashCode());
+		return result;
 	}
 
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		ArangoDBBaseDocument other = (ArangoDBBaseDocument) obj;
+		if (deleted != other.deleted)
+			return false;
+		if (properties == null) {
+			if (other.properties != null)
+				return false;
+		} else if (!serializeProperties(properties).equals(serializeProperties(other.properties)))
+			return false;
+		return true;
+	}
+
+	private String serializeProperties(Map<String, Object> map) {
+		Gson gson = new Gson();
+		try {
+			return gson.toJson(map);
+		} catch (Exception e) {
+			return "";
+		}
+	}
 }

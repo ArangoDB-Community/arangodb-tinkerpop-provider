@@ -13,90 +13,89 @@ import com.tinkerpop.blueprints.impls.arangodb.ArangoDBGraphException;
 public class ArangoEdgeTest extends ArangoDBTestCase {
 
 	ArangoDBGraph graph = null;
-	
+
 	public void testCreateEdge() {
 		String id = null;
-		try {			
+		try {
 			ArangoDBGraph graph = new ArangoDBGraph(configuration, graphName, vertices, edges);
-			
+
 			Vertex a = graph.addVertex(null);
 			Vertex b = graph.addVertex(null);
 
 			Edge e = graph.addEdge(null, a, b, "knows");
 
 			assertEquals("knows", e.getLabel());
-			
-			// save vertices and edges 
+
+			// save vertices and edges
 			graph.shutdown();
 
-			assertEquals("knows", e.getLabel());			
+			assertEquals("knows", e.getLabel());
 			assertTrue(has_id(e));
 			id = e.getId().toString();
-			
+
 		} catch (ArangoDBGraphException e) {
 			e.printStackTrace();
 			fail(e.getMessage());
 		}
-		
-		try {			
+
+		try {
 			ArangoDBGraph graph = new ArangoDBGraph(configuration, graphName, vertices, edges);
 			Edge e = graph.getEdge(id);
-			assertEquals("knows", e.getLabel());			
-			
+			assertEquals("knows", e.getLabel());
+
 		} catch (ArangoDBGraphException e) {
 			e.printStackTrace();
 			fail(e.getMessage());
-		}						
+		}
 	}
 
 	public void testCreateDoubleEdge() {
 		boolean thrown = false;
-		
+
 		Vertex a = graph.addVertex(null);
 		Vertex b = graph.addVertex(null);
 
-		graph.addEdge("123", a, b, "knows");		
-		
+		graph.addEdge("123", a, b, "knows");
+
 		try {
 			graph.addEdge("123", a, b, "knows");
-		}
-		catch (IllegalArgumentException e) {
+		} catch (IllegalArgumentException e) {
 			thrown = true;
 		}
-		
+
 		assertTrue(thrown);
 	}
 
 	public void testCreateEdgeWithLabel() {
 		Vertex a = null;
-		
-		try {			
+
+		try {
 			a = graph.addVertex(null);
 			Vertex b = graph.addVertex(null);
 
-			graph.addEdge("lab_1", a, b, "label1");			
-			graph.addEdge("lab_2", a, b, "label2");			
-			
+			graph.addEdge("lab_1", a, b, "label1");
+			graph.addEdge("lab_2", a, b, "label2");
+
 		} catch (Exception e) {
 			e.printStackTrace();
 			fail(e.getMessage());
 		}
-		
-		try {			
-			// check out and in vertices of vertex b 
+
+		try {
+			// check out and in vertices of vertex b
 			Iterable<Edge> edges = a.getEdges(Direction.BOTH, "label1");
 			Iterator<Edge> iterE = edges.iterator();
 			assertTrue(iterE.hasNext());
 			iterE.next();
 			assertFalse(iterE.hasNext());
-			
+
 		} catch (Exception e) {
 			e.printStackTrace();
 			fail(e.getMessage());
 		}
 
-		try {			
-			// check out and in vertices of vertex b 
+		try {
+			// check out and in vertices of vertex b
 			Iterable<Edge> edges = a.getEdges(Direction.BOTH, "label1", "label2");
 			Iterator<Edge> iterE = edges.iterator();
 			assertTrue(iterE.hasNext());
@@ -104,40 +103,39 @@ public class ArangoEdgeTest extends ArangoDBTestCase {
 			assertTrue(iterE.hasNext());
 			iterE.next();
 			assertFalse(iterE.hasNext());
-			
+
 		} catch (Exception e) {
 			e.printStackTrace();
 			fail(e.getMessage());
 		}
 	}
-	
+
 	public void testCreateEdgeIndex() {
-		try {			
+		try {
 			ArangoDBGraph graph = new ArangoDBGraph(configuration, graphName, vertices, edges);
-			
-			Parameter<String, String> type   = new Parameter<String, String>("type", "skiplist");
+
+			Parameter<String, String> type = new Parameter<String, String>("type", "skiplist");
 			Parameter<String, Boolean> unique = new Parameter<String, Boolean>("unique", false);
-			
+
 			graph.createKeyIndex("key1", Edge.class, type, unique);
 
-			type   = new Parameter<String, String>("type", "hash");
+			type = new Parameter<String, String>("type", "hash");
 			unique = new Parameter<String, Boolean>("unique", true);
-			
+
 			graph.createKeyIndex("key2", Edge.class, type, unique);
-			
-			graph.shutdown();			
-			
+
+			graph.shutdown();
+
 		} catch (ArangoDBGraphException e) {
 			e.printStackTrace();
 			fail(e.getMessage());
-		}		
+		}
 	}
-	
-	
-	public void testVertexCreateManyEdges () {
+
+	public void testVertexCreateManyEdges() {
 		int num = 200;
-		
-		try {			
+
+		try {
 			Vertex a = graph.addVertex("Vertex_a");
 			Vertex b = graph.addVertex("Vertex_b");
 
@@ -146,50 +144,44 @@ public class ArangoEdgeTest extends ArangoDBTestCase {
 			}
 
 			Iterable<Edge> edges = graph.getEdges();
-			
+
 			assertEquals(num, countElements(edges.iterator()));
-			
-		} catch (Exception e) {
-			e.printStackTrace();
-			fail(e.getMessage());
-		}		
-	}	
 
-	public void testVertexCreateDeleteManyVertices () {
-		int num = 200;
-		
-		try {		
-			Vertex a = graph.addVertex("Vertex_a");
-			Vertex b = graph.addVertex("Vertex_b");
-
-			for (int i = 0; i < num; ++i) {
-				Edge e = graph.addEdge("Edge_" + i, a, b, "label " + i);
-				e.setProperty("intValue", i);
-			}
-
-			Iterable<Edge> edges = graph.getEdges();
-			assertEquals(num, countElements(edges.iterator()));
-			
-			edges = graph.getEdges();
-			
-			Iterator<Edge> iterV = edges.iterator();
-			int count = 0;
-			while (iterV.hasNext()) {
-				++count;
-				Edge e = iterV.next();
-				graph.removeEdge(e);
-				//Vertex v = iterV.next();
-				//System.out.println(count + ": " + v.getId());
-			}
-			assertEquals(num, count);
-			
 		} catch (Exception e) {
 			e.printStackTrace();
 			fail(e.getMessage());
 		}
 	}
-	
-	public void testVertexCreateDeletVertices () {	
+
+	public void testVertexCreateDeleteManyVertices() {
+		int num = 200;
+
+		Vertex a = graph.addVertex("Vertex_a");
+		Vertex b = graph.addVertex("Vertex_b");
+
+		for (int i = 0; i < num; ++i) {
+			Edge e = graph.addEdge("Edge_" + i, a, b, "label " + i);
+			e.setProperty("intValue", i);
+		}
+
+		Iterable<Edge> edges = graph.getEdges();
+		assertEquals(num, countElements(edges.iterator()));
+
+		edges = graph.getEdges();
+
+		Iterator<Edge> iterV = edges.iterator();
+		int count = 0;
+		while (iterV.hasNext()) {
+			++count;
+			Edge e = iterV.next();
+			graph.removeEdge(e);
+			// Vertex v = iterV.next();
+			// System.out.println(count + ": " + v.getId());
+		}
+		assertEquals(num, count);
+	}
+
+	public void testVertexCreateDeletVertices() {
 		try {
 			Vertex a = graph.addVertex("Vertex_a");
 			Vertex b = graph.addVertex("Vertex_b");
@@ -197,56 +189,44 @@ public class ArangoEdgeTest extends ArangoDBTestCase {
 			graph.removeEdge(e);
 			graph.removeEdge(e);
 			assertTrue(true);
-		}
-		catch (Exception e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 			fail(e.getMessage());
 		}
-	}	
+	}
 
-	public void testVertexSetProperty () {
-		int expect = 4711;
-		try {		
-			ArangoDBGraph graph = new ArangoDBGraph(configuration, graphName, vertices, edges);
-			Vertex a = graph.addVertex("Vertex_a");
-			Vertex b = graph.addVertex("Vertex_b");
+	public void testVertexSetProperty() throws ArangoDBGraphException {
+		Double expect = 4711.0;
 
-			Edge e = graph.addEdge("Edge", a, b, "label");
-			e.setProperty("intValue", expect);
-			
-			graph.shutdown(); // save
-			
-		} catch (ArangoDBGraphException e) {
-			e.printStackTrace();
-			fail(e.getMessage());
-		}
-		
-		try {		
-			ArangoDBGraph graph = new ArangoDBGraph(configuration, graphName, vertices, edges);
+		ArangoDBGraph graph = new ArangoDBGraph(configuration, graphName, vertices, edges);
+		Vertex a = graph.addVertex("Vertex_a");
+		Vertex b = graph.addVertex("Vertex_b");
 
-			Edge e = graph.getEdge("Edge");
-			assertEquals(expect, e.getProperty("intValue"));
-			
-			graph.shutdown(); // save
-			
-		} catch (ArangoDBGraphException e) {
-			e.printStackTrace();
-			fail(e.getMessage());
-		}
-		
-	}	
+		Edge e = graph.addEdge("Edge", a, b, "label");
+		e.setProperty("numericValue", expect);
 
-	public void testGetGraphEdges () {
+		graph.shutdown(); // save
+
+		ArangoDBGraph graph2 = new ArangoDBGraph(configuration, graphName, vertices, edges);
+
+		Edge e2 = graph2.getEdge("Edge");
+		assertEquals(expect, e2.getProperty("numericValue"));
+
+		graph.shutdown(); // save
+
+	}
+
+	public void testGetGraphEdges() {
 		int num = 10;
-		
-		try {			
-			Vector<Vertex> v = new Vector<Vertex>();  
+
+		try {
+			Vector<Vertex> v = new Vector<Vertex>();
 			for (int i = 0; i < 11; ++i) {
 				v.add(graph.addVertex(i));
 			}
-			
+
 			for (int i = 0; i < num; ++i) {
-				Edge e = graph.addEdge("Edge_" + i, v.elementAt(i), v.elementAt(i+1), "label " + i);
+				Edge e = graph.addEdge("Edge_" + i, v.elementAt(i), v.elementAt(i + 1), "label " + i);
 				e.setProperty("intValue", i);
 			}
 
@@ -258,27 +238,27 @@ public class ArangoEdgeTest extends ArangoDBTestCase {
 
 			edges = graph.getEdges("intValue", 100);
 			assertEquals(0, countElements(edges.iterator()));
-			
+
 		} catch (Exception e) {
 			e.printStackTrace();
 			fail(e.getMessage());
-		}		
-	}	
+		}
+	}
 
-	public void testVertexGetEdges () {
+	public void testVertexGetEdges() {
 		int num = 10;
-		
-		try {			
-			Vector<Vertex> v = new Vector<Vertex>();  
+
+		try {
+			Vector<Vertex> v = new Vector<Vertex>();
 			for (int i = 0; i < 11; ++i) {
 				v.add(graph.addVertex(i));
 			}
-			
+
 			for (int i = 0; i < num; ++i) {
-				graph.addEdge("Edge_" + i, v.elementAt(i), v.elementAt(i+1), "label " + i);
+				graph.addEdge("Edge_" + i, v.elementAt(i), v.elementAt(i + 1), "label " + i);
 			}
 			for (int i = 0; i < num; ++i) {
-				graph.addEdge("Edge_b" + i, v.elementAt(i), v.elementAt(i+1), "label b" + i);
+				graph.addEdge("Edge_b" + i, v.elementAt(i), v.elementAt(i + 1), "label b" + i);
 			}
 
 			int index = 5;
@@ -292,7 +272,7 @@ public class ArangoEdgeTest extends ArangoDBTestCase {
 			assertEquals(1, countElements(edges.iterator()));
 			edges = vertex.getEdges(Direction.IN, "label " + in, "label " + out);
 			assertEquals(1, countElements(edges.iterator()));
- 
+
 			edges = vertex.getEdges(Direction.OUT);
 			assertEquals(2, countElements(edges.iterator()));
 			edges = vertex.getEdges(Direction.OUT, "label " + out);
@@ -306,17 +286,17 @@ public class ArangoEdgeTest extends ArangoDBTestCase {
 			assertEquals(1, countElements(edges.iterator()));
 			edges = vertex.getEdges(Direction.BOTH, "label " + in);
 			assertEquals(1, countElements(edges.iterator()));
-						
+
 		} catch (Exception e) {
 			e.printStackTrace();
 			fail(e.getMessage());
-		}		
-	}	
+		}
+	}
 
-	public void testGetGraphEdge () {
+	public void testGetGraphEdge() {
 		Vertex a = null;
 		Vertex b = null;
-		try {			
+		try {
 			a = graph.addVertex(null);
 			b = graph.addVertex(null);
 
@@ -326,63 +306,63 @@ public class ArangoEdgeTest extends ArangoDBTestCase {
 			e.printStackTrace();
 			fail(e.getMessage());
 		}
-			
-		try {			
+
+		try {
 			graph.addEdge("same", a, b, "label2");
 			fail("inserted edge with same id");
 		} catch (IllegalArgumentException e) {
 		}
-			
-	}	
-	
-	public void testGetGraphEdge2 () {
+
+	}
+
+	public void testGetGraphEdge2() {
 		Vertex a = null;
 		Vertex b = null;
-		try {			
+		try {
 			a = graph.addVertex(null);
 			b = graph.addVertex(null);
 
 			Edge e1 = graph.addEdge("same", a, b, "label1");
 			assertNotNull(e1);
-			
+
 			Iterable<Edge> ei = a.getEdges(Direction.OUT);
 			assertNotNull(ei);
-			
+
 			ei = a.getEdges(Direction.IN);
 			assertNotNull(ei);
-			
+
 			ei = a.getEdges(Direction.OUT, "label1");
-			assertNotNull(ei);			
+			assertNotNull(ei);
 
 			ei = a.getEdges(Direction.OUT, "egal");
-			assertNotNull(ei);			
-			
+			assertNotNull(ei);
+
 		} catch (Exception e) {
 			e.printStackTrace();
 			fail(e.getMessage());
 		}
-			
-		try {			
+
+		try {
 			graph.addEdge("same", a, b, "label2");
 			fail("inserted edge with same id");
 		} catch (IllegalArgumentException e) {
 		}
-			
-	}	
-	
+
+	}
+
 	protected void setUp() {
 		super.setUp();
 		try {
-			graph = new ArangoDBGraph(configuration, graphName, vertices, edges);			
+			graph = new ArangoDBGraph(configuration, graphName, vertices, edges);
 		} catch (ArangoDBGraphException e) {
 			e.printStackTrace();
 			fail(e.getMessage());
-		}		
+		}
 	}
 
 	protected void tearDown() {
 		graph.shutdown();
 		super.tearDown();
 	}
-	
+
 }

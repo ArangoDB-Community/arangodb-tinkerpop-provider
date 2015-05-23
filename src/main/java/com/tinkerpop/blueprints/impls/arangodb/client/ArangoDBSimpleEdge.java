@@ -8,10 +8,10 @@
 
 package com.tinkerpop.blueprints.impls.arangodb.client;
 
-import org.codehaus.jettison.json.JSONObject;
+import java.util.Map;
 
 /**
- * The arangodb index class
+ * The ArangoDB simple edge class
  * 
  * @author Achim Brandt (http://www.triagens.de)
  * @author Johannes Gocke (http://www.triagens.de)
@@ -44,9 +44,8 @@ public class ArangoDBSimpleEdge extends ArangoDBBaseDocument {
 	 * @throws ArangoDBException
 	 *             if an error occurs
 	 */
-	public ArangoDBSimpleEdge(JSONObject properties) throws ArangoDBException {
-		this.properties = properties;
-		checkStdProperties();
+	public ArangoDBSimpleEdge(Map<String, Object> properties) throws ArangoDBException {
+		this.setProperties(properties);
 		checkHasProperty(_TO);
 		checkHasProperty(_FROM);
 	}

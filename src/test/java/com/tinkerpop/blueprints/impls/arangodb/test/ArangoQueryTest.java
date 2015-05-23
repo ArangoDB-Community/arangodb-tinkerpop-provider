@@ -134,6 +134,7 @@ public class ArangoQueryTest extends ArangoDBTestCase {
 
 	}
 
+	@SuppressWarnings("unchecked")
 	@Test
 	public void testVertexQueryHas() {
 		int num = 7;

@@ -1,15 +1,22 @@
 package com.tinkerpop.blueprints.impls.arangodb.client.test;
 
-import org.codehaus.jettison.json.JSONException;
-import org.codehaus.jettison.json.JSONObject;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+
+import com.arangodb.ArangoException;
+import com.arangodb.CursorResult;
+import com.tinkerpop.blueprints.impls.arangodb.client.ArangoDBBaseQuery;
 import com.tinkerpop.blueprints.impls.arangodb.client.ArangoDBException;
 import com.tinkerpop.blueprints.impls.arangodb.client.ArangoDBPropertyFilter;
 import com.tinkerpop.blueprints.impls.arangodb.client.ArangoDBPropertyFilter.Compare;
 import com.tinkerpop.blueprints.impls.arangodb.client.ArangoDBSimpleGraph;
 import com.tinkerpop.blueprints.impls.arangodb.client.ArangoDBSimpleVertex;
-import com.tinkerpop.blueprints.impls.arangodb.client.ArangoDBSimpleVertexCursor;
-import com.tinkerpop.blueprints.impls.arangodb.client.ArangoDBSimpleVertexQuery;
 
 public class SimpleGraphVerticesTest extends BaseTestCase {
 
@@ -20,113 +27,104 @@ public class SimpleGraphVerticesTest extends BaseTestCase {
 	ArangoDBSimpleVertex vertex4 = null;
 	ArangoDBSimpleVertex vertex5 = null;
 
-	protected void setUp() {
+	@Before
+	public void setUp() {
 		super.setUp();
 		try {
-			JSONObject o = new JSONObject();
+			Map<String, Object> o = new HashMap<String, Object>();
 			graph = client.createGraph(graphName, vertices, edges);
 
 			o.put("key1", 1);
 			vertex1 = client.createVertex(graph, "v1", o);
 
+			o = new HashMap<String, Object>();
 			o.put("key1", 2);
 			vertex2 = client.createVertex(graph, "v2", o);
 
+			o = new HashMap<String, Object>();
 			o.put("key1", 3);
 			vertex3 = client.createVertex(graph, "v3", o);
 
+			o = new HashMap<String, Object>();
 			o.put("key1", 4);
 			vertex4 = client.createVertex(graph, "v4", o);
 
+			o = new HashMap<String, Object>();
 			o.put("key1", 5);
 			vertex5 = client.createVertex(graph, "v5", o);
 
 		} catch (ArangoDBException e) {
 			e.printStackTrace();
-			assertTrue(false);
-		} catch (JSONException e) {
+			Assert.assertTrue(false);
+		} catch (ArangoException e) {
 			e.printStackTrace();
-			assertTrue(false);
+			Assert.assertTrue(false);
 		}
 	}
 
-	protected void tearDown() {
+	@After
+	public void tearDown() {
 		super.tearDown();
 	}
 
-	public void test_getGraphVertices() {
+	@SuppressWarnings("rawtypes")
+	@Test
+	public void test_getGraphVertices() throws ArangoDBException {
+		ArangoDBBaseQuery query = client.getGraphVertices(graph, null, null, false);
+		Assert.assertNotNull(query);
 
-		try {
-			ArangoDBSimpleVertexQuery query = client.getGraphVertices(graph, null, null, false);
-			assertNotNull(query);
+		CursorResult<Map> cursor = query.getCursorResult();
+		Assert.assertNotNull(cursor);
 
-			ArangoDBSimpleVertexCursor cursor = query.getResult();
-			assertNotNull(cursor);
-
-			int count = 0;
-
-			while (cursor.hasNext()) {
-				cursor.next();
-				count++;
-			}
-			assertEquals(5, count);
-
-		} catch (ArangoDBException e) {
-			e.printStackTrace();
-			assertTrue(false);
+		int count = 0;
+		Iterator<Map> iterator = cursor.iterator();
+		while (iterator.hasNext()) {
+			iterator.next();
+			count++;
 		}
+		Assert.assertEquals(5, count);
 	}
 
-	public void test_getGraphVerticesWithCount() {
+	@SuppressWarnings("rawtypes")
+	@Test
+	public void test_getGraphVerticesWithCount() throws ArangoDBException {
+		ArangoDBBaseQuery query = client.getGraphVertices(graph, null, null, true);
+		Assert.assertNotNull(query);
 
-		try {
-			ArangoDBSimpleVertexQuery query = client.getGraphVertices(graph, null, null, true);
-			assertNotNull(query);
+		CursorResult<Map> cursor = query.getCursorResult();
+		Assert.assertNotNull(cursor);
 
-			ArangoDBSimpleVertexCursor cursor = query.getResult();
-			assertNotNull(cursor);
+		Assert.assertEquals(5, cursor.getCount());
 
-			assertEquals(5, cursor.count());
-
-			int count = 0;
-
-			while (cursor.hasNext()) {
-				cursor.next();
-				count++;
-			}
-			assertEquals(5, count);
-
-		} catch (ArangoDBException e) {
-			e.printStackTrace();
-			assertTrue(false);
+		int count = 0;
+		Iterator<Map> iterator = cursor.iterator();
+		while (iterator.hasNext()) {
+			iterator.next();
+			count++;
 		}
+		Assert.assertEquals(5, count);
 	}
 
-	public void test_getGraphVerticesWithFilter() {
+	@SuppressWarnings("rawtypes")
+	@Test
+	public void test_getGraphVerticesWithFilter() throws ArangoDBException {
+		ArangoDBPropertyFilter propfilter = new ArangoDBPropertyFilter();
+		propfilter.has("key1", 2, Compare.GREATER_THAN);
+		propfilter.has("key1", 5, Compare.LESS_THAN);
 
-		try {
-			ArangoDBPropertyFilter propfilter = new ArangoDBPropertyFilter();
-			propfilter.has("key1", 2, Compare.GREATER_THAN);
-			propfilter.has("key1", 5, Compare.LESS_THAN);
+		ArangoDBBaseQuery query = client.getGraphVertices(graph, propfilter, null, false);
+		Assert.assertNotNull(query);
 
-			ArangoDBSimpleVertexQuery query = client.getGraphVertices(graph, propfilter, null, false);
-			assertNotNull(query);
+		CursorResult<Map> cursor = query.getCursorResult();
+		Assert.assertNotNull(cursor);
 
-			ArangoDBSimpleVertexCursor cursor = query.getResult();
-			assertNotNull(cursor);
-
-			int count = 0;
-
-			while (cursor.hasNext()) {
-				cursor.next();
-				count++;
-			}
-			assertEquals(2, count);
-
-		} catch (ArangoDBException e) {
-			e.printStackTrace();
-			assertTrue(false);
+		int count = 0;
+		Iterator<Map> iterator = cursor.iterator();
+		while (iterator.hasNext()) {
+			iterator.next();
+			count++;
 		}
+		Assert.assertEquals(2, count);
 	}
 
 }

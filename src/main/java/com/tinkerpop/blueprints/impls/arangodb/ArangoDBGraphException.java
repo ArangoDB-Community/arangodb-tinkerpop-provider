@@ -8,8 +8,10 @@
 
 package com.tinkerpop.blueprints.impls.arangodb;
 
+import com.arangodb.ArangoException;
+
 /**
- * The arangodb graph exceptions class
+ * The ArangoDB graph exceptions class
  * 
  * @author Achim Brandt (http://www.triagens.de)
  * @author Johannes Gocke (http://www.triagens.de)
@@ -31,6 +33,16 @@ public class ArangoDBGraphException extends Exception {
 	 */
 	public ArangoDBGraphException(String message) {
 		super(message);
+	}
+
+	/**
+	 * Creates a graph exception with a message
+	 * 
+	 * @param cause
+	 *            the cause of the exception
+	 */
+	public ArangoDBGraphException(ArangoException cause) {
+		super(cause);
 	}
 
 }

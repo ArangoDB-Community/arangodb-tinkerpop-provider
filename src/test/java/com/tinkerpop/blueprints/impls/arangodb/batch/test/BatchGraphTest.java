@@ -1,5 +1,7 @@
 package com.tinkerpop.blueprints.impls.arangodb.batch.test;
 
+import org.apache.commons.lang3.StringUtils;
+import org.junit.Assert;
 import org.junit.Test;
 
 import com.tinkerpop.blueprints.GraphQuery;
@@ -11,110 +13,76 @@ import com.tinkerpop.blueprints.impls.arangodb.batch.ArangoDBBatchGraph;
 public class BatchGraphTest extends ArangoDBBatchTestCase {
 
 	@Test
-	public void testCreateGraph() {
-		String graph_id = null;
-		try {
-			ArangoDBBatchGraph graph = new ArangoDBBatchGraph(host, port, graphName, vertices, edges);
+	public void testCreateGraph() throws ArangoDBGraphException {
 
-			assertTrue(hasGraph(graphName));
+		ArangoDBBatchGraph graph = new ArangoDBBatchGraph(host, port, graphName, vertices, edges);
 
-			Object x = graph.getProperty("_id");
-			assertNotNull(x);
+		Assert.assertTrue(hasGraph(graphName));
 
-			graph_id = x.toString();
-			assertFalse(graph_id.equals(""));
+		String graphId = graph.getId();
+		Assert.assertNotNull(StringUtils.isNotEmpty(graphId));
 
-			graph.shutdown();
-		} catch (ArangoDBGraphException e) {
-			e.printStackTrace();
-			fail("Could not create graph");
-		}
+		graph.shutdown();
 
-		try {
-			ArangoDBBatchGraph graph = new ArangoDBBatchGraph(host, port, graphName, vertices, edges);
+		// reload graph and test again
 
-			Object x = graph.getProperty("_id");
-			assertNotNull(x);
+		graph = new ArangoDBBatchGraph(host, port, graphName, vertices, edges);
 
-			assertEquals(graph_id, x.toString());
+		String x = graph.getId();
+		Assert.assertNotNull(StringUtils.isNotEmpty(x));
 
-			graph.shutdown();
+		Assert.assertEquals(graphId, x);
 
-		} catch (ArangoDBGraphException e) {
-			e.printStackTrace();
-			fail("Could not create graph");
-		}
+		graph.shutdown();
 	}
 
 	@Test
-	public void testImport() {
+	public void testImport() throws ArangoDBGraphException {
 		int createNum = 1000;
 
-		try {
-			ArangoDBBatchGraph graph = new ArangoDBBatchGraph(host, port, graphName, vertices, edges);
+		ArangoDBBatchGraph graph = new ArangoDBBatchGraph(host, port, graphName, vertices, edges);
 
-			for (Long i = 0L; i < createNum; ++i) {
-				Vertex v = graph.addVertex(i);
-				v.setProperty("keyA", i);
-			}
-
-			graph.shutdown();
-		} catch (ArangoDBGraphException e) {
-			e.printStackTrace();
-			fail("Could not create graph");
+		for (Long i = 0L; i < createNum; ++i) {
+			Vertex v = graph.addVertex(i);
+			v.setProperty("keyA", i);
 		}
 
-		ArangoDBGraph graph2 = null;
-		try {
-			graph2 = new ArangoDBGraph(host, port, graphName, vertices, edges);
-		} catch (ArangoDBGraphException e) {
-			e.printStackTrace();
-			fail("Could not create graph");
-		}
+		graph.shutdown();
+
+		ArangoDBGraph graph2 = new ArangoDBGraph(host, port, graphName, vertices, edges);
 
 		GraphQuery q = graph2.query();
 
-		assertEquals(createNum, countElements(q.vertices()));
+		Assert.assertEquals(createNum, countElements(q.vertices()));
 	}
 
 	@Test
-	public void testImport2() {
+	public void testImport2() throws ArangoDBGraphException {
 		int createNum = 1000;
 
-		try {
-			ArangoDBBatchGraph graph = new ArangoDBBatchGraph(host, port, graphName, vertices, edges);
+		ArangoDBBatchGraph graph = new ArangoDBBatchGraph(host, port, graphName, vertices, edges);
 
-			Vertex inVertex = graph.addVertex(0L);
+		Vertex inVertex = graph.addVertex(0L);
 
-			for (Long i = 1L; i < createNum; ++i) {
-				Vertex outVertex = graph.addVertex(i);
-				graph.addEdge("Edge" + (i - 1), outVertex, inVertex, "label");
-				inVertex = outVertex;
-			}
-
-			graph.addEdge("Edge" + createNum, inVertex, inVertex, "label");
-
-			graph.shutdown();
-		} catch (ArangoDBGraphException e) {
-			e.printStackTrace();
-			fail("Could not create graph");
+		for (Long i = 1L; i < createNum; ++i) {
+			Vertex outVertex = graph.addVertex(i);
+			graph.addEdge("Edge" + (i - 1), outVertex, inVertex, "label");
+			inVertex = outVertex;
 		}
 
-		ArangoDBGraph graph2 = null;
-		try {
-			graph2 = new ArangoDBGraph(host, port, graphName, vertices, edges);
-		} catch (ArangoDBGraphException e) {
-			e.printStackTrace();
-			fail("Could not create graph");
-		}
+		graph.addEdge("Edge" + createNum, inVertex, inVertex, "label");
+
+		graph.shutdown();
+
+		ArangoDBGraph graph2 = new ArangoDBGraph(host, port, graphName, vertices, edges);
 
 		GraphQuery q = graph2.query();
 
-		assertEquals(createNum, countElements(q.vertices()));
+		Assert.assertEquals(createNum, countElements(q.vertices()));
 
 		GraphQuery q2 = graph2.query();
 
-		assertEquals(createNum, countElements(q2.edges()));
+		Assert.assertEquals(createNum, countElements(q2.edges()));
 	}
 
 }

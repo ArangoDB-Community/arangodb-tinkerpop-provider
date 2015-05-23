@@ -1,253 +1,166 @@
 package com.tinkerpop.blueprints.impls.arangodb.client.test;
 
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Vector;
 
-import com.tinkerpop.blueprints.impls.arangodb.client.*;
-import org.codehaus.jettison.json.JSONException;
-import org.codehaus.jettison.json.JSONObject;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+
+import com.arangodb.ArangoException;
+import com.arangodb.ErrorNums;
+import com.tinkerpop.blueprints.impls.arangodb.client.ArangoDBException;
+import com.tinkerpop.blueprints.impls.arangodb.client.ArangoDBSimpleGraph;
+import com.tinkerpop.blueprints.impls.arangodb.client.ArangoDBSimpleVertex;
 
 public class SimpleVertexTest extends BaseTestCase {
 
 	ArangoDBSimpleGraph graph = null;
 
-	protected void setUp() {
+	@Before
+	public void setUp() {
 		super.setUp();
 		try {
 			graph = client.createGraph(graphName, vertices, edges);
-
-		} catch (ArangoDBException e) {
+		} catch (ArangoException e) {
 			e.printStackTrace();
-			assertTrue(false);
+			Assert.assertTrue(false);
 		}
 	}
 
-	protected void tearDown() {
-		super.tearDown();
+	@Test
+	public void test_CreateSimpleVertex() throws ArangoDBException {
+		ArangoDBSimpleVertex vertex = client.createVertex(graph, null, null);
+		Assert.assertNotNull(vertex);
+		Assert.assertNotNull(vertex.getDocumentKey());
 	}
 
-	public void test_CreateSimpleVertex() {
+	@Test
+	public void test_CreateAndGetSimpleVertex() throws ArangoDBException {
+		ArangoDBSimpleVertex vertex = client.createVertex(graph, null, null);
+		Assert.assertNotNull(vertex);
+		Assert.assertNotNull(vertex.getDocumentKey());
 
-		ArangoDBSimpleVertex vertex = null;
-		try {
+		ArangoDBSimpleVertex vertex2 = client.getVertex(graph, vertex.getDocumentKey());
+		Assert.assertNotNull(vertex2);
+		Assert.assertNotNull(vertex2.getDocumentKey());
 
-			vertex = client.createVertex(graph, null, null);
-
-			assertNotNull(vertex);
-			assertNotNull(vertex.getDocumentKey());
-
-		} catch (ArangoDBException e) {
-			e.printStackTrace();
-			assertTrue(false);
-		}
-
-		assertNotNull(vertex);
+		ArangoDBSimpleVertex vertex3 = client.getVertex(graph, vertex.getDocumentKey());
+		Assert.assertNotNull(vertex3);
+		Assert.assertNotNull(vertex3.getDocumentKey());
 	}
 
-	public void test_CreateAndGetSimpleVertex() {
+	@Test
+	public void test_CreateSimpleVertexWithName() throws ArangoDBException {
+		ArangoDBSimpleVertex vertex = client.createVertex(graph, "egon", null);
 
-		ArangoDBSimpleVertex vertex = null;
-		ArangoDBSimpleVertex vertex2 = null;
-		ArangoDBSimpleVertex vertex3 = null;
-		try {
-
-			vertex = client.createVertex(graph, null, null);
-
-			assertNotNull(vertex);
-			assertNotNull(vertex.getDocumentKey());
-
-			vertex2 = client.getVertex(graph, vertex.getDocumentKey());
-
-			assertNotNull(vertex2);
-			assertNotNull(vertex2.getDocumentKey());
-
-			vertex3 = client.getVertex(graph, vertex.getDocumentId());
-
-			assertNotNull(vertex3);
-			assertNotNull(vertex3.getDocumentKey());
-
-		} catch (ArangoDBException e) {
-			e.printStackTrace();
-			assertTrue(false);
-		}
-
-		assertNotNull(vertex);
+		Assert.assertNotNull(vertex);
+		Assert.assertNotNull(vertex.getDocumentKey());
+		Assert.assertEquals("egon", vertex.getDocumentKey());
 	}
 
-	public void test_CreateSimpleVertexWithName() {
+	@Test
+	public void test_CreateSimpleVertexWithProperties() throws ArangoDBException {
+		Map<String, Object> properties = new HashMap<String, Object>();
+		properties.put("fisch", "mehl");
+		properties.put("counter", 5);
 
-		ArangoDBSimpleVertex vertex = null;
-		try {
+		ArangoDBSimpleVertex vertex = client.createVertex(graph, "egon", properties);
 
-			vertex = client.createVertex(graph, "egon", null);
-
-			assertNotNull(vertex);
-			assertNotNull(vertex.getDocumentKey());
-			assertEquals("egon", vertex.getDocumentKey());
-
-		} catch (ArangoDBException e) {
-			e.printStackTrace();
-			assertTrue(false);
-		}
-
-		assertNotNull(vertex);
+		Assert.assertNotNull(vertex);
+		Assert.assertNotNull(vertex.getDocumentKey());
+		Assert.assertEquals("mehl", vertex.getProperty("fisch"));
+		Assert.assertEquals(5, vertex.getProperty("counter"));
 	}
 
-	public void test_CreateSimpleVertexWithProperties() {
+	@Test
+	public void test_ChangeSimpleVertex() throws ArangoDBException {
+		double numericValue = 6.0;
 
-		ArangoDBSimpleVertex vertex = null;
-		try {
+		Map<String, Object> properties = new HashMap<String, Object>();
+		properties.put("fisch", "mehl");
+		properties.put("counter", 5);
+		ArangoDBSimpleVertex vertex = client.createVertex(graph, "egon", properties);
+		Assert.assertNotNull(vertex);
+		Assert.assertNotNull(vertex.getDocumentKey());
+		Assert.assertEquals("mehl", vertex.getProperty("fisch"));
+		Assert.assertEquals(5, vertex.getProperty("counter"));
 
-			JSONObject properties = new JSONObject();
-			properties.put("fisch", "mehl");
-			properties.put("counter", 5);
+		vertex.removeProperty("fisch");
+		vertex.setProperty("counter", numericValue);
+		client.saveVertex(graph, vertex);
+		Assert.assertNull(vertex.getProperty("fisch"));
+		Assert.assertEquals(numericValue, vertex.getProperty("counter"));
 
-			vertex = client.createVertex(graph, "egon", properties);
-
-			assertNotNull(vertex);
-			assertNotNull(vertex.getDocumentKey());
-			assertEquals("mehl", vertex.getProperty("fisch"));
-			assertEquals(5, vertex.getProperty("counter"));
-
-		} catch (ArangoDBException e) {
-			e.printStackTrace();
-			assertTrue(false);
-		} catch (JSONException e) {
-			e.printStackTrace();
-			assertTrue(false);
-		}
-
-		assertNotNull(vertex);
+		ArangoDBSimpleVertex vertex2 = client.getVertex(graph, vertex.getDocumentKey());
+		Assert.assertNotNull(vertex2);
+		Assert.assertNotNull(vertex2.getDocumentKey());
+		Assert.assertNull(vertex2.getProperty("fisch"));
+		Assert.assertEquals(numericValue, vertex2.getProperty("counter"));
 	}
 
-	public void test_ChangeSimpleVertex() {
+	@Test
+	public void test_DeleteSimpleVertex() throws ArangoDBException {
+		ArangoDBSimpleVertex vertex = client.createVertex(graph, "to_delete", null);
+		Assert.assertNotNull(vertex);
+		Assert.assertNotNull(vertex.getDocumentKey());
 
-		ArangoDBSimpleVertex vertex = null;
-		ArangoDBSimpleVertex vertex2 = null;
-		try {
-
-			JSONObject properties = new JSONObject();
-			properties.put("fisch", "mehl");
-			properties.put("counter", 5);
-			vertex = client.createVertex(graph, "egon", properties);
-			assertNotNull(vertex);
-			assertNotNull(vertex.getDocumentKey());
-			assertEquals("mehl", vertex.getProperty("fisch"));
-			assertEquals(5, vertex.getProperty("counter"));
-
-			vertex.removeProperty("fisch");
-			vertex.setProperty("counter", 6);
-			client.saveVertex(graph, vertex);
-			assertNull(vertex.getProperty("fisch"));
-			assertEquals(6, vertex.getProperty("counter"));
-
-			vertex2 = client.getVertex(graph, vertex.getDocumentKey());
-			assertNotNull(vertex2);
-			assertNotNull(vertex2.getDocumentKey());
-			assertNull(vertex2.getProperty("fisch"));
-			assertEquals(6, vertex2.getProperty("counter"));
-
-		} catch (ArangoDBException e) {
-			e.printStackTrace();
-			assertTrue(false);
-		} catch (JSONException e) {
-			e.printStackTrace();
-			assertTrue(false);
-		}
-
-		assertNotNull(vertex);
-	}
-
-	public void test_DeleteSimpleVertex() {
-
-		ArangoDBSimpleVertex vertex = null;
-		try {
-
-			vertex = client.createVertex(graph, "to_delete", null);
-			assertNotNull(vertex);
-			assertNotNull(vertex.getDocumentKey());
-
-			client.deleteVertex(graph, vertex);
-			assertTrue(vertex.isDeleted());
-
-		} catch (ArangoDBException e) {
-			e.printStackTrace();
-			assertTrue(false);
-		}
+		client.deleteVertex(graph, vertex);
+		Assert.assertTrue(vertex.isDeleted());
 
 		try {
 			vertex = client.getVertex(graph, "to_delete");
-			assertTrue(false);
+			Assert.fail("ArangoDBException not thrown");
 		} catch (ArangoDBException e) {
-			assertTrue(true);
+			Assert.assertEquals(new Integer(ErrorNums.ERROR_ARANGO_DOCUMENT_NOT_FOUND), e.errorNumber());
 		}
-
-		assertNotNull(vertex);
 	}
 
-	public void test_SetProperties() {
+	@Test
+	public void test_SetProperties() throws ArangoDBException {
+		ArangoDBSimpleVertex vertex = client.createVertex(graph, "testProperties", null);
+		Assert.assertNotNull(vertex);
+		Assert.assertNotNull(vertex.getDocumentKey());
 
+		vertex.setProperty("key1", "abc##ääüü");
+
+		HashMap<String, Object> hm = new HashMap<String, Object>();
+		hm.put("test", "protest");
+		hm.put("hello", "world");
+		vertex.setProperty("key2", hm);
+
+		HashMap<Object, Object> hm2 = new HashMap<Object, Object>();
+		hm2.put("test", "protest");
+		hm2.put(hm, "world"); // fail!
 		try {
-
-			ArangoDBSimpleVertex vertex = client.createVertex(graph,
-					"testProperties", null);
-			assertNotNull(vertex);
-			assertNotNull(vertex.getDocumentKey());
-
-			vertex.setProperty("key1", "abc##ääüü");
-
-			HashMap<String, Object> hm = new HashMap<String, Object>();
-			hm.put("test", "protest");
-			hm.put("hello", "world");
-			vertex.setProperty("key2", hm);
-
-			HashMap<Object, Object> hm2 = new HashMap<Object, Object>();
-			hm2.put("test", "protest");
-			hm2.put(hm, "world"); // fail!
-			try {
-				vertex.setProperty("key3", hm2);
-				assertTrue(false);
-			} catch (ArangoDBException e) {
-			}
-
-			HashMap<Object, Object> hm3 = new HashMap<Object, Object>();
-			hm3.put("test", "protest");
-			hm3.put("hello", hm);
-			try {
-				vertex.setProperty("key4", hm3);
-			} catch (ArangoDBException e) {
-				assertTrue(false);
-			}
-
-			Vector<Object> v = new Vector<Object>();
-			v.add("huhu");
-			try {
-				vertex.setProperty("key5", v);
-			} catch (ArangoDBException e) {
-				assertTrue(false);
-			}
-
-			v.add(hm);
-			try {
-				vertex.setProperty("key6", v);
-			} catch (ArangoDBException e) {
-				assertTrue(false);
-			}
-
-			v.add(hm2); // fail!
-			try {
-				vertex.setProperty("key6", v);
-				assertTrue(false);
-			} catch (ArangoDBException e) {
-			}
-
-			client.saveVertex(graph, vertex);
-
+			vertex.setProperty("key3", hm2);
+			Assert.fail("ArangoDBException not thrown");
 		} catch (ArangoDBException e) {
-			e.printStackTrace();
-			assertTrue(false);
+			Assert.assertEquals(new Integer(ErrorNums.ERROR_GRAPH_INVALID_PARAMETER), e.errorNumber());
 		}
 
+		HashMap<Object, Object> hm3 = new HashMap<Object, Object>();
+		hm3.put("test", "protest");
+		hm3.put("hello", hm);
+		vertex.setProperty("key4", hm3);
+
+		Vector<Object> v = new Vector<Object>();
+		v.add("huhu");
+		vertex.setProperty("key5", v);
+
+		v.add(hm);
+		vertex.setProperty("key6", v);
+
+		v.add(hm2); // fail!
+		try {
+			vertex.setProperty("key6", v);
+			Assert.fail("ArangoDBException not thrown");
+		} catch (ArangoDBException e) {
+			Assert.assertEquals(new Integer(ErrorNums.ERROR_GRAPH_INVALID_PARAMETER), e.errorNumber());
+		}
+
+		client.saveVertex(graph, vertex);
 	}
 
 }

@@ -11,6 +11,8 @@ package com.tinkerpop.blueprints.impls.arangodb;
 import java.util.Iterator;
 import java.util.Vector;
 
+import org.apache.log4j.Logger;
+
 import com.tinkerpop.blueprints.Direction;
 import com.tinkerpop.blueprints.Edge;
 import com.tinkerpop.blueprints.Predicate;
@@ -19,13 +21,10 @@ import com.tinkerpop.blueprints.VertexQuery;
 import com.tinkerpop.blueprints.impls.arangodb.client.ArangoDBBaseQuery;
 import com.tinkerpop.blueprints.impls.arangodb.client.ArangoDBException;
 import com.tinkerpop.blueprints.impls.arangodb.client.ArangoDBPropertyFilter;
-import com.tinkerpop.blueprints.impls.arangodb.client.ArangoDBSimpleEdgeCursor;
-import com.tinkerpop.blueprints.impls.arangodb.client.ArangoDBSimpleEdgeQuery;
 import com.tinkerpop.blueprints.impls.arangodb.client.ArangoDBSimpleVertex;
-import com.tinkerpop.blueprints.impls.arangodb.client.ArangoDBSimpleVertexQuery;
 
 /**
- * The arangodb vertex query class
+ * The ArangoDB vertex query class
  * 
  * @author Achim Brandt (http://www.triagens.de)
  * @author Johannes Gocke (http://www.triagens.de)
@@ -33,6 +32,11 @@ import com.tinkerpop.blueprints.impls.arangodb.client.ArangoDBSimpleVertexQuery;
  */
 
 public class ArangoDBVertexQuery implements VertexQuery {
+
+	/**
+	 * the logger
+	 */
+	private static Logger LOG = Logger.getLogger(ArangoDBVertexIterable.class);
 
 	private final ArangoDBGraph graph;
 	private final ArangoDBSimpleVertex vertex;
@@ -57,12 +61,26 @@ public class ArangoDBVertexQuery implements VertexQuery {
 		this.count = false;
 	}
 
-	public VertexQuery has(final String key, final Object value) {
+	public VertexQuery has(String key, Object value) {
 		propertyFilter.has(key, value, ArangoDBPropertyFilter.Compare.EQUAL);
 		return this;
 	}
 
-	public <T extends Comparable<T>> VertexQuery has(final String key, final T value, final Compare compare) {
+	/**
+	 * Filter out the element if it does not have a property with a comparable
+	 * value.
+	 *
+	 * @param key
+	 *            the key of the property
+	 * @param value
+	 *            the value to check against
+	 * @param compare
+	 *            the comparator to use for comparison
+	 * @return the modified query object
+	 * @deprecated
+	 */
+	@Deprecated
+	public <T extends Comparable<T>> VertexQuery has(String key, T value, Compare compare) {
 		switch (compare) {
 		case EQUAL:
 			propertyFilter.has(key, value, ArangoDBPropertyFilter.Compare.EQUAL);
@@ -111,10 +129,10 @@ public class ArangoDBVertexQuery implements VertexQuery {
 	}
 
 	public Iterable<Edge> edges() {
-		ArangoDBSimpleEdgeQuery query;
+		ArangoDBBaseQuery query;
 		try {
-			query = graph.client.getVertexEdges(graph.getRawGraph(), vertex, propertyFilter, labels, direction, limit,
-					count);
+			query = graph.getClient().getVertexEdges(graph.getRawGraph(), vertex, propertyFilter, labels, direction,
+				limit, count);
 			return new ArangoDBEdgeIterable(graph, query);
 		} catch (ArangoDBException e) {
 			return new ArangoDBEdgeIterable(graph, null);
@@ -122,10 +140,10 @@ public class ArangoDBVertexQuery implements VertexQuery {
 	}
 
 	public Iterable<Vertex> vertices() {
-		ArangoDBSimpleVertexQuery query;
+		ArangoDBBaseQuery query;
 		try {
-			query = graph.client.getVertexNeighbors(graph.getRawGraph(), vertex, propertyFilter, labels, direction,
-					limit, count);
+			query = graph.getClient().getVertexNeighbors(graph.getRawGraph(), vertex, propertyFilter, labels,
+				direction, limit, count);
 			return new ArangoDBVertexIterable(graph, query);
 		} catch (ArangoDBException e) {
 			return new ArangoDBVertexIterable(graph, null);
@@ -133,22 +151,17 @@ public class ArangoDBVertexQuery implements VertexQuery {
 	}
 
 	public long count() {
-		this.count = true;
-		long result = 0;
-
-		ArangoDBSimpleEdgeQuery query;
+		ArangoDBBaseQuery query;
 		try {
-			query = graph.client.getVertexEdges(graph.getRawGraph(), vertex, propertyFilter, labels, direction, limit,
-					count);
+			query = graph.getClient().getVertexEdges(graph.getRawGraph(), vertex, propertyFilter, labels, direction,
+				limit, true);
 
-			ArangoDBSimpleEdgeCursor cursor = query.getResult();
-
-			result = cursor.count();
+			return query.getCursorResult().getCount();
 		} catch (ArangoDBException e) {
+			LOG.error("error in AQL query", e);
 		}
 
-		this.count = false;
-		return result;
+		return -1;
 	}
 
 	public Iterator<String> vertexIds() {

@@ -12,7 +12,7 @@ import com.tinkerpop.blueprints.Vertex;
 import com.tinkerpop.blueprints.impls.arangodb.client.ArangoDBException;
 
 /**
- * The arangodb graph factory class
+ * The ArangoDB graph factory class
  * 
  * @author Achim Brandt (http://www.triagens.de)
  * @author Johannes Gocke (http://www.triagens.de)
@@ -22,9 +22,9 @@ import com.tinkerpop.blueprints.impls.arangodb.client.ArangoDBException;
 public class ArangoDBGraphFactory {
 
 	/**
-	 * Static function to create a new arangodb graph.
+	 * Static function to create a new ArangoDB graph.
 	 * 
-	 * Connects to arangodb database on localhost:8529.
+	 * Connects to ArangoDB database on localhost:8529.
 	 * 
 	 * @return the new graph
 	 */
@@ -33,12 +33,12 @@ public class ArangoDBGraphFactory {
 	}
 
 	/**
-	 * Static function to create a new arangodb graph.
+	 * Static function to create a new ArangoDB graph.
 	 * 
 	 * @param host
-	 *            Host name of the arangodb
+	 *            Host name of the ArangoDB
 	 * @param port
-	 *            Port number of arangodb
+	 *            Port number of ArangoDB
 	 * @return the new graph
 	 */
 	public static ArangoDBGraph createArangoDBGraph(String host, int port) {
@@ -53,13 +53,13 @@ public class ArangoDBGraphFactory {
 		}
 
 		try {
-			graph.client.putRequest("_api/collection/" + graph.getRawGraph().getVertexCollection() + "/truncate", null);
+			graph.getClient().truncateCollection(graph.getRawGraph().getVertexCollection());
 		} catch (ArangoDBException e) {
 			System.out.println("Could not truncate vertices collection.");
 		}
 
 		try {
-			graph.client.putRequest("_api/collection/" + graph.getRawGraph().getEdgeCollection() + "/truncate", null);
+			graph.getClient().truncateCollection(graph.getRawGraph().getEdgeCollection());
 		} catch (ArangoDBException e) {
 			System.out.println("Could not truncate edges collection.");
 		}

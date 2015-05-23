@@ -8,8 +8,7 @@
 
 package com.tinkerpop.blueprints.impls.arangodb.client;
 
-import org.codehaus.jettison.json.JSONArray;
-import org.codehaus.jettison.json.JSONObject;
+import com.arangodb.entity.GraphEntity;
 
 /**
  * The arangodb graph class
@@ -20,35 +19,22 @@ import org.codehaus.jettison.json.JSONObject;
  * @author Jan Steemann (http://www.triagens.de)
  */
 
-public class ArangoDBSimpleGraph extends ArangoDBBaseDocument {
+public class ArangoDBSimpleGraph {
+
+	private GraphEntity graphEntity;
+	private String vertexCollectionName;
+	private String edgeCollectionName;
 
 	/**
-	 * the name of the "edges" attribute (this attribute contains the name of
-	 * the edge collection)
-	 */
-	public static final String _EDGES = "edges";
-
-	/**
-	 * the name of the "vertices" attribute (this attribute contains the name of
-	 * the edge collection)
-	 */
-	public static final String _VERTICES = "vertices";
-
-	/**
-	 * Creates a graph by a initial JSON document
+	 * Creates a graph by a ArangoDB GraphEntity
 	 * 
-	 * @param properties
-	 *            The JSON document
-	 * 
-	 * @throws ArangoDBException
-	 *             if an error occurs
+	 * @param graphEntity
+	 *            The ArangoDB GraphEntity
 	 */
-	public ArangoDBSimpleGraph(JSONObject properties) throws ArangoDBException {
-		this.properties = properties;
-		handleNewGraphAPI();
-		checkStdProperties();
-		checkHasProperty(_EDGES);
-		checkHasProperty(_VERTICES);
+	public ArangoDBSimpleGraph(GraphEntity graphEntity, String vertexCollectionName, String edgeCollectionName) {
+		this.graphEntity = graphEntity;
+		this.vertexCollectionName = vertexCollectionName;
+		this.edgeCollectionName = edgeCollectionName;
 	}
 
 	/**
@@ -57,7 +43,7 @@ public class ArangoDBSimpleGraph extends ArangoDBBaseDocument {
 	 * @return the name of the graph
 	 */
 	public String getName() {
-		return getDocumentKey();
+		return graphEntity.getName();
 	}
 
 	/**
@@ -66,7 +52,7 @@ public class ArangoDBSimpleGraph extends ArangoDBBaseDocument {
 	 * @return the name of the edge collection
 	 */
 	public String getEdgeCollection() {
-		return getStringProperty(_EDGES);
+		return edgeCollectionName;
 	}
 
 	/**
@@ -74,35 +60,17 @@ public class ArangoDBSimpleGraph extends ArangoDBBaseDocument {
 	 * 
 	 * @return the name of the vertex collection
 	 */
-
 	public String getVertexCollection() {
-		return getStringProperty(_VERTICES);
+		return vertexCollectionName;
 	}
 
 	/**
-	 * handle new graph document format.
+	 * Returns the GraphEntity object
+	 * 
+	 * @return the GraphEntity object
 	 */
-	private void handleNewGraphAPI() {
-		if (properties.has("edgeDefinitions")) {
-			try {
-				JSONArray jsonArray = properties.getJSONArray("edgeDefinitions");
-				if (jsonArray.length() > 0) {
-					JSONObject jsonObject = jsonArray.getJSONObject(0);
-					if (jsonObject.has("collection")) {
-						properties.put(_EDGES, jsonObject.getString("collection"));
-					}
-					if (jsonObject.has("from")) {
-						JSONArray jsonArray2 = jsonObject.getJSONArray("from");
-						if (jsonArray2.length() > 0) {
-							properties.put(_VERTICES, jsonArray2.getString(0));
-						}
-					}
-
-				}
-			} catch (Exception e) {
-			}
-			properties.remove("edgeDefinitions");
-		}
+	public GraphEntity getGraphEntity() {
+		return graphEntity;
 	}
 
 }

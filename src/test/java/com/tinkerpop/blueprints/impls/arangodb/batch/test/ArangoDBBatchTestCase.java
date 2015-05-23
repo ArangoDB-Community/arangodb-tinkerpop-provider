@@ -2,20 +2,19 @@ package com.tinkerpop.blueprints.impls.arangodb.batch.test;
 
 import java.util.Iterator;
 
-import org.codehaus.jettison.json.JSONObject;
 import org.junit.After;
 import org.junit.Before;
 
-import com.tinkerpop.blueprints.BaseTest;
+import com.arangodb.ArangoException;
+import com.arangodb.entity.GraphEntity;
 import com.tinkerpop.blueprints.Element;
 import com.tinkerpop.blueprints.impls.arangodb.ArangoDBEdge;
 import com.tinkerpop.blueprints.impls.arangodb.ArangoDBGraph;
 import com.tinkerpop.blueprints.impls.arangodb.ArangoDBVertex;
 import com.tinkerpop.blueprints.impls.arangodb.client.ArangoDBConfiguration;
-import com.tinkerpop.blueprints.impls.arangodb.client.ArangoDBException;
 import com.tinkerpop.blueprints.impls.arangodb.client.ArangoDBSimpleGraphClient;
 
-public abstract class ArangoDBBatchTestCase extends BaseTest {
+public abstract class ArangoDBBatchTestCase {
 
 	/**
 	 * the client
@@ -67,8 +66,8 @@ public abstract class ArangoDBBatchTestCase extends BaseTest {
 	 */
 	protected void deleteGraph(String name) {
 		try {
-			tmpClient.deleteRequest("_api/document/_graphs/" + name);
-		} catch (ArangoDBException e) {
+			tmpClient.getDriver().deleteGraph(name);
+		} catch (ArangoException e) {
 		}
 	}
 
@@ -81,8 +80,8 @@ public abstract class ArangoDBBatchTestCase extends BaseTest {
 	 */
 	protected boolean hasGraph(String name) {
 		try {
-			JSONObject json = tmpClient.getRequest("_api/document/_graphs/" + name);
-			if (json != null && !json.has("error")) {
+			GraphEntity graph = tmpClient.getDriver().getGraph(name);
+			if (graph != null) {
 				return true;
 			}
 		} catch (Exception e) {
@@ -98,8 +97,8 @@ public abstract class ArangoDBBatchTestCase extends BaseTest {
 	 */
 	protected void deleteCollection(String name) {
 		try {
-			tmpClient.deleteRequest("_api/collection/" + name);
-		} catch (ArangoDBException e) {
+			tmpClient.getDriver().deleteCollection(name);
+		} catch (ArangoException e) {
 		}
 	}
 
@@ -130,7 +129,7 @@ public abstract class ArangoDBBatchTestCase extends BaseTest {
 			}
 		} else if (element.getClass().equals(ArangoDBGraph.class)) {
 			ArangoDBGraph a = (ArangoDBGraph) element;
-			if (a.getRawGraph().getProperty("_id") != null) {
+			if (a.getRawGraph().getGraphEntity().getDocumentKey() != null) {
 				return true;
 			}
 		}
@@ -168,11 +167,10 @@ public abstract class ArangoDBBatchTestCase extends BaseTest {
 				return true;
 			}
 		} else if (element.getClass().equals(ArangoDBGraph.class)) {
-			ArangoDBGraph a = (ArangoDBGraph) element;
-
-			if (expects.equals(a.getProperty(key))) {
-				return true;
-			}
+			// ArangoDBGraph a = (ArangoDBGraph) element;
+			// if (expects.equals(a.getProperty(key))) {
+			// return true;
+			// }
 		}
 
 		return false;
@@ -204,10 +202,8 @@ public abstract class ArangoDBBatchTestCase extends BaseTest {
 	}
 
 	@Before
-	protected void setUp() {
-		configuration = new ArangoDBConfiguration();
-		configuration.setHost(host);
-		configuration.setPort(port);
+	public void setUp() {
+		configuration = new ArangoDBConfiguration(host, port);
 
 		tmpClient = new ArangoDBSimpleGraphClient(configuration);
 
@@ -220,7 +216,7 @@ public abstract class ArangoDBBatchTestCase extends BaseTest {
 	}
 
 	@After
-	protected void tearDown() {
+	public void tearDown() {
 	}
 
 }
