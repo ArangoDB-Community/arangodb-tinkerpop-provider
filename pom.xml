@@ -4,7 +4,7 @@
 
 	<groupId>com.arangodb</groupId>
 	<artifactId>blueprints-arangodb-graph</artifactId>
-	<version>1.0.10-SNAPSHOT</version>
+	<version>1.0.10</version>
 	<name>Blueprints-ArangoDB-Graph</name>
 	<description>An implementation of the Blueprints API for ArangoDB</description>
 
