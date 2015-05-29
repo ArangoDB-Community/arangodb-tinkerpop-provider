@@ -35,6 +35,7 @@ import com.tinkerpop.blueprints.KeyIndexableGraph;
 import com.tinkerpop.blueprints.MetaGraph;
 import com.tinkerpop.blueprints.Parameter;
 import com.tinkerpop.blueprints.Vertex;
+import com.tinkerpop.blueprints.util.ExceptionFactory;
 import com.tinkerpop.blueprints.util.StringFactory;
 
 /**
@@ -84,6 +85,7 @@ public class ArangoDBGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>, Key
 		FEATURES.supportsMapProperty = true;
 		FEATURES.supportsStringProperty = true;
 		FEATURES.supportsThreadedTransactions = false;
+		FEATURES.supportsThreadIsolatedTransactions = false;
 	}
 
 	/**
@@ -220,6 +222,11 @@ public class ArangoDBGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>, Key
 	}
 
 	public Edge addEdge(Object id, Vertex outVertex, Vertex inVertex, String label) {
+
+		if (label == null) {
+			throw ExceptionFactory.edgeLabelCanNotBeNull();
+		}
+
 		return ArangoDBEdge.create(this, id, outVertex, inVertex, label);
 	}
 

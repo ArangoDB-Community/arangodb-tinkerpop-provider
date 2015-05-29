@@ -10,6 +10,8 @@ package com.arangodb.blueprints.client;
 
 import java.util.Map;
 
+import com.tinkerpop.blueprints.util.StringFactory;
+
 /**
  * The ArangoDB simple edge class
  * 
@@ -29,11 +31,6 @@ public class ArangoDBSimpleEdge extends ArangoDBBaseDocument {
 	 * the name of the "from" attribute
 	 */
 	public static final String _FROM = "_from";
-
-	/**
-	 * the name of the "label" attribute
-	 */
-	public static final String _LABEL = "$label";
 
 	/**
 	 * Creates a new edge by a JSON document
@@ -83,7 +80,7 @@ public class ArangoDBSimpleEdge extends ArangoDBBaseDocument {
 	 * @return the edge label
 	 */
 	public String getLabel() {
-		return getStringProperty(_LABEL);
+		return getStringProperty(StringFactory.LABEL);
 	}
 
 }

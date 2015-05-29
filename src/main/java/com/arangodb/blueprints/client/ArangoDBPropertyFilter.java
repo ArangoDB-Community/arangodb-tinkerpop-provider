@@ -9,9 +9,11 @@
 package com.arangodb.blueprints.client;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang.StringUtils;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
@@ -28,14 +30,7 @@ import org.codehaus.jettison.json.JSONObject;
 public class ArangoDBPropertyFilter {
 
 	public enum Compare {
-		EQUAL,
-		NOT_EQUAL,
-		GREATER_THAN,
-		GREATER_THAN_EQUAL,
-		LESS_THAN,
-		LESS_THAN_EQUAL,
-		HAS,
-		HAS_NOT
+		EQUAL, NOT_EQUAL, GREATER_THAN, GREATER_THAN_EQUAL, LESS_THAN, LESS_THAN_EQUAL, HAS, HAS_NOT, IN, NOT_IN
 	};
 
 	private List<PropertyContainer> propertyContainers = new ArrayList<PropertyContainer>();
@@ -146,9 +141,36 @@ public class ArangoDBPropertyFilter {
 			case HAS_NOT:
 				filter.add(prefix + container.key + " == null");
 				break;
+			case IN:
+				filter.add(prefix + container.key + " IN [" + addArray(bindVars, "property" + count, container.value)
+						+ "]");
+				break;
+			case NOT_IN:
+				filter.add(prefix + container.key + " NOT IN ["
+						+ addArray(bindVars, "property" + count, container.value) + "]");
+				break;
 			}
 			count++;
 		}
+	}
+
+	private String addArray(Map<String, Object> bindVars, String propertyName, Object value) {
+		int c = 0;
+		List<String> elements = new ArrayList<String>();
+		if (value instanceof Iterable) {
+			Iterable<?> iterable = (Iterable<?>) value;
+			Iterator<?> iter = iterable.iterator();
+			while (iter.hasNext()) {
+				String prop = propertyName + "_" + c++;
+				elements.add("@" + prop);
+				bindVars.put(prop, iter.next());
+			}
+		} else {
+			elements.add("@" + propertyName);
+			bindVars.put(propertyName, value);
+		}
+
+		return StringUtils.join(elements, ", ");
 	}
 
 	private String escapeKey(String key) {

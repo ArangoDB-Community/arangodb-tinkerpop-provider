@@ -1,5 +1,6 @@
 package com.arangodb.blueprints.test;
 
+import java.util.Arrays;
 import java.util.Iterator;
 
 import org.junit.After;
@@ -8,6 +9,7 @@ import org.junit.Test;
 
 import com.arangodb.blueprints.ArangoDBGraph;
 import com.arangodb.blueprints.ArangoDBGraphException;
+import com.tinkerpop.blueprints.Contains;
 import com.tinkerpop.blueprints.Direction;
 import com.tinkerpop.blueprints.Edge;
 import com.tinkerpop.blueprints.Vertex;
@@ -114,6 +116,7 @@ public class ArangoQueryTest extends ArangoDBTestCase {
 		assertEquals(2, countResults(q.edges()));
 	}
 
+	@SuppressWarnings("unchecked")
 	@Test
 	public void testVertexQueryIDs() {
 		int num = 7;
@@ -151,6 +154,26 @@ public class ArangoQueryTest extends ArangoDBTestCase {
 		q.has("intValue1");
 
 		assertEquals(1, countResults((Iterator<String>) q.vertexIds()));
+	}
+
+	@SuppressWarnings("unchecked")
+	@Test
+	public void testVertexQueryIN() {
+		int num = 7;
+
+		Vertex a = graph.addVertex("Vertex_a");
+		Vertex b = graph.addVertex("Vertex_b");
+
+		for (int i = 0; i < num; ++i) {
+			Edge e = graph.addEdge("Edge_" + i, a, b, "label " + i);
+			e.setProperty("intValue" + i, i);
+		}
+
+		VertexQuery q = a.query();
+		q.has("label", Contains.IN, Arrays.asList("label 0", "label 1", "unknown"));
+
+		int countResults = countResults((Iterator<String>) q.vertexIds());
+		assertEquals(2, countResults);
 	}
 
 	private int countResults(Iterable<?> iterable) {

@@ -15,7 +15,6 @@ import org.apache.log4j.Logger;
 
 import com.arangodb.blueprints.client.ArangoDBBaseQuery;
 import com.arangodb.blueprints.client.ArangoDBException;
-import com.arangodb.blueprints.client.ArangoDBPropertyFilter;
 import com.tinkerpop.blueprints.Edge;
 import com.tinkerpop.blueprints.GraphQuery;
 import com.tinkerpop.blueprints.Predicate;
@@ -29,50 +28,25 @@ import com.tinkerpop.blueprints.Vertex;
  * @author Guido Schwab (http://www.triagens.de)
  */
 
-public class ArangoDBGraphQuery implements GraphQuery {
+public class ArangoDBGraphQuery extends ArangoDBQuery implements GraphQuery {
 
 	/**
 	 * the logger
 	 */
 	private static Logger LOG = Logger.getLogger(ArangoDBVertexIterable.class);
 
-	private final ArangoDBGraph graph;
-	private Long limit = null;
-	private ArangoDBPropertyFilter propertyFilter = new ArangoDBPropertyFilter();
-	private boolean count;
-
 	/**
-	 * Creates a graph query for a arangodb graph
+	 * Creates a graph query for a ArangoDB graph
 	 * 
 	 * @param graph
-	 *            the arangodb graph
+	 *            the ArangoDB graph
 	 */
 	public ArangoDBGraphQuery(final ArangoDBGraph graph) {
-		this.graph = graph;
-		this.count = false;
+		super(graph);
 	}
 
-	public <T extends Comparable<T>> GraphQuery has(final String key, final T value, final Compare compare) {
-		switch (compare) {
-		case EQUAL:
-			propertyFilter.has(key, value, ArangoDBPropertyFilter.Compare.EQUAL);
-			break;
-		case NOT_EQUAL:
-			propertyFilter.has(key, value, ArangoDBPropertyFilter.Compare.NOT_EQUAL);
-			break;
-		case GREATER_THAN:
-			propertyFilter.has(key, value, ArangoDBPropertyFilter.Compare.GREATER_THAN);
-			break;
-		case LESS_THAN:
-			propertyFilter.has(key, value, ArangoDBPropertyFilter.Compare.LESS_THAN);
-			break;
-		case GREATER_THAN_EQUAL:
-			propertyFilter.has(key, value, ArangoDBPropertyFilter.Compare.GREATER_THAN_EQUAL);
-			break;
-		case LESS_THAN_EQUAL:
-			propertyFilter.has(key, value, ArangoDBPropertyFilter.Compare.LESS_THAN_EQUAL);
-			break;
-		}
+	public <T extends Comparable<T>> ArangoDBGraphQuery has(final String key, final T value, final Compare compare) {
+		super.has(key, value, compare);
 		return this;
 	}
 
@@ -103,7 +77,6 @@ public class ArangoDBGraphQuery implements GraphQuery {
 	 * @return number of elements
 	 */
 	public long count() {
-
 		ArangoDBBaseQuery query;
 		try {
 			query = graph.getClient().getGraphEdges(graph.getRawGraph(), propertyFilter, new Vector<String>(), limit,
@@ -153,64 +126,38 @@ public class ArangoDBGraphQuery implements GraphQuery {
 		};
 	}
 
-	public GraphQuery has(String key) {
-		propertyFilter.has(key, null, ArangoDBPropertyFilter.Compare.HAS);
+	public ArangoDBGraphQuery has(String key) {
+		super.has(key);
 		return this;
 	}
 
-	public GraphQuery hasNot(String key) {
-		propertyFilter.has(key, null, ArangoDBPropertyFilter.Compare.HAS_NOT);
+	public ArangoDBGraphQuery hasNot(String key) {
+		super.hasNot(key);
 		return this;
 	}
 
-	public GraphQuery has(String key, Object value) {
-		propertyFilter.has(key, value, ArangoDBPropertyFilter.Compare.EQUAL);
+	public ArangoDBGraphQuery has(String key, Object value) {
+		super.has(key, value);
 		return this;
 	}
 
-	public GraphQuery hasNot(String key, Object value) {
-		propertyFilter.has(key, value, ArangoDBPropertyFilter.Compare.NOT_EQUAL);
+	public ArangoDBGraphQuery hasNot(String key, Object value) {
+		super.hasNot(key, value);
 		return this;
 	}
 
-	public GraphQuery has(String key, Predicate prdct, Object value) {
-		if (prdct instanceof com.tinkerpop.blueprints.Compare) {
-			com.tinkerpop.blueprints.Compare compare = (com.tinkerpop.blueprints.Compare) prdct;
-
-			switch (compare) {
-			case EQUAL:
-				propertyFilter.has(key, value, ArangoDBPropertyFilter.Compare.EQUAL);
-				break;
-			case NOT_EQUAL:
-				propertyFilter.has(key, value, ArangoDBPropertyFilter.Compare.NOT_EQUAL);
-				break;
-			case GREATER_THAN:
-				propertyFilter.has(key, value, ArangoDBPropertyFilter.Compare.GREATER_THAN);
-				break;
-			case LESS_THAN:
-				propertyFilter.has(key, value, ArangoDBPropertyFilter.Compare.LESS_THAN);
-				break;
-			case GREATER_THAN_EQUAL:
-				propertyFilter.has(key, value, ArangoDBPropertyFilter.Compare.GREATER_THAN_EQUAL);
-				break;
-			case LESS_THAN_EQUAL:
-				propertyFilter.has(key, value, ArangoDBPropertyFilter.Compare.LESS_THAN_EQUAL);
-				break;
-			}
-		} else if (prdct instanceof com.tinkerpop.blueprints.Contains) {
-
-		}
+	public ArangoDBGraphQuery has(String key, Predicate prdct, Object value) {
+		super.has(key, prdct, value);
 		return this;
 	}
 
-	public <T extends Comparable<?>> GraphQuery interval(String key, T startValue, T endValue) {
-		propertyFilter.has(key, startValue, ArangoDBPropertyFilter.Compare.GREATER_THAN_EQUAL);
-		propertyFilter.has(key, endValue, ArangoDBPropertyFilter.Compare.LESS_THAN);
+	public <T extends Comparable<?>> ArangoDBGraphQuery interval(String key, T startValue, T endValue) {
+		super.interval(key, startValue, endValue);
 		return this;
 	}
 
-	public GraphQuery limit(int limit) {
-		this.limit = new Long(limit);
+	public ArangoDBGraphQuery limit(int limit) {
+		super.limit(limit);
 		return this;
 	}
 

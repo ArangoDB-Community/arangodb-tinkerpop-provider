@@ -150,6 +150,11 @@ public class ArangoDBVertex extends ArangoDBElement implements Vertex {
 	}
 
 	public Edge addEdge(String label, Vertex inVertex) {
+
+		if (label == null) {
+			throw ExceptionFactory.edgeLabelCanNotBeNull();
+		}
+
 		return ArangoDBEdge.create(this.graph, null, this, inVertex, label);
 	}
 

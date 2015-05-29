@@ -36,6 +36,7 @@ public class ArangoVertexTest extends ArangoDBTestCase {
 
 		Vertex b = graph.getVertex(id);
 		assertNotNull(b);
+		assertEquals(a, b);
 
 		a = graph.getVertex(id);
 		boolean eq = b.equals(a);

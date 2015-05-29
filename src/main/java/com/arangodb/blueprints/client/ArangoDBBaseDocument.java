@@ -8,11 +8,11 @@
 
 package com.arangodb.blueprints.client;
 
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -73,7 +73,7 @@ abstract public class ArangoDBBaseDocument {
 	 * Sets the document status to "deleted"
 	 */
 	public void setDeleted() {
-		properties = new HashMap<String, Object>();
+		properties = new TreeMap<String, Object>();
 		deleted = true;
 	}
 
@@ -97,9 +97,9 @@ abstract public class ArangoDBBaseDocument {
 	 */
 	public void setProperties(Map<String, Object> properties) throws ArangoDBException {
 		if (properties != null) {
-			this.properties = properties;
+			this.properties = new TreeMap<String, Object>(properties);
 		} else {
-			this.properties = new HashMap<String, Object>();
+			this.properties = new TreeMap<String, Object>();
 		}
 		checkStdProperties();
 	}
@@ -160,25 +160,30 @@ abstract public class ArangoDBBaseDocument {
 	public static Object toDocumentValue(Object value) throws ArangoDBException {
 		if (value instanceof Boolean) {
 			return value;
-		} else if (value instanceof Integer || value instanceof Long) {
-			return value;
+		} else if (value instanceof Integer) {
+			return new Double(((Integer) value).doubleValue());
+		} else if (value instanceof Long) {
+			return new Double(((Long) value).doubleValue());
+		} else if (value instanceof Float) {
+			return new Double(((Float) value).doubleValue());
 		} else if (value instanceof String) {
 			return value;
-		} else if (value instanceof Double || value instanceof Float) {
+		} else if (value instanceof Double) {
 			return value;
 		} else if (value instanceof Map) {
+			Map<String, Object> result = new TreeMap<String, Object>();
 			Map<?, ?> m = (Map<?, ?>) value;
 
 			for (Map.Entry<?, ?> entry : m.entrySet()) {
 				if (entry.getKey() instanceof String) {
-					toDocumentValue(entry.getValue());
+					result.put((String) entry.getKey(), toDocumentValue(entry.getValue()));
 				} else {
 					throw new ArangoDBException("a key of a Map has to be a String",
 							ErrorNums.ERROR_GRAPH_INVALID_PARAMETER);
 				}
 			}
 
-			return value;
+			return result;
 
 		} else if (value instanceof List) {
 			List<?> l = (List<?>) value;
@@ -298,7 +303,7 @@ abstract public class ArangoDBBaseDocument {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + (deleted ? 1231 : 1237);
-		result = prime * result + ((properties == null) ? 0 : properties.hashCode());
+		result = prime * result + ((properties == null) ? 0 : serializeProperties(properties).hashCode());
 		return result;
 	}
 
@@ -316,8 +321,9 @@ abstract public class ArangoDBBaseDocument {
 		if (properties == null) {
 			if (other.properties != null)
 				return false;
-		} else if (!serializeProperties(properties).equals(serializeProperties(other.properties)))
+		} else if (!serializeProperties(properties).equals(serializeProperties(other.properties))) {
 			return false;
+		}
 		return true;
 	}
 

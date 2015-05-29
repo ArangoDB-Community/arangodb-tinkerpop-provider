@@ -117,7 +117,7 @@ public class ArangoDBEdge extends ArangoDBElement implements Edge {
 	}
 
 	public String getLabel() {
-		Object l = document.getProperty(ArangoDBSimpleEdge._LABEL);
+		Object l = document.getProperty(StringFactory.LABEL);
 		if (l != null) {
 			return l.toString();
 		}

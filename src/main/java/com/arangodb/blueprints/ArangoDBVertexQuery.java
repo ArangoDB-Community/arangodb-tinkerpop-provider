@@ -8,8 +8,9 @@
 
 package com.arangodb.blueprints;
 
+import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.Vector;
+import java.util.List;
 
 import org.apache.log4j.Logger;
 
@@ -31,20 +32,16 @@ import com.tinkerpop.blueprints.VertexQuery;
  * @author Guido Schwab (http://www.triagens.de)
  */
 
-public class ArangoDBVertexQuery implements VertexQuery {
+public class ArangoDBVertexQuery extends ArangoDBQuery implements VertexQuery {
 
 	/**
 	 * the logger
 	 */
 	private static Logger LOG = Logger.getLogger(ArangoDBVertexIterable.class);
 
-	private final ArangoDBGraph graph;
 	private final ArangoDBSimpleVertex vertex;
-	private ArangoDBBaseQuery.Direction direction = ArangoDBBaseQuery.Direction.ALL;
-	private Vector<String> labels = null;
-	private Long limit = null;
-	private ArangoDBPropertyFilter propertyFilter = new ArangoDBPropertyFilter();
-	private boolean count;
+	private ArangoDBBaseQuery.Direction direction;
+	private List<String> labels = null;
 
 	/**
 	 * Creates a arangodb vertex query for a graph and a vertex
@@ -55,14 +52,14 @@ public class ArangoDBVertexQuery implements VertexQuery {
 	 *            the vertex
 	 */
 	public ArangoDBVertexQuery(final ArangoDBGraph graph, final ArangoDBVertex vertex) {
-		this.graph = graph;
+		super(graph);
 		this.vertex = vertex.getRawVertex();
-		this.labels = new Vector<String>();
-		this.count = false;
+		this.direction = ArangoDBBaseQuery.Direction.ALL;
+		this.labels = new ArrayList<String>();
 	}
 
-	public VertexQuery has(String key, Object value) {
-		propertyFilter.has(key, value, ArangoDBPropertyFilter.Compare.EQUAL);
+	public ArangoDBVertexQuery has(String key, Object value) {
+		super.has(key, value);
 		return this;
 	}
 
@@ -80,31 +77,12 @@ public class ArangoDBVertexQuery implements VertexQuery {
 	 * @deprecated
 	 */
 	@Deprecated
-	public <T extends Comparable<T>> VertexQuery has(String key, T value, Compare compare) {
-		switch (compare) {
-		case EQUAL:
-			propertyFilter.has(key, value, ArangoDBPropertyFilter.Compare.EQUAL);
-			break;
-		case NOT_EQUAL:
-			propertyFilter.has(key, value, ArangoDBPropertyFilter.Compare.NOT_EQUAL);
-			break;
-		case GREATER_THAN:
-			propertyFilter.has(key, value, ArangoDBPropertyFilter.Compare.GREATER_THAN);
-			break;
-		case LESS_THAN:
-			propertyFilter.has(key, value, ArangoDBPropertyFilter.Compare.LESS_THAN);
-			break;
-		case GREATER_THAN_EQUAL:
-			propertyFilter.has(key, value, ArangoDBPropertyFilter.Compare.GREATER_THAN_EQUAL);
-			break;
-		case LESS_THAN_EQUAL:
-			propertyFilter.has(key, value, ArangoDBPropertyFilter.Compare.LESS_THAN_EQUAL);
-			break;
-		}
+	public <T extends Comparable<T>> ArangoDBVertexQuery has(String key, T value, Compare compare) {
+		super.has(key, value, compare);
 		return this;
 	}
 
-	public VertexQuery direction(final Direction direction) {
+	public ArangoDBVertexQuery direction(final Direction direction) {
 		if (direction == Direction.IN) {
 			this.direction = ArangoDBBaseQuery.Direction.IN;
 		} else if (direction == Direction.OUT) {
@@ -115,11 +93,11 @@ public class ArangoDBVertexQuery implements VertexQuery {
 		return this;
 	}
 
-	public VertexQuery labels(final String... labels) {
+	public ArangoDBVertexQuery labels(final String... labels) {
 		if (labels == null) {
 			return this;
 		}
-		this.labels = new Vector<String>();
+		this.labels = new ArrayList<String>();
 
 		for (String label : labels) {
 			this.labels.add(label);
@@ -195,59 +173,34 @@ public class ArangoDBVertexQuery implements VertexQuery {
 		};
 	}
 
-	public VertexQuery has(String key) {
-		propertyFilter.has(key, null, ArangoDBPropertyFilter.Compare.HAS);
+	public ArangoDBVertexQuery has(String key) {
+		super.has(key);
 		return this;
 	}
 
-	public VertexQuery hasNot(String key) {
+	public ArangoDBVertexQuery hasNot(String key) {
+		super.hasNot(key);
 		propertyFilter.has(key, null, ArangoDBPropertyFilter.Compare.HAS_NOT);
 		return this;
 	}
 
-	public VertexQuery hasNot(String key, Object value) {
-		propertyFilter.has(key, value, ArangoDBPropertyFilter.Compare.NOT_EQUAL);
+	public ArangoDBVertexQuery hasNot(String key, Object value) {
+		super.hasNot(key, value);
 		return this;
 	}
 
-	public VertexQuery has(String key, Predicate prdct, Object value) {
-		if (prdct instanceof com.tinkerpop.blueprints.Compare) {
-			com.tinkerpop.blueprints.Compare compare = (com.tinkerpop.blueprints.Compare) prdct;
-
-			switch (compare) {
-			case EQUAL:
-				propertyFilter.has(key, value, ArangoDBPropertyFilter.Compare.EQUAL);
-				break;
-			case NOT_EQUAL:
-				propertyFilter.has(key, value, ArangoDBPropertyFilter.Compare.NOT_EQUAL);
-				break;
-			case GREATER_THAN:
-				propertyFilter.has(key, value, ArangoDBPropertyFilter.Compare.GREATER_THAN);
-				break;
-			case LESS_THAN:
-				propertyFilter.has(key, value, ArangoDBPropertyFilter.Compare.LESS_THAN);
-				break;
-			case GREATER_THAN_EQUAL:
-				propertyFilter.has(key, value, ArangoDBPropertyFilter.Compare.GREATER_THAN_EQUAL);
-				break;
-			case LESS_THAN_EQUAL:
-				propertyFilter.has(key, value, ArangoDBPropertyFilter.Compare.LESS_THAN_EQUAL);
-				break;
-			}
-		} else if (prdct instanceof com.tinkerpop.blueprints.Contains) {
-
-		}
+	public ArangoDBVertexQuery has(String key, Predicate prdct, Object value) {
+		super.has(key, prdct, value);
 		return this;
 	}
 
-	public <T extends Comparable<?>> VertexQuery interval(String key, T startValue, T endValue) {
-		propertyFilter.has(key, startValue, ArangoDBPropertyFilter.Compare.GREATER_THAN_EQUAL);
-		propertyFilter.has(key, endValue, ArangoDBPropertyFilter.Compare.LESS_THAN);
+	public <T extends Comparable<?>> ArangoDBVertexQuery interval(String key, T startValue, T endValue) {
+		super.interval(key, startValue, endValue);
 		return this;
 	}
 
-	public VertexQuery limit(int limit) {
-		this.limit = new Long(limit);
+	public ArangoDBVertexQuery limit(int limit) {
+		super.limit(limit);
 		return this;
 	}
 

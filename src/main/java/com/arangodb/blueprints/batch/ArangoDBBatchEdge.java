@@ -56,7 +56,7 @@ public class ArangoDBBatchEdge extends ArangoDBBatchElement implements Edge {
 			properties.put(ArangoDBBaseDocument._ID, "");
 			properties.put(ArangoDBBaseDocument._KEY, key);
 			if (label != null) {
-				properties.put(ArangoDBSimpleEdge._LABEL, label);
+				properties.put(StringFactory.LABEL, label);
 			}
 
 			properties.put(ArangoDBSimpleEdge._FROM, graph.getRawGraph().getVertexCollection() + "/"
@@ -130,7 +130,7 @@ public class ArangoDBBatchEdge extends ArangoDBBatchElement implements Edge {
 	}
 
 	public String getLabel() {
-		Object l = document.getProperty(ArangoDBSimpleEdge._LABEL);
+		Object l = document.getProperty(StringFactory.LABEL);
 		if (l != null) {
 			return l.toString();
 		}

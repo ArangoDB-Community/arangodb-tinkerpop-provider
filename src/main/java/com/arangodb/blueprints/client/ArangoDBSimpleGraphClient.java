@@ -30,6 +30,7 @@ import com.arangodb.entity.IndexType;
 import com.arangodb.entity.IndexesEntity;
 import com.arangodb.entity.marker.VertexEntity;
 import com.arangodb.util.AqlQueryOptions;
+import com.tinkerpop.blueprints.util.StringFactory;
 
 /**
  * The arangodb graph client class (handles the HTTP connection to arangodb)
@@ -190,7 +191,8 @@ public class ArangoDBSimpleGraphClient {
 				graph.getVertexCollection(), properties, false);
 			properties.put(ArangoDBSimpleVertex._KEY, vertexEntity.getDocumentKey());
 			properties.put(ArangoDBSimpleVertex._ID, vertexEntity.getDocumentHandle());
-			properties.put(ArangoDBSimpleVertex._REV, vertexEntity.getDocumentRevision());
+			Long l = vertexEntity.getDocumentRevision();
+			properties.put(ArangoDBSimpleVertex._REV, l.toString());
 		} catch (ArangoException e) {
 			throw new ArangoDBException(e);
 		}
@@ -251,9 +253,8 @@ public class ArangoDBSimpleGraphClient {
 			throw new ArangoDBException(e);
 		}
 
-		vertex.getProperties().put(ArangoDBSimpleVertex._ID, vertexEntity.getDocumentHandle());
-		vertex.getProperties().put(ArangoDBSimpleVertex._KEY, vertexEntity.getDocumentKey());
-		vertex.getProperties().put(ArangoDBSimpleVertex._REV, vertexEntity.getDocumentRevision());
+		Long l = vertexEntity.getDocumentRevision();
+		vertex.getProperties().put(ArangoDBSimpleVertex._REV, l.toString());
 		return vertex;
 	}
 
@@ -327,9 +328,9 @@ public class ArangoDBSimpleGraphClient {
 			properties.remove(ArangoDBSimpleEdge._KEY);
 		}
 		if (label != null) {
-			properties.put(ArangoDBSimpleEdge._LABEL, label);
-		} else if (properties.containsKey(ArangoDBSimpleEdge._LABEL)) {
-			properties.remove(ArangoDBSimpleEdge._LABEL);
+			properties.put(StringFactory.LABEL, label);
+		} else if (properties.containsKey(StringFactory.LABEL)) {
+			properties.remove(StringFactory.LABEL);
 		}
 
 		properties.put(ArangoDBSimpleEdge._FROM, from.getDocumentId());
@@ -345,7 +346,8 @@ public class ArangoDBSimpleGraphClient {
 
 		properties.put(ArangoDBSimpleEdge._ID, edgeEntity.getDocumentHandle());
 		properties.put(ArangoDBSimpleEdge._KEY, edgeEntity.getDocumentKey());
-		properties.put(ArangoDBSimpleEdge._REV, edgeEntity.getDocumentRevision());
+		Long l = edgeEntity.getDocumentRevision();
+		properties.put(ArangoDBSimpleVertex._REV, l.toString());
 
 		return new ArangoDBSimpleEdge(properties);
 	}
@@ -401,7 +403,8 @@ public class ArangoDBSimpleGraphClient {
 		} catch (ArangoException e) {
 			throw new ArangoDBException(e);
 		}
-		edge.getProperties().put(ArangoDBSimpleEdge._REV, edgeEntity.getDocumentRevision());
+		Long l = edgeEntity.getDocumentRevision();
+		edge.getProperties().put(ArangoDBSimpleVertex._REV, l.toString());
 
 		return edge;
 	}

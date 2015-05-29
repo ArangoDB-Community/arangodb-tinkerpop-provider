@@ -73,9 +73,7 @@ public class ArangoDBBaseQuery {
 	};
 
 	public enum QueryType {
-		GRAPH_VERTICES,
-		GRAPH_EDGES,
-		GRAPH_NEIGHBORS
+		GRAPH_VERTICES, GRAPH_EDGES, GRAPH_NEIGHBORS
 	}
 
 	/**
@@ -158,7 +156,7 @@ public class ArangoDBBaseQuery {
 			List<String> orFilter = new ArrayList<String>();
 			int count = 0;
 			for (String label : labelsFilter) {
-				orFilter.add(prefix + "`$label` == @label" + count);
+				orFilter.add(prefix + "label == @label" + count);
 				bindVars.put("label" + count++, label);
 			}
 			if (CollectionUtils.isNotEmpty(orFilter)) {
