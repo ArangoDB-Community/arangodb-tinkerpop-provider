@@ -10,7 +10,6 @@ import com.arangodb.blueprints.client.ArangoDBException;
 import com.arangodb.blueprints.client.ArangoDBSimpleGraphClient;
 import com.tinkerpop.blueprints.EdgeTestSuite;
 import com.tinkerpop.blueprints.Graph;
-import com.tinkerpop.blueprints.GraphTestSuite;
 import com.tinkerpop.blueprints.TestSuite;
 import com.tinkerpop.blueprints.VertexQueryTestSuite;
 import com.tinkerpop.blueprints.impls.GraphTest;
@@ -64,11 +63,11 @@ public class BenchmarkTest extends GraphTest {
 		printTestPerformance("EdgeTestSuite", this.stopWatch());
 	}
 
-	public void testGraphTestSuite() throws Exception {
-		this.stopWatch();
-		doTestSuite(new GraphTestSuite(this));
-		printTestPerformance("GraphTestSuite", this.stopWatch());
-	}
+	// public void testGraphTestSuite() throws Exception {
+	// this.stopWatch();
+	// doTestSuite(new GraphTestSuite(this));
+	// printTestPerformance("GraphTestSuite", this.stopWatch());
+	// }
 
 	public void testVertexQueryTestSuite() throws Exception {
 		this.stopWatch();
