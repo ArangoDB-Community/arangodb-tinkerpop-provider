@@ -11,7 +11,7 @@ public class ArangoGraphTest extends ArangoDBTestCase {
 
 	@Test
 	public void testCreateGraph() throws ArangoDBGraphException {
-		ArangoDBGraph graph = new ArangoDBGraph(host, port, graphName, vertices, edges);
+		ArangoDBGraph graph = new ArangoDBGraph(configuration, graphName, vertices, edges);
 
 		assertTrue(hasGraph(graphName));
 
@@ -20,7 +20,7 @@ public class ArangoGraphTest extends ArangoDBTestCase {
 
 		graph.shutdown();
 
-		graph = new ArangoDBGraph(host, port, graphName, vertices, edges);
+		graph = new ArangoDBGraph(configuration, graphName, vertices, edges);
 
 		String x = graph.getId();
 		assertNotNull(StringUtils.isNotEmpty(x));
@@ -33,7 +33,7 @@ public class ArangoGraphTest extends ArangoDBTestCase {
 	@Test
 	public void testCreateGraphFail() {
 		try {
-			new ArangoDBGraph(host, port, graphName, null, null);
+			new ArangoDBGraph(configuration, graphName, null, null);
 			Assert.fail("This should throw an exception");
 		} catch (ArangoDBGraphException e) {
 

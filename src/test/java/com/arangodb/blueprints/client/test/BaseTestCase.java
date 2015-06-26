@@ -16,6 +16,8 @@ public abstract class BaseTestCase {
 
 	@Before
 	public void setUp() {
+
+		// host name and port see: arangodb.properties
 		ArangoDBConfiguration configuration = new ArangoDBConfiguration();
 
 		client = new ArangoDBSimpleGraphClient(configuration);

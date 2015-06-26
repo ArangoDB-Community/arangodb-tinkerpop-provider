@@ -30,18 +30,6 @@ public abstract class ArangoDBTestCase extends BaseTest {
 	protected ArangoDBConfiguration configuration;
 
 	/**
-	 * ArangoDB hostname
-	 */
-
-	protected final String host = "localhost";
-
-	/**
-	 * ArangoDB port
-	 */
-
-	protected final int port = 8529;
-
-	/**
 	 * name of the test graph
 	 */
 
@@ -201,7 +189,8 @@ public abstract class ArangoDBTestCase extends BaseTest {
 	@Before
 	protected void setUp() {
 
-		configuration = new ArangoDBConfiguration(host, port);
+		// host name and port see: arangodb.properties
+		configuration = new ArangoDBConfiguration();
 		tmpClient = new ArangoDBSimpleGraphClient(configuration);
 
 		// delete graph

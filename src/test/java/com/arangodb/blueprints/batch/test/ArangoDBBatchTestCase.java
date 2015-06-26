@@ -29,18 +29,6 @@ public abstract class ArangoDBBatchTestCase {
 	protected ArangoDBConfiguration configuration;
 
 	/**
-	 * ArangoDB hostname
-	 */
-
-	protected final String host = "localhost";
-
-	/**
-	 * ArangoDB port
-	 */
-
-	protected final int port = 8529;
-
-	/**
 	 * name of the test graph
 	 */
 
@@ -203,7 +191,9 @@ public abstract class ArangoDBBatchTestCase {
 
 	@Before
 	public void setUp() {
-		configuration = new ArangoDBConfiguration(host, port);
+
+		// host name and port see: arangodb.properties
+		configuration = new ArangoDBConfiguration();
 
 		tmpClient = new ArangoDBSimpleGraphClient(configuration);
 
