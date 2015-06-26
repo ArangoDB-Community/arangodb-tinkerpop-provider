@@ -58,17 +58,11 @@ public class ArangoDBBaseQuery {
 	 */
 
 	public enum Direction {
-		/**
-		 * direction into a element
-		 */
+		// direction into a element
 		IN,
-		/**
-		 * direction out of a element
-		 */
+		// direction out of a element
 		OUT,
-		/**
-		 * direction in and out of a element
-		 */
+		// direction in and out of a element
 		ALL
 	};
 
@@ -106,6 +100,7 @@ public class ArangoDBBaseQuery {
 	public CursorResult<Map> getCursorResult() throws ArangoDBException {
 
 		Map<String, Object> options = new HashMap<String, Object>();
+		options.put("includeData", true);
 		options.put("direction", "any");
 		if (direction != null) {
 			if (direction == Direction.IN) {
