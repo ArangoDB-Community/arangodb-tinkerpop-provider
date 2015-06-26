@@ -15,7 +15,7 @@ public class BatchGraphTest extends ArangoDBBatchTestCase {
 	@Test
 	public void testCreateGraph() throws ArangoDBGraphException {
 
-		ArangoDBBatchGraph graph = new ArangoDBBatchGraph(host, port, graphName, vertices, edges);
+		ArangoDBBatchGraph graph = new ArangoDBBatchGraph(configuration, graphName, vertices, edges);
 
 		Assert.assertTrue(hasGraph(graphName));
 
@@ -26,7 +26,7 @@ public class BatchGraphTest extends ArangoDBBatchTestCase {
 
 		// reload graph and test again
 
-		graph = new ArangoDBBatchGraph(host, port, graphName, vertices, edges);
+		graph = new ArangoDBBatchGraph(configuration, graphName, vertices, edges);
 
 		String x = graph.getId();
 		Assert.assertNotNull(StringUtils.isNotEmpty(x));
@@ -40,7 +40,7 @@ public class BatchGraphTest extends ArangoDBBatchTestCase {
 	public void testImport() throws ArangoDBGraphException {
 		int createNum = 1000;
 
-		ArangoDBBatchGraph graph = new ArangoDBBatchGraph(host, port, graphName, vertices, edges);
+		ArangoDBBatchGraph graph = new ArangoDBBatchGraph(configuration, graphName, vertices, edges);
 
 		for (Long i = 0L; i < createNum; ++i) {
 			Vertex v = graph.addVertex(i);
@@ -49,7 +49,7 @@ public class BatchGraphTest extends ArangoDBBatchTestCase {
 
 		graph.shutdown();
 
-		ArangoDBGraph graph2 = new ArangoDBGraph(host, port, graphName, vertices, edges);
+		ArangoDBGraph graph2 = new ArangoDBGraph(configuration, graphName, vertices, edges);
 
 		GraphQuery q = graph2.query();
 
@@ -60,7 +60,7 @@ public class BatchGraphTest extends ArangoDBBatchTestCase {
 	public void testImport2() throws ArangoDBGraphException {
 		int createNum = 1000;
 
-		ArangoDBBatchGraph graph = new ArangoDBBatchGraph(host, port, graphName, vertices, edges);
+		ArangoDBBatchGraph graph = new ArangoDBBatchGraph(configuration, graphName, vertices, edges);
 
 		Vertex inVertex = graph.addVertex(0L);
 
@@ -74,7 +74,7 @@ public class BatchGraphTest extends ArangoDBBatchTestCase {
 
 		graph.shutdown();
 
-		ArangoDBGraph graph2 = new ArangoDBGraph(host, port, graphName, vertices, edges);
+		ArangoDBGraph graph2 = new ArangoDBGraph(configuration, graphName, vertices, edges);
 
 		GraphQuery q = graph2.query();
 
