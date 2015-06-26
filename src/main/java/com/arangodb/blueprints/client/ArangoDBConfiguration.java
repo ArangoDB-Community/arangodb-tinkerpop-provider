@@ -29,7 +29,6 @@ public class ArangoDBConfiguration extends ArangoConfigure {
 	 */
 
 	public ArangoDBConfiguration() {
-		this("127.0.0.1", 8529);
 	}
 
 	/**
