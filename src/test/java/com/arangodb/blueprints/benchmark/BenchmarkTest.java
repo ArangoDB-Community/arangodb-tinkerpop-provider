@@ -16,8 +16,6 @@ import com.tinkerpop.blueprints.impls.GraphTest;
 
 public class BenchmarkTest extends GraphTest {
 
-	public static final String ARANGODB_HOSTNAME = "localhost";
-	public static final int ARANGODB_PORT = 8529;
 	public static final String NAME_GRAPH = "BlueprintsBenchmarkGraph";
 	public static final String NAME_VERTEX_COLLECTION = "BenchmarkVertices";
 	public static final String NAME_EDGE_COLLECTION = "BenchmarkEdges";
@@ -27,7 +25,9 @@ public class BenchmarkTest extends GraphTest {
 	private ArangoDBSimpleGraphClient client;
 
 	public BenchmarkTest() {
-		configuration = new ArangoDBConfiguration(ARANGODB_HOSTNAME, ARANGODB_PORT);
+
+		// host name and port see: arangodb.properties
+		configuration = new ArangoDBConfiguration();
 		configuration.setDefaultDatabase(NAME_DATABASE);
 		client = new ArangoDBSimpleGraphClient(configuration);
 		try {
