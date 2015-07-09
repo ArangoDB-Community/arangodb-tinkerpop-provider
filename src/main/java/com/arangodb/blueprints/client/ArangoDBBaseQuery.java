@@ -13,7 +13,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 
 import com.arangodb.CursorResult;
@@ -67,7 +67,9 @@ public class ArangoDBBaseQuery {
 	};
 
 	public enum QueryType {
-		GRAPH_VERTICES, GRAPH_EDGES, GRAPH_NEIGHBORS
+		GRAPH_VERTICES,
+		GRAPH_EDGES,
+		GRAPH_NEIGHBORS
 	}
 
 	/**
@@ -101,14 +103,7 @@ public class ArangoDBBaseQuery {
 
 		Map<String, Object> options = new HashMap<String, Object>();
 		options.put("includeData", true);
-		options.put("direction", "any");
-		if (direction != null) {
-			if (direction == Direction.IN) {
-				options.put("direction", "inbound");
-			} else if (direction == Direction.OUT) {
-				options.put("direction", "outbound");
-			}
-		}
+		options.put("direction", getDirectionString());
 
 		Map<String, Object> bindVars = new HashMap<String, Object>();
 		bindVars.put("graphName", graph.getName());
@@ -132,9 +127,13 @@ public class ArangoDBBaseQuery {
 			sb.append("for i in GRAPH_EDGES(@graphName , @vertexExample, @options)");
 			break;
 		case GRAPH_NEIGHBORS:
-			sb.append("for i in GRAPH_NEIGHBORS(@graphName , @vertexExample, @options)");
-			prefix = "i.path.edges[0].";
-			returnExp = " return i.vertex";
+			// version 2.5
+			// sb.append("for i in GRAPH_NEIGHBORS(@graphName , @vertexExample,
+			// @options)");
+			// prefix = "i.path.edges[0].";
+			// returnExp = " return i.vertex";
+			sb.append("for i in GRAPH_EDGES(@graphName , @vertexExample, @options)");
+			returnExp = " return DOCUMENT(" + getDocumentByDirection() + ")";
 			break;
 		default:
 			break;
@@ -176,6 +175,30 @@ public class ArangoDBBaseQuery {
 		aqlQueryOptions.setCount(count);
 
 		return client.executeAqlQuery(query, bindVars, aqlQueryOptions);
+	}
+
+	private String getDirectionString() {
+		if (direction != null) {
+			if (direction == Direction.IN) {
+				return "inbound";
+			} else if (direction == Direction.OUT) {
+				return "outbound";
+			}
+		}
+
+		return "any";
+	}
+
+	private String getDocumentByDirection() {
+		if (direction != null) {
+			if (direction == Direction.IN) {
+				return "i._from";
+			} else if (direction == Direction.OUT) {
+				return "i._to";
+			}
+		}
+
+		return "i._to == @vertexExample ? i._from : i._to";
 	}
 
 	public ArangoDBSimpleVertex getStartVertex() {
