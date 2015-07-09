@@ -190,10 +190,12 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<arangodb-java-driver.version>2.5.5</arangodb-java-driver.version>
+		<arangodb-java-driver.version>2.5.6</arangodb-java-driver.version>
 		<blueprints.version>2.6.0</blueprints.version>
 		<rexster.version>2.6.0</rexster.version>
 		<junit.version>4.12</junit.version>
+		<logback-classic.version>1.1.3</logback-classic.version>
+		<commons-lang3.version>3.3.2</commons-lang3.version>
 	</properties>
 
 	<dependencies>
@@ -227,8 +229,16 @@
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-lang3</artifactId>
-			<version>3.3.2</version>
+			<version>${commons-lang3.version}</version>
 		</dependency>
+		<dependency>
+			<groupId>ch.qos.logback</groupId>
+			<artifactId>logback-classic</artifactId>
+			<version>${logback-classic.version}</version>
+			<type>jar</type>
+			<scope>test</scope>
+		</dependency>
+		
 	</dependencies>
 
 
