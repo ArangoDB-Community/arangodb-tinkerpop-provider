@@ -15,8 +15,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.Vector;
 
-import org.apache.commons.collections4.CollectionUtils;
-
 import com.arangodb.ArangoException;
 import com.arangodb.blueprints.ArangoDBGraphException;
 import com.arangodb.blueprints.client.ArangoDBConfiguration;
@@ -30,6 +28,7 @@ import com.arangodb.blueprints.utils.ArangoDBUtil;
 import com.arangodb.entity.EdgeDefinitionEntity;
 import com.arangodb.entity.GraphEntity;
 import com.arangodb.entity.IndexType;
+import com.arangodb.util.CollectionUtils;
 import com.tinkerpop.blueprints.Edge;
 import com.tinkerpop.blueprints.Element;
 import com.tinkerpop.blueprints.Features;
