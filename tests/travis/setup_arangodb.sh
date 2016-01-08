@@ -32,7 +32,7 @@ ${ARANGOD} \
     --server.endpoint tcp://127.0.0.1:8529 \
     --javascript.app-path ${ARANGODB_DIR}/js/apps \
     --javascript.startup-directory ${ARANGODB_DIR}/js \
-    --server.disable-authentication false &
+    --server.disable-authentication true &
 
 sleep 2
 
