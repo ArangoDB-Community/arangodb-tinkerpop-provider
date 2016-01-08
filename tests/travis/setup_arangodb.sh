@@ -3,13 +3,13 @@
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd $DIR
 
-VERSION=2.6.2
+VERSION=2.7.3
 NAME=ArangoDB-$VERSION
 
 if [ ! -d "$DIR/$NAME" ]; then
   # download ArangoDB
-  echo "wget http://www.arangodb.org/repositories/travisCI/$NAME.tar.gz"
-  wget http://www.arangodb.org/repositories/travisCI/$NAME.tar.gz
+  echo "wget https://www.arangodb.com/repositories/travisCI/$NAME.tar.gz"
+  wget https://www.arangodb.com/repositories/travisCI/$NAME.tar.gz
   echo "tar zxf $NAME.tar.gz"
   tar zvxf $NAME.tar.gz
 fi
@@ -32,8 +32,7 @@ ${ARANGOD} \
     --server.endpoint tcp://127.0.0.1:8529 \
     --javascript.app-path ${ARANGODB_DIR}/js/apps \
     --javascript.startup-directory ${ARANGODB_DIR}/js \
-    --database.maximal-journal-size 1048576 \
-    --server.disable-authentication true &
+    --server.disable-authentication false &
 
 sleep 2
 
@@ -47,7 +46,7 @@ if [ "x$process" == "x" ]; then
 fi
 
 echo "Waiting until ArangoDB is ready on port 8529"
-while [[ -z `curl -s 'http://127.0.0.1:8529/_api/version' ` ]] ; do
+while [[ -z `curl -uroot: -s 'http://127.0.0.1:8529/_api/version' ` ]] ; do
   echo -n "."
   sleep 2s
 done
