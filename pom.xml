@@ -190,7 +190,7 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<arangodb-java-driver.version>2.7.2</arangodb-java-driver.version>
+		<arangodb-java-driver.version>2.7.3</arangodb-java-driver.version>
 		<blueprints.version>2.6.0</blueprints.version>
 		<rexster.version>2.6.0</rexster.version>
 		<junit.version>4.12</junit.version>
