@@ -39,7 +39,19 @@ public class ArangoDBBatchEdge extends ArangoDBBatchElement implements Edge {
 	 */
 	private Vertex inVertex = null;
 
-	static ArangoDBBatchEdge create(ArangoDBBatchGraph graph, Object id, Vertex outVertex, Vertex inVertex, String label) {
+	private ArangoDBBatchEdge(ArangoDBBatchGraph graph, ArangoDBSimpleEdge edge, Vertex outVertex, Vertex inVertex) {
+		this.graph = graph;
+		this.document = edge;
+		this.outVertex = outVertex;
+		this.inVertex = inVertex;
+	}
+
+	static ArangoDBBatchEdge create(
+		ArangoDBBatchGraph graph,
+		Object id,
+		Vertex outVertex,
+		Vertex inVertex,
+		String label) {
 		String key = (id != null) ? id.toString() : null;
 
 		if (key == null) {
@@ -59,10 +71,10 @@ public class ArangoDBBatchEdge extends ArangoDBBatchElement implements Edge {
 				properties.put(StringFactory.LABEL, label);
 			}
 
-			properties.put(ArangoDBSimpleEdge._FROM, graph.getRawGraph().getVertexCollection() + "/"
-					+ from.getRawVertex().getDocumentKey());
-			properties.put(ArangoDBSimpleEdge._TO, graph.getRawGraph().getVertexCollection() + "/"
-					+ to.getRawVertex().getDocumentKey());
+			properties.put(ArangoDBSimpleEdge._FROM,
+				graph.getRawGraph().getVertexCollection() + "/" + from.getRawVertex().getDocumentKey());
+			properties.put(ArangoDBSimpleEdge._TO,
+				graph.getRawGraph().getVertexCollection() + "/" + to.getRawVertex().getDocumentKey());
 
 			try {
 				ArangoDBSimpleEdge v = new ArangoDBSimpleEdge(properties);
@@ -118,17 +130,12 @@ public class ArangoDBBatchEdge extends ArangoDBBatchElement implements Edge {
 		return newEdge;
 	}
 
-	private ArangoDBBatchEdge(ArangoDBBatchGraph graph, ArangoDBSimpleEdge edge, Vertex outVertex, Vertex inVertex) {
-		this.graph = graph;
-		this.document = edge;
-		this.outVertex = outVertex;
-		this.inVertex = inVertex;
-	}
-
+	@Override
 	public Vertex getVertex(Direction direction) throws IllegalArgumentException {
 		throw new UnsupportedOperationException();
 	}
 
+	@Override
 	public String getLabel() {
 		Object l = document.getProperty(StringFactory.LABEL);
 		if (l != null) {
@@ -152,6 +159,7 @@ public class ArangoDBBatchEdge extends ArangoDBBatchElement implements Edge {
 		return StringFactory.edgeString(this);
 	}
 
+	@Override
 	public void remove() {
 		throw new UnsupportedOperationException();
 	}
@@ -159,6 +167,7 @@ public class ArangoDBBatchEdge extends ArangoDBBatchElement implements Edge {
 	/**
 	 * not supported in batch mode
 	 */
+	@Override
 	public void save() {
 		throw new UnsupportedOperationException();
 	}

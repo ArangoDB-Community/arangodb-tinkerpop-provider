@@ -12,8 +12,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
-import java.util.Vector;
+
+import org.apache.log4j.Logger;
 
 import com.arangodb.ArangoException;
 import com.arangodb.blueprints.ArangoDBGraphException;
@@ -58,6 +60,11 @@ import com.tinkerpop.blueprints.util.StringFactory;
 
 public class ArangoDBBatchGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>, KeyIndexableGraph {
 
+	/**
+	 * the logger
+	 */
+	private static final Logger logger = Logger.getLogger(ArangoDBBatchGraph.class);
+
 	private static final Features FEATURES = new Features();
 
 	static {
@@ -101,43 +108,43 @@ public class ArangoDBBatchGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>
 	 * ArangoDBSimpleGraph
 	 */
 
-	private ArangoDBSimpleGraph rawGraph = null;
+	private ArangoDBSimpleGraph rawGraph;
 
 	/**
 	 * A ArangoDBSimpleGraphClient to handle the connection to the Database
 	 */
 
-	public ArangoDBSimpleGraphClient client = null;
+	public final ArangoDBSimpleGraphClient client;
 
 	/**
 	 * A cache for all created vertices
 	 */
 
-	public HashMap<String, ArangoDBBatchVertex> vertexCache = null;
+	public final Map<String, ArangoDBBatchVertex> vertexCache;
 
 	/**
 	 * A cache for all created edges
 	 */
 
-	public HashMap<String, ArangoDBBatchEdge> edgeCache = null;
+	public final Map<String, ArangoDBBatchEdge> edgeCache;
 
 	/**
 	 * Set of added vertices
 	 */
 
-	private HashSet<ArangoDBBatchVertex> addedVertices = null;
+	private Set<ArangoDBBatchVertex> addedVertices;
 
 	/**
 	 * Set of added edges
 	 */
 
-	private HashSet<ArangoDBBatchEdge> addedEdges = null;
+	private Set<ArangoDBBatchEdge> addedEdges = null;
 
 	/**
 	 * counter for created identifiers
 	 */
 
-	private Long idCounter = 0l;
+	private Long idCounter = 0L;
 
 	/**
 	 * Creates a Graph (simple configuration)
@@ -212,29 +219,35 @@ public class ArangoDBBatchGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>
 				rawGraph = new ArangoDBSimpleGraph(graph, verticesCollectionName, edgesCollectionName);
 			}
 		} catch (ArangoException e1) {
+			logger.debug("could not read graph", e1);
 		}
 		if (rawGraph == null) {
 			try {
 				rawGraph = this.client.createGraph(name, verticesCollectionName, edgesCollectionName);
 			} catch (ArangoException e) {
+				logger.warn("could not create graph", e);
 				throw new ArangoDBGraphException(e.getMessage());
 			}
 		}
 	}
 
+	@Override
 	public Features getFeatures() {
 		return FEATURES;
 	}
 
+	@Override
 	public void shutdown() {
 		saveVertices();
 		saveEdges();
 	}
 
+	@Override
 	public Vertex addVertex(Object id) {
 		return ArangoDBBatchVertex.create(this, id);
 	}
 
+	@Override
 	public Vertex getVertex(Object id) {
 		return ArangoDBBatchVertex.load(this, id);
 	}
@@ -242,6 +255,7 @@ public class ArangoDBBatchGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>
 	/**
 	 * not supported in batch mode
 	 */
+	@Override
 	public void removeVertex(Vertex vertex) {
 		throw new UnsupportedOperationException();
 	}
@@ -249,6 +263,7 @@ public class ArangoDBBatchGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>
 	/**
 	 * not supported in batch mode
 	 */
+	@Override
 	public Iterable<Vertex> getVertices() {
 		throw new UnsupportedOperationException();
 	}
@@ -256,14 +271,17 @@ public class ArangoDBBatchGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>
 	/**
 	 * not supported in batch mode
 	 */
+	@Override
 	public Iterable<Vertex> getVertices(String key, Object value) {
 		throw new UnsupportedOperationException();
 	}
 
+	@Override
 	public Edge addEdge(Object id, Vertex outVertex, Vertex inVertex, String label) {
 		return ArangoDBBatchEdge.create(this, id, outVertex, inVertex, label);
 	}
 
+	@Override
 	public Edge getEdge(Object id) {
 		return ArangoDBBatchEdge.load(this, id);
 	}
@@ -271,6 +289,7 @@ public class ArangoDBBatchGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>
 	/**
 	 * not supported in batch mode
 	 */
+	@Override
 	public void removeEdge(Edge edge) {
 		throw new UnsupportedOperationException();
 	}
@@ -278,22 +297,30 @@ public class ArangoDBBatchGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>
 	/**
 	 * not supported in batch mode
 	 */
+	@Override
 	public Iterable<Edge> getEdges() {
 		throw new UnsupportedOperationException();
 	}
 
+	/**
+	 * not supported in batch mode
+	 */
+	@Override
 	public Iterable<Edge> getEdges(String key, Object value) {
 		throw new UnsupportedOperationException();
 	}
 
+	@Override
 	public ArangoDBSimpleGraph getRawGraph() {
 		return rawGraph;
 	}
 
+	@Override
 	public String toString() {
 		return StringFactory.graphString(this, this.rawGraph.toString());
 	}
 
+	@Override
 	public <T extends Element> void dropKeyIndex(String key, Class<T> elementClass) {
 
 		List<ArangoDBIndex> indices = null;
@@ -304,42 +331,48 @@ public class ArangoDBBatchGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>
 				indices = client.getEdgeIndices(rawGraph);
 			}
 		} catch (ArangoDBException e) {
+			logger.warn("could not read indices", e);
 		}
 
-		String n = ArangoDBUtil.normalizeKey(key);
+		String normalizedKey = ArangoDBUtil.normalizeKey(key);
 
 		if (indices != null) {
-			for (ArangoDBIndex i : indices) {
-				if (i.getFields().size() == 1) {
-					String field = i.getFields().get(0);
-
-					if (field.equals(n)) {
-						try {
-							client.deleteIndex(i.getId());
-						} catch (ArangoDBException e) {
-						}
-					}
+			for (ArangoDBIndex index : indices) {
+				if (index.getFields().size() == 1) {
+					deleteIndexByKey(normalizedKey, index);
 				}
 			}
 		}
 
 	}
 
+	private void deleteIndexByKey(String key, ArangoDBIndex index) {
+		String field = index.getFields().get(0);
+		if (field.equals(key)) {
+			try {
+				client.deleteIndex(index.getId());
+			} catch (ArangoDBException e) {
+				logger.warn("could not delete indice", e);
+			}
+		}
+	}
+
 	@SuppressWarnings("rawtypes")
+	@Override
 	public <T extends Element> void createKeyIndex(String key, Class<T> elementClass, Parameter... indexParameters) {
 
 		IndexType type = IndexType.SKIPLIST;
 		boolean unique = false;
-		Vector<String> fields = new Vector<String>();
+		List<String> fields = new ArrayList<String>();
 
 		String n = ArangoDBUtil.normalizeKey(key);
 		fields.add(n);
 
 		for (Parameter p : indexParameters) {
-			if (p.getKey().equals("type")) {
+			if ("type".equals(p.getKey())) {
 				type = object2IndexType(p.getValue());
 			}
-			if (p.getKey().equals("unique")) {
+			if ("unique".equals(p.getKey())) {
 				unique = (Boolean) p.getValue();
 			}
 		}
@@ -351,6 +384,7 @@ public class ArangoDBBatchGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>
 				client.createEdgeIndex(rawGraph, type, unique, fields);
 			}
 		} catch (ArangoDBException e) {
+			logger.error("could not create index", e);
 		}
 	}
 
@@ -371,6 +405,7 @@ public class ArangoDBBatchGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>
 		return IndexType.SKIPLIST;
 	}
 
+	@Override
 	public <T extends Element> Set<String> getIndexedKeys(Class<T> elementClass) {
 		HashSet<String> result = new HashSet<String>();
 		List<ArangoDBIndex> indices = null;
@@ -393,6 +428,7 @@ public class ArangoDBBatchGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>
 			}
 
 		} catch (ArangoDBException e) {
+			logger.error("could not get index keys", e);
 		}
 
 		return result;
@@ -414,7 +450,7 @@ public class ArangoDBBatchGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>
 		try {
 			client.createVertices(rawGraph, vertices, false);
 		} catch (ArangoDBException e) {
-			e.printStackTrace();
+			logger.error("could not create vertices", e);
 		}
 
 		addedVertices.clear();
@@ -439,7 +475,7 @@ public class ArangoDBBatchGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>
 		try {
 			client.createEdges(rawGraph, edges, false);
 		} catch (ArangoDBException e) {
-			e.printStackTrace();
+			logger.error("could not create edges", e);
 		}
 
 		addedEdges.clear();
@@ -480,6 +516,7 @@ public class ArangoDBBatchGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>
 		addedEdges.add(element);
 	}
 
+	@Override
 	public GraphQuery query() {
 		throw new UnsupportedOperationException();
 	}
@@ -489,7 +526,7 @@ public class ArangoDBBatchGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>
 	 * 
 	 * @return a new identifier number
 	 */
-	synchronized public Long getNewId() {
+	public synchronized Long getNewId() {
 		return ++idCounter;
 	}
 

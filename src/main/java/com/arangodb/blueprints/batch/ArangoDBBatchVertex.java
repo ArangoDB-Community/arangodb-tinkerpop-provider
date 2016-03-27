@@ -11,6 +11,8 @@ package com.arangodb.blueprints.batch;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.log4j.Logger;
+
 import com.arangodb.blueprints.client.ArangoDBBaseDocument;
 import com.arangodb.blueprints.client.ArangoDBException;
 import com.arangodb.blueprints.client.ArangoDBSimpleVertex;
@@ -30,6 +32,16 @@ import com.tinkerpop.blueprints.util.StringFactory;
  */
 
 public class ArangoDBBatchVertex extends ArangoDBBatchElement implements Vertex {
+
+	/**
+	 * the logger
+	 */
+	private static final Logger logger = Logger.getLogger(ArangoDBBatchVertex.class);
+
+	private ArangoDBBatchVertex(ArangoDBBatchGraph graph, ArangoDBSimpleVertex vertex) {
+		this.graph = graph;
+		this.document = vertex;
+	}
 
 	/**
 	 * Creates a vertex
@@ -56,6 +68,7 @@ public class ArangoDBBatchVertex extends ArangoDBBatchElement implements Vertex 
 			ArangoDBSimpleVertex v = new ArangoDBSimpleVertex(properties);
 			return build(graph, v);
 		} catch (ArangoDBException e) {
+			logger.warn("could create batch vertex", e);
 			throw new IllegalArgumentException(e.getMessage());
 		}
 	}
@@ -85,7 +98,7 @@ public class ArangoDBBatchVertex extends ArangoDBBatchElement implements Vertex 
 			ArangoDBSimpleVertex v = graph.client.getVertex(graph.getRawGraph(), key);
 			return build(graph, v);
 		} catch (ArangoDBException e) {
-			// nothing found
+			logger.warn("could read batch vertex", e);
 			return null;
 		}
 	}
@@ -106,19 +119,17 @@ public class ArangoDBBatchVertex extends ArangoDBBatchElement implements Vertex 
 		return newVertex;
 	}
 
-	private ArangoDBBatchVertex(ArangoDBBatchGraph graph, ArangoDBSimpleVertex vertex) {
-		this.graph = graph;
-		this.document = vertex;
-	}
-
+	@Override
 	public Iterable<Edge> getEdges(Direction direction, String... labels) {
 		throw new UnsupportedOperationException();
 	}
 
+	@Override
 	public Iterable<Vertex> getVertices(Direction direction, String... labels) {
 		throw new UnsupportedOperationException();
 	}
 
+	@Override
 	public VertexQuery query() {
 		throw new UnsupportedOperationException();
 	}
@@ -133,18 +144,22 @@ public class ArangoDBBatchVertex extends ArangoDBBatchElement implements Vertex 
 		return (ArangoDBSimpleVertex) document;
 	}
 
+	@Override
 	public String toString() {
 		return StringFactory.vertexString(this);
 	}
 
+	@Override
 	public void remove() {
 		throw new UnsupportedOperationException();
 	}
 
+	@Override
 	public void save() throws ArangoDBException {
 		throw new UnsupportedOperationException();
 	}
 
+	@Override
 	public Edge addEdge(String label, Vertex inVertex) {
 		return ArangoDBBatchEdge.create(this.graph, null, this, inVertex, label);
 	}

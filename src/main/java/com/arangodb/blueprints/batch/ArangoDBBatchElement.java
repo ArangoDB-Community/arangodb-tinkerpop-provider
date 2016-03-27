@@ -3,6 +3,8 @@ package com.arangodb.blueprints.batch;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.apache.log4j.Logger;
+
 import com.arangodb.blueprints.client.ArangoDBBaseDocument;
 import com.arangodb.blueprints.client.ArangoDBException;
 import com.arangodb.blueprints.utils.ArangoDBUtil;
@@ -19,7 +21,12 @@ import com.tinkerpop.blueprints.util.StringFactory;
  * @author Guido Schwab (http://www.triagens.de)
  */
 
-abstract public class ArangoDBBatchElement implements Element {
+abstract class ArangoDBBatchElement implements Element {
+
+	/**
+	 * the logger
+	 */
+	private static final Logger logger = Logger.getLogger(ArangoDBBatchElement.class);
 
 	/**
 	 * the graph of the document
@@ -46,7 +53,7 @@ abstract public class ArangoDBBatchElement implements Element {
 	 *             if an error occurs
 	 */
 
-	abstract public void save() throws ArangoDBException;
+	public abstract void save() throws ArangoDBException;
 
 	/**
 	 * Return the object value associated with the provided string key. If no
@@ -56,6 +63,7 @@ abstract public class ArangoDBBatchElement implements Element {
 	 *            the key of the key/value property
 	 * @return the object value related to the string key
 	 */
+	@Override
 	public Object getProperty(String key) {
 		return document.getProperty(ArangoDBUtil.normalizeKey(key));
 	}
@@ -70,6 +78,7 @@ abstract public class ArangoDBBatchElement implements Element {
 		this.document = document;
 	}
 
+	@Override
 	public Set<String> getPropertyKeys() {
 		Set<String> ps = document.getPropertyKeys();
 		HashSet<String> result = new HashSet<String>();
@@ -79,12 +88,13 @@ abstract public class ArangoDBBatchElement implements Element {
 		return result;
 	}
 
+	@Override
 	public void setProperty(String key, Object value) {
 		if (created) {
 			throw new UnsupportedOperationException();
 		}
 
-		if (key == null || key.equals(StringFactory.EMPTY_STRING))
+		if (isEmptyString(key))
 			throw ExceptionFactory.propertyKeyCanNotBeEmpty();
 		if (key.equals(StringFactory.ID))
 			throw ExceptionFactory.propertyKeyIdIsReserved();
@@ -92,31 +102,43 @@ abstract public class ArangoDBBatchElement implements Element {
 		try {
 			document.setProperty(ArangoDBUtil.normalizeKey(key), value);
 		} catch (ArangoDBException e) {
+			logger.warn("could not set property", e);
 			throw new IllegalArgumentException(e.getMessage());
 		}
 	}
 
+	@Override
 	public Object removeProperty(String key) {
-		if (created) {
-			throw new UnsupportedOperationException();
-		}
-
-		if (key == null || key.equals(StringFactory.EMPTY_STRING))
-			throw ExceptionFactory.propertyKeyCanNotBeEmpty();
-		if (key.equals(StringFactory.ID))
-			throw ExceptionFactory.propertyKeyIdIsReserved();
-		if (key.equals(StringFactory.LABEL) && this instanceof Edge)
-			throw ExceptionFactory.propertyKeyLabelIsReservedForEdges();
+		checkRemovePropertyKey(key);
 
 		Object o = null;
 		try {
 			o = document.removeProperty(ArangoDBUtil.normalizeKey(key));
 		} catch (ArangoDBException e) {
+			logger.warn("could not remove property", e);
 			throw new IllegalArgumentException(e.getMessage());
 		}
 		return o;
 	}
 
+	private void checkRemovePropertyKey(String key) {
+		if (created) {
+			throw new UnsupportedOperationException();
+		}
+
+		if (isEmptyString(key))
+			throw ExceptionFactory.propertyKeyCanNotBeEmpty();
+		if (key.equals(StringFactory.ID))
+			throw ExceptionFactory.propertyKeyIdIsReserved();
+		if (key.equals(StringFactory.LABEL) && this instanceof Edge)
+			throw ExceptionFactory.propertyKeyLabelIsReservedForEdges();
+	}
+
+	private boolean isEmptyString(String key) {
+		return key == null || key.equals(StringFactory.EMPTY_STRING);
+	}
+
+	@Override
 	public Object getId() {
 		return document.getDocumentKey();
 	}
