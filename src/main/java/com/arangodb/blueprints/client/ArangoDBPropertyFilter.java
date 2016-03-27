@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
@@ -29,8 +30,26 @@ import org.codehaus.jettison.json.JSONObject;
 
 public class ArangoDBPropertyFilter {
 
+	private static final String PROPERTY = "property";
+	private static final String COMPARE = "compare";
+	private static final String KEY = "key";
+	private static final String VALUE = "value";
+	/**
+	 * the logger
+	 */
+	private static final Logger logger = Logger.getLogger(ArangoDBPropertyFilter.class);
+
 	public enum Compare {
-		EQUAL, NOT_EQUAL, GREATER_THAN, GREATER_THAN_EQUAL, LESS_THAN, LESS_THAN_EQUAL, HAS, HAS_NOT, IN, NOT_IN
+		EQUAL,
+		NOT_EQUAL,
+		GREATER_THAN,
+		GREATER_THAN_EQUAL,
+		LESS_THAN,
+		LESS_THAN_EQUAL,
+		HAS,
+		HAS_NOT,
+		IN,
+		NOT_IN
 	};
 
 	private List<PropertyContainer> propertyContainers = new ArrayList<PropertyContainer>();
@@ -58,6 +77,7 @@ public class ArangoDBPropertyFilter {
 	 * 
 	 * @throws ArangoDBException
 	 *             if an error occurs
+	 * @deprecated
 	 */
 	@Deprecated
 	public JSONArray getAsJSON() throws ArangoDBException {
@@ -65,45 +85,50 @@ public class ArangoDBPropertyFilter {
 		try {
 
 			for (final PropertyContainer container : propertyContainers) {
-				JSONObject o = new JSONObject();
-				o.put("key", container.key);
-				o.put("value", container.value); // TODO check different value
-													// types
-				switch (container.compare) {
-				case EQUAL:
-					o.put("compare", "==");
-					break;
-				case NOT_EQUAL:
-					o.put("compare", "!=");
-					break;
-				case GREATER_THAN:
-					o.put("compare", ">");
-					break;
-				case LESS_THAN:
-					o.put("compare", "<");
-					break;
-				case GREATER_THAN_EQUAL:
-					o.put("compare", ">=");
-					break;
-				case LESS_THAN_EQUAL:
-					o.put("compare", "<=");
-					break;
-				case HAS:
-					o.put("compare", "HAS");
-					break;
-				case HAS_NOT:
-					o.put("compare", "HAS_NOT");
-					break;
-				}
-				result.put(o);
+				addContainer(result, container);
 			}
 
 			return result;
 		} catch (JSONException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.debug("error in get in getAsJSON", e);
+
 			throw new ArangoDBException("JSON error: " + e.getMessage());
 		}
+	}
+
+	private void addContainer(JSONArray result, final PropertyContainer container) throws JSONException {
+		JSONObject o = new JSONObject();
+		o.put(KEY, container.key);
+		o.put(VALUE, container.value);
+		switch (container.compare) {
+		case EQUAL:
+			o.put(COMPARE, "==");
+			break;
+		case NOT_EQUAL:
+			o.put(COMPARE, "!=");
+			break;
+		case GREATER_THAN:
+			o.put(COMPARE, ">");
+			break;
+		case LESS_THAN:
+			o.put(COMPARE, "<");
+			break;
+		case GREATER_THAN_EQUAL:
+			o.put(COMPARE, ">=");
+			break;
+		case LESS_THAN_EQUAL:
+			o.put(COMPARE, "<=");
+			break;
+		case HAS:
+			o.put(COMPARE, "HAS");
+			break;
+		case HAS_NOT:
+			o.put(COMPARE, "HAS_NOT");
+			break;
+		default:
+			// do nothing
+		}
+		result.put(o);
 	}
 
 	public void addProperties(String prefix, List<String> filter, Map<String, Object> bindVars) {
@@ -113,27 +138,27 @@ public class ArangoDBPropertyFilter {
 			switch (container.compare) {
 			case EQUAL:
 				filter.add(prefix + key + " == @property" + count);
-				bindVars.put("property" + count, container.value);
+				bindVars.put(PROPERTY + count, container.value);
 				break;
 			case NOT_EQUAL:
 				filter.add(prefix + key + " != @property" + count);
-				bindVars.put("property" + count, container.value);
+				bindVars.put(PROPERTY + count, container.value);
 				break;
 			case GREATER_THAN:
 				filter.add(prefix + key + " > @property" + count);
-				bindVars.put("property" + count, container.value);
+				bindVars.put(PROPERTY + count, container.value);
 				break;
 			case LESS_THAN:
 				filter.add(prefix + key + " < @property" + count);
-				bindVars.put("property" + count, container.value);
+				bindVars.put(PROPERTY + count, container.value);
 				break;
 			case GREATER_THAN_EQUAL:
 				filter.add(prefix + key + " >= @property" + count);
-				bindVars.put("property" + count, container.value);
+				bindVars.put(PROPERTY + count, container.value);
 				break;
 			case LESS_THAN_EQUAL:
 				filter.add(prefix + key + " <= @property" + count);
-				bindVars.put("property" + count, container.value);
+				bindVars.put(PROPERTY + count, container.value);
 				break;
 			case HAS:
 				filter.add(prefix + container.key + " != null");
@@ -142,13 +167,15 @@ public class ArangoDBPropertyFilter {
 				filter.add(prefix + container.key + " == null");
 				break;
 			case IN:
-				filter.add(prefix + container.key + " IN [" + addArray(bindVars, "property" + count, container.value)
-						+ "]");
+				filter.add(
+					prefix + container.key + " IN [" + addArray(bindVars, PROPERTY + count, container.value) + "]");
 				break;
 			case NOT_IN:
-				filter.add(prefix + container.key + " NOT IN ["
-						+ addArray(bindVars, "property" + count, container.value) + "]");
+				filter.add(
+					prefix + container.key + " NOT IN [" + addArray(bindVars, PROPERTY + count, container.value) + "]");
 				break;
+			default:
+				// do nothing
 			}
 			count++;
 		}
@@ -178,9 +205,9 @@ public class ArangoDBPropertyFilter {
 	}
 
 	private class PropertyContainer {
-		public String key;
-		public Object value;
-		public Compare compare;
+		public final String key;
+		public final Object value;
+		public final Compare compare;
 
 		public PropertyContainer(final String key, final Object value, final Compare compare) {
 			this.key = key;

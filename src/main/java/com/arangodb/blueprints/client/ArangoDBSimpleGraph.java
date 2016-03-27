@@ -73,6 +73,7 @@ public class ArangoDBSimpleGraph {
 		return graphEntity;
 	}
 
+	@Override
 	public String toString() {
 		return "{\"name\":\"" + getName() + "\",\"vertices\":\"" + getVertexCollection() + "\",\"edges\":\""
 				+ getEdgeCollection() + "\"}";

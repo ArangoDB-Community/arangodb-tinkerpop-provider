@@ -15,6 +15,7 @@ import java.util.Set;
 import java.util.TreeMap;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 
 import com.arangodb.ErrorNums;
 import com.google.gson.Gson;
@@ -28,7 +29,12 @@ import com.google.gson.Gson;
  * @author Jan Steemann (http://www.triagens.de)
  */
 
-abstract public class ArangoDBBaseDocument {
+public abstract class ArangoDBBaseDocument {
+
+	/**
+	 * the logger
+	 */
+	private static final Logger logger = Logger.getLogger(ArangoDBBaseDocument.class);
 
 	/**
 	 * document id attribute
@@ -158,48 +164,54 @@ abstract public class ArangoDBBaseDocument {
 	 *             If the type is not supported
 	 */
 	public static Object toDocumentValue(Object value) throws ArangoDBException {
+		Object result;
+
 		if (value instanceof Boolean) {
-			return value;
+			result = value;
 		} else if (value instanceof Integer) {
-			return new Double(((Integer) value).doubleValue());
+			result = new Double(((Integer) value).doubleValue());
 		} else if (value instanceof Long) {
-			return new Double(((Long) value).doubleValue());
+			result = new Double(((Long) value).doubleValue());
 		} else if (value instanceof Float) {
-			return new Double(((Float) value).doubleValue());
+			result = new Double(((Float) value).doubleValue());
 		} else if (value instanceof String) {
-			return value;
+			result = value;
 		} else if (value instanceof Double) {
-			return value;
+			result = value;
 		} else if (value instanceof Map) {
-			Map<String, Object> result = new TreeMap<String, Object>();
-			Map<?, ?> m = (Map<?, ?>) value;
-
-			for (Map.Entry<?, ?> entry : m.entrySet()) {
-				if (entry.getKey() instanceof String) {
-					result.put((String) entry.getKey(), toDocumentValue(entry.getValue()));
-				} else {
-					throw new ArangoDBException("a key of a Map has to be a String",
-							ErrorNums.ERROR_GRAPH_INVALID_PARAMETER);
-				}
-			}
-
-			return result;
-
+			result = mapToDocumentValue((Map<?, ?>) value);
 		} else if (value instanceof List) {
-			List<?> l = (List<?>) value;
-
-			for (final Object k : l) {
-				toDocumentValue(k);
-			}
-
-			return value;
+			result = listToDocumentValue((List<?>) value);
 		} else {
 			// TODO add more types
 
 			throw new ArangoDBException("class of value not supported: " + value.getClass().toString(),
 					ErrorNums.ERROR_GRAPH_INVALID_PARAMETER);
 		}
+		return result;
+	}
 
+	private static Object listToDocumentValue(List<?> value) throws ArangoDBException {
+		for (final Object k : value) {
+			toDocumentValue(k);
+		}
+
+		return value;
+	}
+
+	private static Object mapToDocumentValue(Map<?, ?> value) throws ArangoDBException {
+		Map<String, Object> map = new TreeMap<String, Object>();
+
+		for (Map.Entry<?, ?> entry : value.entrySet()) {
+			if (entry.getKey() instanceof String) {
+				map.put((String) entry.getKey(), toDocumentValue(entry.getValue()));
+			} else {
+				throw new ArangoDBException("a key of a Map has to be a String",
+						ErrorNums.ERROR_GRAPH_INVALID_PARAMETER);
+			}
+		}
+
+		return map;
 	}
 
 	/**
@@ -291,6 +303,7 @@ abstract public class ArangoDBBaseDocument {
 		return getStringProperty(_KEY);
 	}
 
+	@Override
 	public String toString() {
 		if (properties == null) {
 			return "null";
@@ -332,6 +345,7 @@ abstract public class ArangoDBBaseDocument {
 		try {
 			return gson.toJson(map);
 		} catch (Exception e) {
+			logger.debug("could not create json object by map", e);
 			return "";
 		}
 	}

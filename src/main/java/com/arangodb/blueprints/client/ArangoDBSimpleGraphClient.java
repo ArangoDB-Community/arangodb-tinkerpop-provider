@@ -12,7 +12,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Vector;
 
 import com.arangodb.ArangoDriver;
 import com.arangodb.ArangoException;
@@ -74,7 +73,7 @@ public class ArangoDBSimpleGraphClient {
 	 */
 
 	public void shutdown() {
-		// TODO driver.shutdown();
+		// TODO driver shutdown
 	}
 
 	/**
@@ -176,28 +175,30 @@ public class ArangoDBSimpleGraphClient {
 	 */
 	public ArangoDBSimpleVertex createVertex(ArangoDBSimpleGraph graph, String id, Map<String, Object> properties)
 			throws ArangoDBException {
-		if (properties == null) {
-			properties = new HashMap<String, Object>();
+
+		Map<String, Object> tmpProperties = properties;
+		if (tmpProperties == null) {
+			tmpProperties = new HashMap<String, Object>();
 		}
 
 		if (id != null) {
-			properties.put(ArangoDBSimpleVertex._KEY, id);
-		} else if (properties.containsKey(ArangoDBSimpleVertex._KEY)) {
-			properties.remove(ArangoDBSimpleVertex._KEY);
+			tmpProperties.put(ArangoDBSimpleVertex._KEY, id);
+		} else if (tmpProperties.containsKey(ArangoDBSimpleVertex._KEY)) {
+			tmpProperties.remove(ArangoDBSimpleVertex._KEY);
 		}
 
 		try {
 			VertexEntity<Map<String, Object>> vertexEntity = driver.graphCreateVertex(graph.getName(),
-				graph.getVertexCollection(), properties, false);
-			properties.put(ArangoDBSimpleVertex._KEY, vertexEntity.getDocumentKey());
-			properties.put(ArangoDBSimpleVertex._ID, vertexEntity.getDocumentHandle());
+				graph.getVertexCollection(), tmpProperties, false);
+			tmpProperties.put(ArangoDBSimpleVertex._KEY, vertexEntity.getDocumentKey());
+			tmpProperties.put(ArangoDBSimpleVertex._ID, vertexEntity.getDocumentHandle());
 			Long l = vertexEntity.getDocumentRevision();
-			properties.put(ArangoDBSimpleVertex._REV, l.toString());
+			tmpProperties.put(ArangoDBSimpleVertex._REV, l.toString());
 		} catch (ArangoException e) {
 			throw new ArangoDBException(e);
 		}
 
-		return new ArangoDBSimpleVertex(properties);
+		return new ArangoDBSimpleVertex(tmpProperties);
 	}
 
 	/**
@@ -318,38 +319,40 @@ public class ArangoDBSimpleGraphClient {
 		ArangoDBSimpleVertex from,
 		ArangoDBSimpleVertex to,
 		Map<String, Object> properties) throws ArangoDBException {
-		if (properties == null) {
-			properties = new HashMap<String, Object>();
+
+		Map<String, Object> tmpProperties = properties;
+		if (tmpProperties == null) {
+			tmpProperties = new HashMap<String, Object>();
 		}
 
 		if (id != null) {
-			properties.put(ArangoDBSimpleEdge._KEY, id);
-		} else if (properties.containsKey(ArangoDBSimpleEdge._KEY)) {
-			properties.remove(ArangoDBSimpleEdge._KEY);
+			tmpProperties.put(ArangoDBSimpleEdge._KEY, id);
+		} else if (tmpProperties.containsKey(ArangoDBSimpleEdge._KEY)) {
+			tmpProperties.remove(ArangoDBSimpleEdge._KEY);
 		}
 		if (label != null) {
-			properties.put(StringFactory.LABEL, label);
-		} else if (properties.containsKey(StringFactory.LABEL)) {
-			properties.remove(StringFactory.LABEL);
+			tmpProperties.put(StringFactory.LABEL, label);
+		} else if (tmpProperties.containsKey(StringFactory.LABEL)) {
+			tmpProperties.remove(StringFactory.LABEL);
 		}
 
-		properties.put(ArangoDBSimpleEdge._FROM, from.getDocumentId());
-		properties.put(ArangoDBSimpleEdge._TO, to.getDocumentId());
+		tmpProperties.put(ArangoDBSimpleEdge._FROM, from.getDocumentId());
+		tmpProperties.put(ArangoDBSimpleEdge._TO, to.getDocumentId());
 
 		EdgeEntity<Map<String, Object>> edgeEntity;
 		try {
 			edgeEntity = driver.graphCreateEdge(graph.getName(), graph.getEdgeCollection(), id, from.getDocumentId(),
-				to.getDocumentId(), properties, false);
+				to.getDocumentId(), tmpProperties, false);
 		} catch (ArangoException e) {
 			throw new ArangoDBException(e);
 		}
 
-		properties.put(ArangoDBSimpleEdge._ID, edgeEntity.getDocumentHandle());
-		properties.put(ArangoDBSimpleEdge._KEY, edgeEntity.getDocumentKey());
+		tmpProperties.put(ArangoDBSimpleEdge._ID, edgeEntity.getDocumentHandle());
+		tmpProperties.put(ArangoDBSimpleEdge._KEY, edgeEntity.getDocumentKey());
 		Long l = edgeEntity.getDocumentRevision();
-		properties.put(ArangoDBSimpleVertex._REV, l.toString());
+		tmpProperties.put(ArangoDBSimpleVertex._REV, l.toString());
 
-		return new ArangoDBSimpleEdge(properties);
+		return new ArangoDBSimpleEdge(tmpProperties);
 	}
 
 	/**
@@ -504,41 +507,6 @@ public class ArangoDBSimpleGraphClient {
 			throw new ArangoDBException(e);
 		}
 	}
-
-	/**
-	 * Get the next values from the cursor
-	 * 
-	 * @param id
-	 *            The cursor id
-	 * 
-	 * @return JSONObject The result
-	 * 
-	 * @throws ArangoDBException
-	 *             if creation failed
-	 */
-
-	// public JSONObject getNextCursorValues(String id) throws ArangoDBException
-	// {
-	// return putRequest(configuration.requestDbPrefix() + "_api/cursor/" +
-	// urlEncode(id), null);
-	// }
-
-	/**
-	 * Dispose the cursor
-	 * 
-	 * @param id
-	 *            The cursor id
-	 * @return true, if the cursor was deleted
-	 */
-
-	// public boolean deleteCursor(String id) {
-	// try {
-	// deleteRequest(configuration.requestDbPrefix() + "_api/cursor/" +
-	// urlEncode(id));
-	// } catch (ArangoDBException e) {
-	// }
-	// return true;
-	// }
 
 	/**
 	 * Create a query to get all vertices of a graph
@@ -859,8 +827,8 @@ public class ArangoDBSimpleGraphClient {
 	 *             if creation failed
 	 */
 
-	private Vector<ArangoDBIndex> getIndices(String collectionName) throws ArangoDBException {
-		Vector<ArangoDBIndex> indices = new Vector<ArangoDBIndex>();
+	private List<ArangoDBIndex> getIndices(String collectionName) throws ArangoDBException {
+		List<ArangoDBIndex> indices = new ArrayList<ArangoDBIndex>();
 
 		IndexesEntity indexes;
 		try {

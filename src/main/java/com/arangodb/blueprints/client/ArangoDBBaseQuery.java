@@ -127,11 +127,6 @@ public class ArangoDBBaseQuery {
 			sb.append("for i in GRAPH_EDGES(@graphName , @vertexExample, @options)");
 			break;
 		case GRAPH_NEIGHBORS:
-			// version 2.5
-			// sb.append("for i in GRAPH_NEIGHBORS(@graphName , @vertexExample,
-			// @options)");
-			// prefix = "i.path.edges[0].";
-			// returnExp = " return i.vertex";
 			sb.append("for i in GRAPH_EDGES(@graphName , @vertexExample, @options)");
 			returnExp = " return DOCUMENT(" + getDocumentByDirection() + ")";
 			break;
@@ -148,10 +143,10 @@ public class ArangoDBBaseQuery {
 
 		if (CollectionUtils.isNotEmpty(labelsFilter)) {
 			List<String> orFilter = new ArrayList<String>();
-			int count = 0;
+			int tmpCount = 0;
 			for (String label : labelsFilter) {
-				orFilter.add(prefix + "label == @label" + count);
-				bindVars.put("label" + count++, label);
+				orFilter.add(prefix + "label == @label" + tmpCount);
+				bindVars.put("label" + tmpCount++, label);
 			}
 			if (CollectionUtils.isNotEmpty(orFilter)) {
 				andFilter.add("(" + StringUtils.join(orFilter, " OR ") + ")");

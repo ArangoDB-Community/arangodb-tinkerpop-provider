@@ -29,6 +29,7 @@ public class ArangoDBConfiguration extends ArangoConfigure {
 	 */
 
 	public ArangoDBConfiguration() {
+		// using defaults (localhost:8529)
 	}
 
 	/**

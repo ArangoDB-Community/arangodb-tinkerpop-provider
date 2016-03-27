@@ -23,7 +23,7 @@ public class ArangoDBException extends Exception {
 
 	private static final long serialVersionUID = -163216237496410756L;
 
-	private Integer errorNum = 0;
+	private final Integer errorNum;
 
 	/**
 	 * Creates an exception
