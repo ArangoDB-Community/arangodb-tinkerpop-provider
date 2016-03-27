@@ -600,8 +600,10 @@ public class ArangoDBSimpleGraphClient {
 	}
 
 	@SuppressWarnings("rawtypes")
-	public CursorResult<Map> executeAqlQuery(String query, Map<String, Object> bindVars, AqlQueryOptions aqlQueryOptions)
-			throws ArangoDBException {
+	public CursorResult<Map> executeAqlQuery(
+		String query,
+		Map<String, Object> bindVars,
+		AqlQueryOptions aqlQueryOptions) throws ArangoDBException {
 		try {
 			return driver.executeAqlQuery(query, bindVars, aqlQueryOptions, Map.class);
 
@@ -709,7 +711,7 @@ public class ArangoDBSimpleGraphClient {
 		ArangoDBSimpleGraph graph,
 		IndexType type,
 		boolean unique,
-		Vector<String> fields) throws ArangoDBException {
+		List<String> fields) throws ArangoDBException {
 		return createIndex(graph.getVertexCollection(), type, unique, fields);
 	}
 
@@ -731,11 +733,8 @@ public class ArangoDBSimpleGraphClient {
 	 *             if creation failed
 	 */
 
-	public ArangoDBIndex createEdgeIndex(
-		ArangoDBSimpleGraph graph,
-		IndexType type,
-		boolean unique,
-		Vector<String> fields) throws ArangoDBException {
+	public ArangoDBIndex createEdgeIndex(ArangoDBSimpleGraph graph, IndexType type, boolean unique, List<String> fields)
+			throws ArangoDBException {
 		return createIndex(graph.getEdgeCollection(), type, unique, fields);
 	}
 

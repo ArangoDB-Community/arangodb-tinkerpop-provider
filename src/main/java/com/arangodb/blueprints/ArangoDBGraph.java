@@ -8,13 +8,14 @@
 
 package com.arangodb.blueprints;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.Vector;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 
 import com.arangodb.ArangoException;
 import com.arangodb.blueprints.client.ArangoDBConfiguration;
@@ -47,6 +48,11 @@ import com.tinkerpop.blueprints.util.StringFactory;
  */
 
 public class ArangoDBGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>, KeyIndexableGraph {
+
+	/**
+	 * the logger
+	 */
+	private static final Logger logger = Logger.getLogger(ArangoDBElement.class);
 
 	private static final Features FEATURES = new Features();
 
@@ -177,6 +183,7 @@ public class ArangoDBGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>, Key
 				simpleGraph = new ArangoDBSimpleGraph(graph, verticesCollectionName, edgesCollectionName);
 			}
 		} catch (ArangoException e1) {
+			logger.debug("could not get graph", e1);
 		}
 		if (simpleGraph == null) {
 			try {
@@ -187,22 +194,27 @@ public class ArangoDBGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>, Key
 		}
 	}
 
+	@Override
 	public Features getFeatures() {
 		return FEATURES;
 	}
 
+	@Override
 	public void shutdown() {
 		client.shutdown();
 	}
 
+	@Override
 	public Vertex addVertex(Object id) {
 		return ArangoDBVertex.create(this, id);
 	}
 
+	@Override
 	public Vertex getVertex(Object id) {
 		return ArangoDBVertex.load(this, id);
 	}
 
+	@Override
 	public void removeVertex(Vertex vertex) {
 		if (vertex.getClass().equals(ArangoDBVertex.class)) {
 			ArangoDBVertex v = (ArangoDBVertex) vertex;
@@ -210,17 +222,20 @@ public class ArangoDBGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>, Key
 		}
 	}
 
+	@Override
 	public Iterable<Vertex> getVertices() {
 		ArangoDBGraphQuery q = new ArangoDBGraphQuery(this);
 		return q.vertices();
 	}
 
+	@Override
 	public Iterable<Vertex> getVertices(String key, Object value) {
 		ArangoDBGraphQuery q = new ArangoDBGraphQuery(this);
 		q.has(key, value);
 		return q.vertices();
 	}
 
+	@Override
 	public Edge addEdge(Object id, Vertex outVertex, Vertex inVertex, String label) {
 
 		if (label == null) {
@@ -230,10 +245,12 @@ public class ArangoDBGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>, Key
 		return ArangoDBEdge.create(this, id, outVertex, inVertex, label);
 	}
 
+	@Override
 	public Edge getEdge(Object id) {
 		return ArangoDBEdge.load(this, id);
 	}
 
+	@Override
 	public void removeEdge(Edge edge) {
 		if (edge.getClass().equals(ArangoDBEdge.class)) {
 			ArangoDBEdge e = (ArangoDBEdge) edge;
@@ -241,25 +258,30 @@ public class ArangoDBGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>, Key
 		}
 	}
 
+	@Override
 	public Iterable<Edge> getEdges() {
 		ArangoDBGraphQuery q = new ArangoDBGraphQuery(this);
 		return q.edges();
 	}
 
+	@Override
 	public Iterable<Edge> getEdges(String key, Object value) {
 		ArangoDBGraphQuery q = new ArangoDBGraphQuery(this);
 		q.has(key, value);
 		return q.edges();
 	}
 
+	@Override
 	public ArangoDBSimpleGraph getRawGraph() {
 		return simpleGraph;
 	}
 
+	@Override
 	public String toString() {
 		return StringFactory.graphString(this, this.simpleGraph.toString());
 	}
 
+	@Override
 	public <T extends Element> void dropKeyIndex(String key, Class<T> elementClass) {
 
 		List<ArangoDBIndex> indices = null;
@@ -270,6 +292,7 @@ public class ArangoDBGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>, Key
 				indices = client.getEdgeIndices(simpleGraph);
 			}
 		} catch (ArangoDBException e) {
+			logger.warn("error while reading an index", e);
 		}
 
 		String n = ArangoDBUtil.normalizeKey(key);
@@ -283,6 +306,7 @@ public class ArangoDBGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>, Key
 						try {
 							client.deleteIndex(i.getId());
 						} catch (ArangoDBException e) {
+							logger.warn("error while deleting an index", e);
 						}
 					}
 				}
@@ -292,20 +316,21 @@ public class ArangoDBGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>, Key
 	}
 
 	@SuppressWarnings("rawtypes")
+	@Override
 	public <T extends Element> void createKeyIndex(String key, Class<T> elementClass, Parameter... indexParameters) {
 
 		IndexType type = IndexType.SKIPLIST;
 		boolean unique = false;
-		Vector<String> fields = new Vector<String>();
+		List<String> fields = new ArrayList<String>();
 
 		String n = ArangoDBUtil.normalizeKey(key);
 		fields.add(n);
 
 		for (Parameter p : indexParameters) {
-			if (p.getKey().equals("type")) {
+			if ("type".equals(p.getKey())) {
 				type = object2IndexType(p.getValue());
 			}
-			if (p.getKey().equals("unique")) {
+			if ("unique".equals(p.getKey())) {
 				unique = (Boolean) p.getValue();
 			}
 		}
@@ -317,6 +342,7 @@ public class ArangoDBGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>, Key
 				getClient().createEdgeIndex(simpleGraph, type, unique, fields);
 			}
 		} catch (ArangoDBException e) {
+			logger.warn("error while creating a vertex index", e);
 		}
 	}
 
@@ -337,6 +363,7 @@ public class ArangoDBGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>, Key
 		return IndexType.SKIPLIST;
 	}
 
+	@Override
 	public <T extends Element> Set<String> getIndexedKeys(Class<T> elementClass) {
 		HashSet<String> result = new HashSet<String>();
 		List<ArangoDBIndex> indices = null;
@@ -359,11 +386,13 @@ public class ArangoDBGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>, Key
 			}
 
 		} catch (ArangoDBException e) {
+			logger.warn("error while reading index keys", e);
 		}
 
 		return result;
 	}
 
+	@Override
 	public GraphQuery query() {
 		return new ArangoDBGraphQuery(this);
 	}

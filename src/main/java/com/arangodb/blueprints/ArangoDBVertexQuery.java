@@ -37,7 +37,7 @@ public class ArangoDBVertexQuery extends ArangoDBQuery implements VertexQuery {
 	/**
 	 * the logger
 	 */
-	private static Logger LOG = Logger.getLogger(ArangoDBVertexIterable.class);
+	private static final Logger logger = Logger.getLogger(ArangoDBVertexIterable.class);
 
 	private final ArangoDBSimpleVertex vertex;
 	private ArangoDBBaseQuery.Direction direction;
@@ -58,6 +58,7 @@ public class ArangoDBVertexQuery extends ArangoDBQuery implements VertexQuery {
 		this.labels = new ArrayList<String>();
 	}
 
+	@Override
 	public ArangoDBVertexQuery has(String key, Object value) {
 		super.has(key, value);
 		return this;
@@ -77,11 +78,13 @@ public class ArangoDBVertexQuery extends ArangoDBQuery implements VertexQuery {
 	 * @deprecated
 	 */
 	@Deprecated
+	@Override
 	public <T extends Comparable<T>> ArangoDBVertexQuery has(String key, T value, Compare compare) {
 		super.has(key, value, compare);
 		return this;
 	}
 
+	@Override
 	public ArangoDBVertexQuery direction(final Direction direction) {
 		if (direction == Direction.IN) {
 			this.direction = ArangoDBBaseQuery.Direction.IN;
@@ -93,6 +96,7 @@ public class ArangoDBVertexQuery extends ArangoDBQuery implements VertexQuery {
 		return this;
 	}
 
+	@Override
 	public ArangoDBVertexQuery labels(final String... labels) {
 		if (labels == null) {
 			return this;
@@ -106,6 +110,7 @@ public class ArangoDBVertexQuery extends ArangoDBQuery implements VertexQuery {
 		return this;
 	}
 
+	@Override
 	public Iterable<Edge> edges() {
 		ArangoDBBaseQuery query;
 		try {
@@ -113,21 +118,25 @@ public class ArangoDBVertexQuery extends ArangoDBQuery implements VertexQuery {
 				limit, count);
 			return new ArangoDBEdgeIterable(graph, query);
 		} catch (ArangoDBException e) {
+			logger.debug("could not get edges", e);
 			return new ArangoDBEdgeIterable(graph, null);
 		}
 	}
 
+	@Override
 	public Iterable<Vertex> vertices() {
 		ArangoDBBaseQuery query;
 		try {
-			query = graph.getClient().getVertexNeighbors(graph.getRawGraph(), vertex, propertyFilter, labels,
-				direction, limit, count);
+			query = graph.getClient().getVertexNeighbors(graph.getRawGraph(), vertex, propertyFilter, labels, direction,
+				limit, count);
 			return new ArangoDBVertexIterable(graph, query);
 		} catch (ArangoDBException e) {
+			logger.debug("could not get vertices", e);
 			return new ArangoDBVertexIterable(graph, null);
 		}
 	}
 
+	@Override
 	public long count() {
 		ArangoDBBaseQuery query;
 		try {
@@ -136,72 +145,86 @@ public class ArangoDBVertexQuery extends ArangoDBQuery implements VertexQuery {
 
 			return query.getCursorResult().getCount();
 		} catch (ArangoDBException e) {
-			LOG.error("error in AQL query", e);
+			logger.error("error in AQL query", e);
 		}
 
 		return -1;
 	}
 
+	@Override
 	public Iterator<String> vertexIds() {
-
-		return new Iterator<String>() {
-
-			private Iterator<Vertex> iter = vertices().iterator();
-
-			public boolean hasNext() {
-				return iter.hasNext();
-			}
-
-			public String next() {
-				if (!iter.hasNext()) {
-					return null;
-				}
-
-				Vertex v = iter.next();
-
-				if (v == null) {
-					return null;
-				}
-
-				return v.getId().toString();
-			}
-
-			public void remove() {
-				iter.remove();
-			}
-
-		};
+		return new VertexIterator(vertices());
 	}
 
+	@Override
 	public ArangoDBVertexQuery has(String key) {
 		super.has(key);
 		return this;
 	}
 
+	@Override
 	public ArangoDBVertexQuery hasNot(String key) {
 		super.hasNot(key);
 		propertyFilter.has(key, null, ArangoDBPropertyFilter.Compare.HAS_NOT);
 		return this;
 	}
 
+	@Override
 	public ArangoDBVertexQuery hasNot(String key, Object value) {
 		super.hasNot(key, value);
 		return this;
 	}
 
+	@Override
 	public ArangoDBVertexQuery has(String key, Predicate prdct, Object value) {
 		super.has(key, prdct, value);
 		return this;
 	}
 
+	@Override
 	public <T extends Comparable<?>> ArangoDBVertexQuery interval(String key, T startValue, T endValue) {
 		super.interval(key, startValue, endValue);
 		return this;
 	}
 
+	@Override
 	public ArangoDBVertexQuery limit(int limit) {
 		super.limit(limit);
 		return this;
 	}
 
+	class VertexIterator implements Iterator<String> {
+
+		private Iterator<Vertex> iter;
+
+		public VertexIterator(Iterable<Vertex> iterable) {
+			iter = iterable.iterator();
+		}
+
+		@Override
+		public boolean hasNext() {
+			return iter.hasNext();
+		}
+
+		@Override
+		public String next() {
+			if (!iter.hasNext()) {
+				return null;
+			}
+
+			Vertex v = iter.next();
+
+			if (v == null) {
+				return null;
+			}
+
+			return v.getId().toString();
+		}
+
+		@Override
+		public void remove() {
+			iter.remove();
+		}
+
+	}
 }

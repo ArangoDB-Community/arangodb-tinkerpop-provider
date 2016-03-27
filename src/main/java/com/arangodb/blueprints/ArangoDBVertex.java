@@ -8,6 +8,8 @@
 
 package com.arangodb.blueprints;
 
+import org.apache.log4j.Logger;
+
 import com.arangodb.blueprints.client.ArangoDBException;
 import com.arangodb.blueprints.client.ArangoDBSimpleVertex;
 import com.tinkerpop.blueprints.Direction;
@@ -26,6 +28,17 @@ import com.tinkerpop.blueprints.util.StringFactory;
  */
 
 public class ArangoDBVertex extends ArangoDBElement implements Vertex {
+
+	/**
+	 * the logger
+	 */
+	private static final Logger logger = Logger.getLogger(ArangoDBVertex.class);
+
+	private ArangoDBVertex(ArangoDBGraph graph, ArangoDBSimpleVertex vertex) {
+		this.graph = graph;
+		this.document = vertex;
+	}
+
 	/**
 	 * Creates a vertex
 	 * 
@@ -47,6 +60,7 @@ public class ArangoDBVertex extends ArangoDBElement implements Vertex {
 			if (e.errorNumber() == 1210) {
 				throw ExceptionFactory.vertexWithIdAlreadyExists(id);
 			}
+			logger.debug("could not create vertex", e);
 			throw new IllegalArgumentException(e.getMessage());
 		}
 	}
@@ -74,6 +88,7 @@ public class ArangoDBVertex extends ArangoDBElement implements Vertex {
 			return build(graph, v);
 		} catch (ArangoDBException e) {
 			// nothing found
+			logger.debug("graph not found", e);
 			return null;
 		}
 	}
@@ -82,11 +97,7 @@ public class ArangoDBVertex extends ArangoDBElement implements Vertex {
 		return new ArangoDBVertex(graph, simpleVertex);
 	}
 
-	private ArangoDBVertex(ArangoDBGraph graph, ArangoDBSimpleVertex vertex) {
-		this.graph = graph;
-		this.document = vertex;
-	}
-
+	@Override
 	public Iterable<Edge> getEdges(Direction direction, String... labels) {
 		if (document.isDeleted()) {
 			return null;
@@ -98,6 +109,7 @@ public class ArangoDBVertex extends ArangoDBElement implements Vertex {
 		return q.edges();
 	}
 
+	@Override
 	public Iterable<Vertex> getVertices(Direction direction, String... labels) {
 		if (document.isDeleted()) {
 			return null;
@@ -109,6 +121,7 @@ public class ArangoDBVertex extends ArangoDBElement implements Vertex {
 		return q.vertices();
 	}
 
+	@Override
 	public VertexQuery query() {
 		if (document.isDeleted()) {
 			return null;
@@ -126,10 +139,12 @@ public class ArangoDBVertex extends ArangoDBElement implements Vertex {
 		return (ArangoDBSimpleVertex) document;
 	}
 
+	@Override
 	public String toString() {
 		return StringFactory.vertexString(this);
 	}
 
+	@Override
 	public void remove() {
 		if (document.isDeleted()) {
 			return;
@@ -139,9 +154,11 @@ public class ArangoDBVertex extends ArangoDBElement implements Vertex {
 			graph.getClient().deleteVertex(graph.getRawGraph(), (ArangoDBSimpleVertex) document);
 		} catch (ArangoDBException ex) {
 			// ignore error
+			logger.debug("could not delete vertex", ex);
 		}
 	}
 
+	@Override
 	public void save() throws ArangoDBException {
 		if (document.isDeleted()) {
 			return;
@@ -149,6 +166,7 @@ public class ArangoDBVertex extends ArangoDBElement implements Vertex {
 		graph.getClient().saveVertex(graph.getRawGraph(), (ArangoDBSimpleVertex) document);
 	}
 
+	@Override
 	public Edge addEdge(String label, Vertex inVertex) {
 
 		if (label == null) {

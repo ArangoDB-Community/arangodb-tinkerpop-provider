@@ -34,7 +34,7 @@ public class ArangoDBVertexIterable implements Iterable<Vertex> {
 	/**
 	 * the logger
 	 */
-	private static Logger LOG = Logger.getLogger(ArangoDBVertexIterable.class);
+	private static final Logger logger = Logger.getLogger(ArangoDBVertexIterable.class);
 
 	private final ArangoDBGraph graph;
 	private final ArangoDBBaseQuery query;
@@ -52,56 +52,59 @@ public class ArangoDBVertexIterable implements Iterable<Vertex> {
 		this.query = query;
 	}
 
+	@Override
 	public Iterator<Vertex> iterator() {
-
-		return new Iterator<Vertex>() {
-
-			@SuppressWarnings("rawtypes")
-			private CursorResult<Map> iter;
-
-			{
-				try {
-					if (query != null) {
-						iter = query.getCursorResult();
-					}
-				} catch (ArangoDBException e) {
-					LOG.error("error in AQL request", e);
-				}
-			}
-
-			public boolean hasNext() {
-				if (iter == null) {
-					return false;
-				}
-				return iter.iterator().hasNext();
-			}
-
-			@SuppressWarnings("unchecked")
-			public Vertex next() {
-				if (iter == null || !iter.iterator().hasNext()) {
-					throw new NoSuchElementException();
-				}
-
-				try {
-					return ArangoDBVertex.build(graph, new ArangoDBSimpleVertex(iter.iterator().next()));
-				} catch (ArangoDBException e) {
-					LOG.error("iterator.next", e);
-					return null;
-				}
-			}
-
-			public void remove() {
-				if (iter != null) {
-					try {
-						iter.close();
-					} catch (ArangoException e) {
-						LOG.error("could not close iterator", e);
-					}
-				}
-			}
-
-		};
-
+		return new VertexIterator(query);
 	}
 
+	class VertexIterator implements Iterator<Vertex> {
+
+		@SuppressWarnings("rawtypes")
+		private CursorResult<Map> iter;
+
+		public VertexIterator(ArangoDBBaseQuery query) {
+			try {
+				if (query != null) {
+					iter = query.getCursorResult();
+				}
+			} catch (ArangoDBException e) {
+				logger.error("error in AQL request", e);
+			}
+		}
+
+		@Override
+		public boolean hasNext() {
+			if (iter == null) {
+				return false;
+			}
+			return iter.iterator().hasNext();
+		}
+
+		@SuppressWarnings("unchecked")
+		@Override
+		public Vertex next() {
+			if (iter == null || !iter.iterator().hasNext()) {
+				throw new NoSuchElementException();
+			}
+
+			try {
+				return ArangoDBVertex.build(graph, new ArangoDBSimpleVertex(iter.iterator().next()));
+			} catch (ArangoDBException e) {
+				logger.error("iterator.next", e);
+				return null;
+			}
+		}
+
+		@Override
+		public void remove() {
+			if (iter != null) {
+				try {
+					iter.close();
+				} catch (ArangoException e) {
+					logger.error("could not close iterator", e);
+				}
+			}
+		}
+
+	}
 }

@@ -1,6 +1,7 @@
 package com.arangodb.blueprints;
 
 import com.arangodb.blueprints.client.ArangoDBPropertyFilter;
+import com.tinkerpop.blueprints.Contains;
 import com.tinkerpop.blueprints.Predicate;
 import com.tinkerpop.blueprints.Query.Compare;
 
@@ -42,6 +43,8 @@ public class ArangoDBQuery {
 		case LESS_THAN_EQUAL:
 			propertyFilter.has(key, value, ArangoDBPropertyFilter.Compare.LESS_THAN_EQUAL);
 			break;
+		default:
+			// do nothing
 		}
 		return this;
 	}
@@ -89,17 +92,16 @@ public class ArangoDBQuery {
 			case LESS_THAN_EQUAL:
 				propertyFilter.has(key, value, ArangoDBPropertyFilter.Compare.LESS_THAN_EQUAL);
 				break;
+			default:
+				// do nothing
 			}
 		} else if (prdct instanceof com.tinkerpop.blueprints.Contains) {
 			com.tinkerpop.blueprints.Contains contains = (com.tinkerpop.blueprints.Contains) prdct;
 
-			switch (contains) {
-			case IN:
+			if (contains == Contains.IN) {
 				propertyFilter.has(key, value, ArangoDBPropertyFilter.Compare.IN);
-				break;
-			case NOT_IN:
+			} else if (contains == Contains.NOT_IN) {
 				propertyFilter.has(key, value, ArangoDBPropertyFilter.Compare.NOT_IN);
-				break;
 			}
 		}
 		return this;

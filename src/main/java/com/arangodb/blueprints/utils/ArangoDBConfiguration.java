@@ -45,6 +45,7 @@ public class ArangoDBConfiguration implements GraphConfiguration {
 	 *            Rexster configuration context
 	 * @return Graph a ArangoDBGraph
 	 */
+	@Override
 	public Graph configureGraphInstance(GraphConfigurationContext context) throws GraphConfigurationException {
 
 		final HierarchicalConfiguration graphSectionConfig = (HierarchicalConfiguration) context.getProperties();
@@ -54,7 +55,7 @@ public class ArangoDBConfiguration implements GraphConfiguration {
 			conf = graphSectionConfig.configurationAt(Tokens.REXSTER_GRAPH_PROPERTIES);
 		} catch (IllegalArgumentException iae) {
 			throw new GraphConfigurationException("Check graph configuration. Missing or empty configuration element: "
-					+ Tokens.REXSTER_GRAPH_PROPERTIES);
+					+ Tokens.REXSTER_GRAPH_PROPERTIES, iae);
 		}
 
 		try {

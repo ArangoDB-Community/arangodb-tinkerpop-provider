@@ -8,6 +8,9 @@
 
 package com.arangodb.blueprints;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.arangodb.blueprints.client.ArangoDBException;
 import com.arangodb.blueprints.client.ArangoDBSimpleEdge;
 import com.tinkerpop.blueprints.Direction;
@@ -25,6 +28,9 @@ import com.tinkerpop.blueprints.util.StringFactory;
  */
 
 public class ArangoDBEdge extends ArangoDBElement implements Edge {
+
+	private static final Logger logger = LoggerFactory.getLogger(ArangoDBEdge.class);
+
 	/**
 	 * the _from vertex
 	 */
@@ -34,6 +40,13 @@ public class ArangoDBEdge extends ArangoDBElement implements Edge {
 	 * the _to vertex
 	 */
 	private Vertex inVertex = null;
+
+	private ArangoDBEdge(ArangoDBGraph graph, ArangoDBSimpleEdge edge, Vertex outVertex, Vertex inVertex) {
+		this.graph = graph;
+		this.document = edge;
+		this.outVertex = outVertex;
+		this.inVertex = inVertex;
+	}
 
 	static ArangoDBEdge create(ArangoDBGraph graph, Object id, Vertex outVertex, Vertex inVertex, String label) {
 		String key = (id != null) ? id.toString() : null;
@@ -50,6 +63,9 @@ public class ArangoDBEdge extends ArangoDBElement implements Edge {
 				if (e.errorNumber() == 1210) {
 					throw ExceptionFactory.vertexWithIdAlreadyExists(id);
 				}
+
+				logger.debug("error while creating an edge", e);
+
 				throw new IllegalArgumentException(e.getMessage());
 			}
 		}
@@ -69,6 +85,8 @@ public class ArangoDBEdge extends ArangoDBElement implements Edge {
 			return build(graph, v, null, null);
 		} catch (ArangoDBException e) {
 			// do nothing
+			logger.debug("error while reading an edge", e);
+
 			return null;
 		}
 	}
@@ -77,13 +95,7 @@ public class ArangoDBEdge extends ArangoDBElement implements Edge {
 		return new ArangoDBEdge(graph, simpleEdge, outVertex, inVertex);
 	}
 
-	private ArangoDBEdge(ArangoDBGraph graph, ArangoDBSimpleEdge edge, Vertex outVertex, Vertex inVertex) {
-		this.graph = graph;
-		this.document = edge;
-		this.outVertex = outVertex;
-		this.inVertex = inVertex;
-	}
-
+	@Override
 	public Vertex getVertex(Direction direction) throws IllegalArgumentException {
 		if (direction.equals(Direction.IN)) {
 			if (inVertex == null) {
@@ -116,6 +128,7 @@ public class ArangoDBEdge extends ArangoDBElement implements Edge {
 		return parts[0];
 	}
 
+	@Override
 	public String getLabel() {
 		Object l = document.getProperty(StringFactory.LABEL);
 		if (l != null) {
@@ -139,6 +152,7 @@ public class ArangoDBEdge extends ArangoDBElement implements Edge {
 		return StringFactory.edgeString(this);
 	}
 
+	@Override
 	public void remove() {
 		if (document.isDeleted()) {
 			return;
@@ -146,10 +160,12 @@ public class ArangoDBEdge extends ArangoDBElement implements Edge {
 		try {
 			graph.getClient().deleteEdge(graph.getRawGraph(), (ArangoDBSimpleEdge) document);
 		} catch (ArangoDBException ex) {
-			// ignore error;
+			// ignore error
+			logger.debug("error while deleting an edge", ex);
 		}
 	}
 
+	@Override
 	public void save() throws ArangoDBException {
 		if (document.isDeleted()) {
 			return;

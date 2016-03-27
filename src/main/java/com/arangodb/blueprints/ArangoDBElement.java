@@ -4,6 +4,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 
 import com.arangodb.blueprints.client.ArangoDBBaseDocument;
 import com.arangodb.blueprints.client.ArangoDBException;
@@ -21,12 +22,16 @@ import com.tinkerpop.blueprints.util.StringFactory;
  * @author Guido Schwab (http://www.triagens.de)
  */
 
-abstract public class ArangoDBElement implements Element {
+abstract class ArangoDBElement implements Element {
+
+	/**
+	 * the logger
+	 */
+	private static final Logger logger = Logger.getLogger(ArangoDBElement.class);
 
 	/**
 	 * the graph of the document
 	 */
-
 	protected ArangoDBGraph graph;
 
 	/**
@@ -42,7 +47,7 @@ abstract public class ArangoDBElement implements Element {
 	 *             if an error occurs
 	 */
 
-	abstract public void save() throws ArangoDBException;
+	abstract void save() throws ArangoDBException;
 
 	/**
 	 * Return the object value associated with the provided string key. If no
@@ -53,6 +58,7 @@ abstract public class ArangoDBElement implements Element {
 	 * @return the object value related to the string key
 	 */
 	@SuppressWarnings("unchecked")
+	@Override
 	public <T> T getProperty(String key) {
 		return (T) document.getProperty(ArangoDBUtil.normalizeKey(key));
 	}
@@ -67,6 +73,7 @@ abstract public class ArangoDBElement implements Element {
 		this.document = document;
 	}
 
+	@Override
 	public Set<String> getPropertyKeys() {
 		Set<String> ps = document.getPropertyKeys();
 		HashSet<String> result = new HashSet<String>();
@@ -86,6 +93,7 @@ abstract public class ArangoDBElement implements Element {
 		return result;
 	}
 
+	@Override
 	public void setProperty(String key, Object value) {
 
 		if (StringFactory.ID.equals(key)) {
@@ -104,11 +112,13 @@ abstract public class ArangoDBElement implements Element {
 			document.setProperty(ArangoDBUtil.normalizeKey(key), value);
 			save();
 		} catch (ArangoDBException e) {
+			logger.debug("error while setting a property", e);
 			throw new IllegalArgumentException(e.getMessage());
 		}
 	}
 
 	@SuppressWarnings("unchecked")
+	@Override
 	public <T> T removeProperty(String key) {
 
 		if (StringUtils.isBlank(key)) {
@@ -125,11 +135,13 @@ abstract public class ArangoDBElement implements Element {
 			save();
 
 		} catch (ArangoDBException e) {
+			logger.debug("error while removing a property", e);
 			throw new IllegalArgumentException(e.getMessage());
 		}
 		return o;
 	}
 
+	@Override
 	public Object getId() {
 		return document.getDocumentKey();
 	}
