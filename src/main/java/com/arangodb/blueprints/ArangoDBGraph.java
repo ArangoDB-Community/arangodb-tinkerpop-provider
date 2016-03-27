@@ -162,21 +162,7 @@ public class ArangoDBGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>, Key
 		try {
 			GraphEntity graph = client.getGraph(name);
 			if (graph != null) {
-				boolean error = false;
-
-				List<EdgeDefinitionEntity> edgeDefinitions = graph.getEdgeDefinitions();
-
-				if (edgeDefinitions.size() != 1 || CollectionUtils.isNotEmpty(graph.getOrphanCollections())) {
-					error = true;
-				} else {
-					EdgeDefinitionEntity edgeDefinitionEntity = edgeDefinitions.get(0);
-					if (!edgesCollectionName.equals(edgeDefinitionEntity.getCollection())
-							|| edgeDefinitionEntity.getFrom().size() != 1 || edgeDefinitionEntity.getTo().size() != 1
-							|| !verticesCollectionName.equals(edgeDefinitionEntity.getFrom().get(0))
-							|| !verticesCollectionName.equals(edgeDefinitionEntity.getTo().get(0))) {
-						error = true;
-					}
-				}
+				boolean error = graphHasError(verticesCollectionName, edgesCollectionName, graph);
 				if (error) {
 					throw new ArangoDBGraphException("Graph with that name already exists but with other settings");
 				}
@@ -192,6 +178,25 @@ public class ArangoDBGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>, Key
 				throw new ArangoDBGraphException(e2);
 			}
 		}
+	}
+
+	private boolean graphHasError(String verticesCollectionName, String edgesCollectionName, GraphEntity graph) {
+		boolean error = false;
+
+		List<EdgeDefinitionEntity> edgeDefinitions = graph.getEdgeDefinitions();
+
+		if (edgeDefinitions.size() != 1 || CollectionUtils.isNotEmpty(graph.getOrphanCollections())) {
+			error = true;
+		} else {
+			EdgeDefinitionEntity edgeDefinitionEntity = edgeDefinitions.get(0);
+			if (!edgesCollectionName.equals(edgeDefinitionEntity.getCollection())
+					|| edgeDefinitionEntity.getFrom().size() != 1 || edgeDefinitionEntity.getTo().size() != 1
+					|| !verticesCollectionName.equals(edgeDefinitionEntity.getFrom().get(0))
+					|| !verticesCollectionName.equals(edgeDefinitionEntity.getTo().get(0))) {
+				error = true;
+			}
+		}
+		return error;
 	}
 
 	@Override
@@ -295,24 +300,28 @@ public class ArangoDBGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>, Key
 			logger.warn("error while reading an index", e);
 		}
 
-		String n = ArangoDBUtil.normalizeKey(key);
+		String normalizedKey = ArangoDBUtil.normalizeKey(key);
 
 		if (indices != null) {
-			for (ArangoDBIndex i : indices) {
-				if (i.getFields().size() == 1) {
-					String field = i.getFields().get(0);
-
-					if (field.equals(n)) {
-						try {
-							client.deleteIndex(i.getId());
-						} catch (ArangoDBException e) {
-							logger.warn("error while deleting an index", e);
-						}
-					}
+			for (ArangoDBIndex index : indices) {
+				if (index.getFields().size() == 1) {
+					deleteIndexByKey(normalizedKey, index);
 				}
 			}
 		}
 
+	}
+
+	private void deleteIndexByKey(String normalizedKey, ArangoDBIndex index) {
+		String field = index.getFields().get(0);
+
+		if (field.equals(normalizedKey)) {
+			try {
+				client.deleteIndex(index.getId());
+			} catch (ArangoDBException e) {
+				logger.warn("error while deleting an index", e);
+			}
+		}
 	}
 
 	@SuppressWarnings("rawtypes")
@@ -376,12 +385,7 @@ public class ArangoDBGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>, Key
 
 			for (ArangoDBIndex i : indices) {
 				if (i.getFields().size() == 1) {
-					String key = i.getFields().get(0);
-
-					// ignore system index
-					if (key.charAt(0) != '_') {
-						result.add(ArangoDBUtil.denormalizeKey(key));
-					}
+					addNotSystemKey(result, i);
 				}
 			}
 
@@ -390,6 +394,15 @@ public class ArangoDBGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>, Key
 		}
 
 		return result;
+	}
+
+	private void addNotSystemKey(HashSet<String> result, ArangoDBIndex i) {
+		String key = i.getFields().get(0);
+
+		// ignore system index
+		if (key.charAt(0) != '_') {
+			result.add(ArangoDBUtil.denormalizeKey(key));
+		}
 	}
 
 	@Override

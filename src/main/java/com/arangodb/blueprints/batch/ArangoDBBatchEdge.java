@@ -11,6 +11,8 @@ package com.arangodb.blueprints.batch;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.log4j.Logger;
+
 import com.arangodb.blueprints.client.ArangoDBBaseDocument;
 import com.arangodb.blueprints.client.ArangoDBException;
 import com.arangodb.blueprints.client.ArangoDBSimpleEdge;
@@ -29,6 +31,12 @@ import com.tinkerpop.blueprints.util.StringFactory;
  */
 
 public class ArangoDBBatchEdge extends ArangoDBBatchElement implements Edge {
+
+	/**
+	 * the logger
+	 */
+	private static final Logger logger = Logger.getLogger(ArangoDBBatchEdge.class);
+
 	/**
 	 * the _from vertex
 	 */
@@ -83,6 +91,7 @@ public class ArangoDBBatchEdge extends ArangoDBBatchElement implements Edge {
 				if (e.errorNumber() == 1210) {
 					throw ExceptionFactory.vertexWithIdAlreadyExists(id);
 				}
+				logger.warn("could not create batch edge", e);
 				throw new IllegalArgumentException(e.getMessage());
 			}
 		}
@@ -107,6 +116,7 @@ public class ArangoDBBatchEdge extends ArangoDBBatchElement implements Edge {
 			return build(graph, v, null, null);
 		} catch (ArangoDBException e) {
 			// do nothing
+			logger.warn("could not load batch edge", e);
 			return null;
 		}
 	}
@@ -131,7 +141,7 @@ public class ArangoDBBatchEdge extends ArangoDBBatchElement implements Edge {
 	}
 
 	@Override
-	public Vertex getVertex(Direction direction) throws IllegalArgumentException {
+	public Vertex getVertex(Direction direction) {
 		throw new UnsupportedOperationException();
 	}
 
