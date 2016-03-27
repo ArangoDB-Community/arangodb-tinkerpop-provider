@@ -33,7 +33,7 @@ public class ArangoDBGraphQuery extends ArangoDBQuery implements GraphQuery {
 	/**
 	 * the logger
 	 */
-	private static Logger LOG = Logger.getLogger(ArangoDBVertexIterable.class);
+	private static final Logger logger = Logger.getLogger(ArangoDBVertexIterable.class);
 
 	/**
 	 * Creates a graph query for a ArangoDB graph
@@ -50,6 +50,7 @@ public class ArangoDBGraphQuery extends ArangoDBQuery implements GraphQuery {
 		return this;
 	}
 
+	@Override
 	public Iterable<Edge> edges() {
 		ArangoDBBaseQuery query;
 		try {
@@ -57,16 +58,19 @@ public class ArangoDBGraphQuery extends ArangoDBQuery implements GraphQuery {
 				count);
 			return new ArangoDBEdgeIterable(graph, query);
 		} catch (ArangoDBException e) {
+			logger.debug("error while reading edges", e);
 			return new ArangoDBEdgeIterable(graph, null);
 		}
 	}
 
+	@Override
 	public Iterable<Vertex> vertices() {
 		ArangoDBBaseQuery query;
 		try {
 			query = graph.getClient().getGraphVertices(graph.getRawGraph(), propertyFilter, limit, count);
 			return new ArangoDBVertexIterable(graph, query);
 		} catch (ArangoDBException e) {
+			logger.debug("error while reading vertices", e);
 			return new ArangoDBVertexIterable(graph, null);
 		}
 	}
@@ -84,7 +88,7 @@ public class ArangoDBGraphQuery extends ArangoDBQuery implements GraphQuery {
 
 			return query.getCursorResult().getCount();
 		} catch (ArangoDBException e) {
-			LOG.error("error in AQL query", e);
+			logger.error("error in AQL query", e);
 		}
 
 		return -1;
@@ -96,69 +100,83 @@ public class ArangoDBGraphQuery extends ArangoDBQuery implements GraphQuery {
 	 * @return the identifiers of result elements
 	 */
 	public Iterator<String> vertexIds() {
-
-		return new Iterator<String>() {
-
-			private Iterator<Vertex> iter = vertices().iterator();
-
-			public boolean hasNext() {
-				return iter.hasNext();
-			}
-
-			public String next() {
-				if (!iter.hasNext()) {
-					return null;
-				}
-
-				Vertex v = iter.next();
-
-				if (v == null) {
-					return null;
-				}
-
-				return v.getId().toString();
-			}
-
-			public void remove() {
-				iter.remove();
-			}
-
-		};
+		return new VertexIterator(vertices());
 	}
 
+	@Override
 	public ArangoDBGraphQuery has(String key) {
 		super.has(key);
 		return this;
 	}
 
+	@Override
 	public ArangoDBGraphQuery hasNot(String key) {
 		super.hasNot(key);
 		return this;
 	}
 
+	@Override
 	public ArangoDBGraphQuery has(String key, Object value) {
 		super.has(key, value);
 		return this;
 	}
 
+	@Override
 	public ArangoDBGraphQuery hasNot(String key, Object value) {
 		super.hasNot(key, value);
 		return this;
 	}
 
+	@Override
 	public ArangoDBGraphQuery has(String key, Predicate prdct, Object value) {
 		super.has(key, prdct, value);
 		return this;
 	}
 
+	@Override
 	public <T extends Comparable<?>> ArangoDBGraphQuery interval(String key, T startValue, T endValue) {
 		super.interval(key, startValue, endValue);
 		return this;
 	}
 
+	@Override
 	public ArangoDBGraphQuery limit(int limit) {
 		super.limit(limit);
 		return this;
 	}
 
+	class VertexIterator implements Iterator<String> {
+
+		private Iterator<Vertex> iter = vertices().iterator();
+
+		public VertexIterator(Iterable<Vertex> iterable) {
+			iter = iterable.iterator();
+		}
+
+		@Override
+		public boolean hasNext() {
+			return iter.hasNext();
+		}
+
+		@Override
+		public String next() {
+			if (!iter.hasNext()) {
+				return null;
+			}
+
+			Vertex v = iter.next();
+
+			if (v == null) {
+				return null;
+			}
+
+			return v.getId().toString();
+		}
+
+		@Override
+		public void remove() {
+			iter.remove();
+		}
+
+	}
 }
