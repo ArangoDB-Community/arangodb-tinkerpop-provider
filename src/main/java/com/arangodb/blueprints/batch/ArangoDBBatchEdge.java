@@ -54,12 +54,15 @@ public class ArangoDBBatchEdge extends ArangoDBBatchElement implements Edge {
 		this.inVertex = inVertex;
 	}
 
-	static ArangoDBBatchEdge create(
+	public static ArangoDBBatchEdge create(
 		ArangoDBBatchGraph graph,
 		Object id,
 		Vertex outVertex,
 		Vertex inVertex,
 		String label) {
+
+		checkVertexCLass(outVertex, inVertex);
+
 		String key = (id != null) ? id.toString() : null;
 
 		if (key == null) {
@@ -68,38 +71,40 @@ public class ArangoDBBatchEdge extends ArangoDBBatchElement implements Edge {
 
 		Map<String, Object> properties = new HashMap<String, Object>();
 
-		if (outVertex instanceof ArangoDBBatchVertex && inVertex instanceof ArangoDBBatchVertex) {
-			ArangoDBBatchVertex from = (ArangoDBBatchVertex) outVertex;
-			ArangoDBBatchVertex to = (ArangoDBBatchVertex) inVertex;
+		ArangoDBBatchVertex from = (ArangoDBBatchVertex) outVertex;
+		ArangoDBBatchVertex to = (ArangoDBBatchVertex) inVertex;
 
-			properties.put(ArangoDBBaseDocument._REV, "");
-			properties.put(ArangoDBBaseDocument._ID, "");
-			properties.put(ArangoDBBaseDocument._KEY, key);
-			if (label != null) {
-				properties.put(StringFactory.LABEL, label);
-			}
-
-			properties.put(ArangoDBSimpleEdge._FROM,
-				graph.getRawGraph().getVertexCollection() + "/" + from.getRawVertex().getDocumentKey());
-			properties.put(ArangoDBSimpleEdge._TO,
-				graph.getRawGraph().getVertexCollection() + "/" + to.getRawVertex().getDocumentKey());
-
-			try {
-				ArangoDBSimpleEdge v = new ArangoDBSimpleEdge(properties);
-				return build(graph, v, outVertex, inVertex);
-			} catch (ArangoDBException e) {
-				if (e.errorNumber() == 1210) {
-					throw ExceptionFactory.vertexWithIdAlreadyExists(id);
-				}
-				logger.warn("could not create batch edge", e);
-				throw new IllegalArgumentException(e.getMessage());
-			}
+		properties.put(ArangoDBBaseDocument._REV, "");
+		properties.put(ArangoDBBaseDocument._ID, "");
+		properties.put(ArangoDBBaseDocument._KEY, key);
+		if (label != null) {
+			properties.put(StringFactory.LABEL, label);
 		}
-		throw new IllegalArgumentException("Wrong vertex class.");
 
+		properties.put(ArangoDBSimpleEdge._FROM,
+			graph.getRawGraph().getVertexCollection() + "/" + from.getRawVertex().getDocumentKey());
+		properties.put(ArangoDBSimpleEdge._TO,
+			graph.getRawGraph().getVertexCollection() + "/" + to.getRawVertex().getDocumentKey());
+
+		try {
+			ArangoDBSimpleEdge v = new ArangoDBSimpleEdge(properties);
+			return build(graph, v, outVertex, inVertex);
+		} catch (ArangoDBException e) {
+			if (e.errorNumber() == 1210) {
+				throw ExceptionFactory.vertexWithIdAlreadyExists(id);
+			}
+			logger.warn("could not create batch edge", e);
+			throw new IllegalArgumentException(e.getMessage());
+		}
 	}
 
-	static ArangoDBBatchEdge load(ArangoDBBatchGraph graph, Object id) {
+	private static void checkVertexCLass(Vertex outVertex, Vertex inVertex) {
+		if (!(outVertex instanceof ArangoDBBatchVertex) || !(inVertex instanceof ArangoDBBatchVertex)) {
+			throw new IllegalArgumentException("Wrong vertex class.");
+		}
+	}
+
+	public static ArangoDBBatchEdge load(ArangoDBBatchGraph graph, Object id) {
 		if (id == null) {
 			throw ExceptionFactory.edgeIdCanNotBeNull();
 		}
@@ -121,7 +126,7 @@ public class ArangoDBBatchEdge extends ArangoDBBatchElement implements Edge {
 		}
 	}
 
-	static ArangoDBBatchEdge build(
+	public static ArangoDBBatchEdge build(
 		ArangoDBBatchGraph graph,
 		ArangoDBSimpleEdge simpleEdge,
 		Vertex outVertex,

@@ -227,13 +227,17 @@ public class ArangoDBBatchGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>
 		} else {
 			EdgeDefinitionEntity edgeDefinitionEntity = edgeDefinitions.get(0);
 			if (!edgesCollectionName.equals(edgeDefinitionEntity.getCollection())
-					|| edgeDefinitionEntity.getFrom().size() != 1 || edgeDefinitionEntity.getTo().size() != 1
+					|| hasOneFromAndTo(edgeDefinitionEntity)
 					|| !verticesCollectionName.equals(edgeDefinitionEntity.getFrom().get(0))
 					|| !verticesCollectionName.equals(edgeDefinitionEntity.getTo().get(0))) {
 				error = true;
 			}
 		}
 		return error;
+	}
+
+	private boolean hasOneFromAndTo(EdgeDefinitionEntity edgeDefinitionEntity) {
+		return edgeDefinitionEntity.getFrom().size() != 1 || edgeDefinitionEntity.getTo().size() != 1;
 	}
 
 	@Override

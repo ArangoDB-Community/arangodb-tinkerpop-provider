@@ -108,12 +108,7 @@ public class ArangoDBBaseQuery {
 		Map<String, Object> bindVars = new HashMap<String, Object>();
 		bindVars.put("graphName", graph.getName());
 		bindVars.put("options", options);
-
-		if (startVertex != null) {
-			bindVars.put("vertexExample", startVertex.getDocumentId());
-		} else {
-			bindVars.put("vertexExample", new HashMap<String, String>());
-		}
+		bindVars.put("vertexExample", getVertexExample());
 
 		StringBuilder sb = new StringBuilder();
 		String prefix = "i.";
@@ -127,10 +122,9 @@ public class ArangoDBBaseQuery {
 			sb.append("for i in GRAPH_EDGES(@graphName , @vertexExample, @options)");
 			break;
 		case GRAPH_NEIGHBORS:
+		default:
 			sb.append("for i in GRAPH_EDGES(@graphName , @vertexExample, @options)");
 			returnExp = " return DOCUMENT(" + getDocumentByDirection() + ")";
-			break;
-		default:
 			break;
 		}
 
@@ -170,6 +164,14 @@ public class ArangoDBBaseQuery {
 		aqlQueryOptions.setCount(count);
 
 		return client.executeAqlQuery(query, bindVars, aqlQueryOptions);
+	}
+
+	private Object getVertexExample() {
+		if (startVertex != null) {
+			return startVertex.getDocumentId();
+		} else {
+			return new HashMap<String, String>();
+		}
 	}
 
 	private String getDirectionString() {

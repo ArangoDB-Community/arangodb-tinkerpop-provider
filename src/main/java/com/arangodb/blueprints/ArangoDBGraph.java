@@ -146,17 +146,7 @@ public class ArangoDBGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>, Key
 	public ArangoDBGraph(ArangoDBConfiguration configuration, String name, String verticesCollectionName,
 		String edgesCollectionName) throws ArangoDBGraphException {
 
-		if (StringUtils.isBlank(name)) {
-			throw new ArangoDBGraphException("graph name must not be null.");
-		}
-
-		if (StringUtils.isBlank(verticesCollectionName)) {
-			throw new ArangoDBGraphException("vertex collection name must not be null.");
-		}
-
-		if (StringUtils.isBlank(edgesCollectionName)) {
-			throw new ArangoDBGraphException("edge collection name must not be null.");
-		}
+		checkNames(name, verticesCollectionName, edgesCollectionName);
 
 		client = new ArangoDBSimpleGraphClient(configuration);
 		try {
@@ -180,6 +170,21 @@ public class ArangoDBGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>, Key
 		}
 	}
 
+	private void checkNames(String name, String verticesCollectionName, String edgesCollectionName)
+			throws ArangoDBGraphException {
+		if (StringUtils.isBlank(name)) {
+			throw new ArangoDBGraphException("graph name must not be null.");
+		}
+
+		if (StringUtils.isBlank(verticesCollectionName)) {
+			throw new ArangoDBGraphException("vertex collection name must not be null.");
+		}
+
+		if (StringUtils.isBlank(edgesCollectionName)) {
+			throw new ArangoDBGraphException("edge collection name must not be null.");
+		}
+	}
+
 	private boolean graphHasError(String verticesCollectionName, String edgesCollectionName, GraphEntity graph) {
 		boolean error = false;
 
@@ -190,13 +195,17 @@ public class ArangoDBGraph implements Graph, MetaGraph<ArangoDBSimpleGraph>, Key
 		} else {
 			EdgeDefinitionEntity edgeDefinitionEntity = edgeDefinitions.get(0);
 			if (!edgesCollectionName.equals(edgeDefinitionEntity.getCollection())
-					|| edgeDefinitionEntity.getFrom().size() != 1 || edgeDefinitionEntity.getTo().size() != 1
+					|| hasOneFromAndTo(edgeDefinitionEntity)
 					|| !verticesCollectionName.equals(edgeDefinitionEntity.getFrom().get(0))
 					|| !verticesCollectionName.equals(edgeDefinitionEntity.getTo().get(0))) {
 				error = true;
 			}
 		}
 		return error;
+	}
+
+	private boolean hasOneFromAndTo(EdgeDefinitionEntity edgeDefinitionEntity) {
+		return edgeDefinitionEntity.getFrom().size() != 1 || edgeDefinitionEntity.getTo().size() != 1;
 	}
 
 	@Override
