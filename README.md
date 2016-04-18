@@ -26,7 +26,7 @@ To add the driver to your project with maven, add the following code to your pom
 <dependencies>
   <dependency>
     <groupId>com.arangodb</groupId>
-    <artifactId>arangodb-java-driver</artifactId>
+    <artifactId>blueprints-arangodb-graph</artifactId>
     <version>1.0.13</version>
   </dependency>
 	....
