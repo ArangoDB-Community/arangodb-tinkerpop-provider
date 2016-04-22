@@ -27,7 +27,7 @@ To add the driver to your project with maven, add the following code to your pom
   <dependency>
     <groupId>com.arangodb</groupId>
     <artifactId>arangodb-java-driver</artifactId>
-    <version>1.0.13</version>
+    <version>1.0.14</version>
   </dependency>
 	....
 </dependencies>
