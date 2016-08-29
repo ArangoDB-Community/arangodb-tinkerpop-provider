@@ -4,7 +4,7 @@
 
 	<groupId>com.arangodb</groupId>
 	<artifactId>blueprints-arangodb-graph</artifactId>
-	<version>1.0.15-SNAPSHOT</version>
+	<version>1.0.15</version>
 	<packaging>jar</packaging>
 	
 	<name>Blueprints-ArangoDB-Graph</name>
@@ -190,7 +190,7 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<arangodb-java-driver.version>2.6.10</arangodb-java-driver.version>
+		<arangodb-java-driver.version>2.6.11</arangodb-java-driver.version>
 		<blueprints.version>2.6.0</blueprints.version>
 		<rexster.version>2.6.0</rexster.version>
 		<junit.version>4.12</junit.version>
