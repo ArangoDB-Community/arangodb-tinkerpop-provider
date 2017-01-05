@@ -6,6 +6,17 @@
 
 An implementation of the [Blueprints 2.6](https://github.com/tinkerpop/blueprints/wiki) API for ArangoDB
 
+## Compatibility
+
+This Blueprints driver is only supporting:
+* Blueprints 2.6
+* ArangoDB 2.5.4 - 2.8.*
+
+It is not supporting ArangoDB 3.0 or newer.
+The ArangoDB team is aware of this issue and is planning to upgrade this driver.
+We suggest to use AQL directly on ArangoDB instead, which will give you a significant performance
+boost as a bonus.
+
 ## Installation & Testing
 
 Please check the
