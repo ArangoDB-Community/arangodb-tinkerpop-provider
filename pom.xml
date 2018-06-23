@@ -3,8 +3,8 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>com.arangodb</groupId>
-	<artifactId>blueprints-arangodb-graph</artifactId>
-	<version>1.0.15</version>
+	<artifactId>arangodb-tinkerpop</artifactId>
+	<version>2.0.0</version>
 	<packaging>jar</packaging>
 	
 	<name>Blueprints-ArangoDB-Graph</name>
@@ -46,6 +46,11 @@
 			<name>a-brandt</name>
 			<url>https://github.com/a-brandt</url>
 		</developer>
+		<developer>
+			<id>arcanefoam</id>
+			<name>Horacio Hoyos Rodriguez</name>
+			<url>https://github.com/arcanefoam</url>
+		</developer>
 	</developers>
 
 	<profiles>
@@ -65,7 +70,7 @@
 			<plugin>
 				<groupId>org.sonatype.plugins</groupId>
 				<artifactId>nexus-staging-maven-plugin</artifactId>
-				<version>1.6.5</version>
+				<version>1.6.8</version>
 				<extensions>true</extensions>
 				<configuration>
 					<serverId>ossrh</serverId>
@@ -78,7 +83,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-assembly-plugin</artifactId>
-				<version>2.4.1</version>
+				<version>3.1.0</version>
 				<executions>
 					<execution>
 						<id>assembly</id>
@@ -105,8 +110,8 @@
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.2</version>
 				<configuration>
-					<source>1.6</source>
-					<target>1.6</target>
+					<source>1.8</source>
+					<target>1.8</target>
 					<compilerArgument></compilerArgument>
 				</configuration>
 			</plugin>
@@ -136,7 +141,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-javadoc-plugin</artifactId>
-				<version>2.9.1</version>
+				<version>3.0.1</version>
 				<executions>
 					<execution>
 						<id>attach-javadocs</id>
@@ -152,7 +157,7 @@
 
 			<plugin>
 				<artifactId>maven-surefire-plugin</artifactId>
-				<version>2.19.1</version>
+				<version>2.21.0</version>
 				<configuration>
 					<forkCount>0</forkCount>
 					<includes>
@@ -184,14 +189,13 @@
 					</execution>
 				</executions>
 			</plugin>
-
 		</plugins>
 	</build>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<arangodb-java-driver.version>2.6.11</arangodb-java-driver.version>
-		<blueprints.version>2.6.0</blueprints.version>
+		<arangodb-java-driver.version>4.3.0</arangodb-java-driver.version>
+		<tinkerpop.version>3.3.0</tinkerpop.version>
 		<rexster.version>2.6.0</rexster.version>
 		<junit.version>4.12</junit.version>
 		<logback-classic.version>1.1.3</logback-classic.version>
@@ -205,15 +209,27 @@
 			<version>${arangodb-java-driver.version}</version>
 		</dependency>
 		<dependency>
-			<groupId>com.tinkerpop.blueprints</groupId>
-			<artifactId>blueprints-core</artifactId>
-			<version>${blueprints.version}</version>
+			<groupId>org.apache.tinkerpop</groupId>
+			<artifactId>gremlin-core</artifactId>
+			<version>${tinkerpop.version}</version>
 		</dependency>
 		<dependency>
-			<groupId>com.tinkerpop.rexster</groupId>
-			<artifactId>rexster-core</artifactId>
-			<version>${rexster.version}</version>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-lang3</artifactId>
+			<version>${commons-lang3.version}</version>
 		</dependency>
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-collections4</artifactId>
+			<version>4.1</version>
+		</dependency>
+		<dependency>
+		    <groupId>com.google.code.gson</groupId>
+		    <artifactId>gson</artifactId>
+		    <version>2.8.5</version>
+		</dependency>
+
+		<!--TEST-->
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
@@ -221,15 +237,10 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-			<groupId>com.tinkerpop.blueprints</groupId>
-			<artifactId>blueprints-test</artifactId>
-			<version>${blueprints.version}</version>
+			<groupId>org.apache.tinkerpop</groupId>
+			<artifactId>gremlin-test</artifactId>
+			<version>${tinkerpop.version}</version>
 			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.commons</groupId>
-			<artifactId>commons-lang3</artifactId>
-			<version>${commons-lang3.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>ch.qos.logback</groupId>
@@ -238,7 +249,13 @@
 			<type>jar</type>
 			<scope>test</scope>
 		</dependency>
-		
+		<dependency>
+			<groupId>org.mockito</groupId>
+			<artifactId>mockito-core</artifactId>
+			<version>2.13.0</version>
+			<scope>compile</scope>
+		</dependency>
+
 	</dependencies>
 
 
