@@ -48,7 +48,7 @@ public abstract class ArangoDBBaseDocument {
 	 */
 	public ArangoDBBaseDocument(Map<String, Object> properties) {
 		super();
-		this.properties = new TreeMap<>(properties);
+		//this.properties = new TreeMap<>(properties);
 	}
 	
 	/**
@@ -58,8 +58,8 @@ public abstract class ArangoDBBaseDocument {
 	 */
 	public ArangoDBBaseDocument(String id, Map<String, Object> properties) {
 		super();
-		this.id = id;
-		this.properties = new TreeMap<>(properties);
+//		this.id = id;
+//		this.properties = new TreeMap<>(properties);
 	}
 
 
@@ -67,9 +67,9 @@ public abstract class ArangoDBBaseDocument {
 	 * Sets the document status to "deleted"
 	 */
 	public void setDeleted() {
-		logger.info("setDeleted");
-		properties.clear();
-		deleted = true;
+//		logger.info("setDeleted");
+//		properties.clear();
+//		deleted = true;
 	}
 
 	/**
@@ -83,9 +83,9 @@ public abstract class ArangoDBBaseDocument {
 	
 
 	protected void checkHasProperty(String name) throws ArangoDBGraphException {
-		if (!properties.containsKey(name)) {
-			throw new ArangoDBGraphException("Missing property '" + name + "'");
-		}
+//		if (!properties.containsKey(name)) {
+//			throw new ArangoDBGraphException("Missing property '" + name + "'");
+//		}
 	}
 
 	/**

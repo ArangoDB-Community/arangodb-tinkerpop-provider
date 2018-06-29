@@ -30,7 +30,7 @@ import org.apache.commons.configuration.SubnodeConfiguration;
  * 
  * @author Achim Brandt (http://www.triagens.de)
  */
-
+@Deprecated
 public class ArangoDBConfiguration implements GraphConfiguration {
 
 	/**

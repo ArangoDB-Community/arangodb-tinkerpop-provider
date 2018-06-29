@@ -2,7 +2,6 @@ package com.arangodb.tinkerpop.gremlin.structure;
 
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
@@ -10,15 +9,11 @@ import org.apache.commons.collections4.map.AbstractHashedMap;
 import org.apache.tinkerpop.gremlin.structure.Element;
 import org.apache.tinkerpop.gremlin.structure.Graph;
 import org.apache.tinkerpop.gremlin.structure.Property;
-import org.apache.tinkerpop.gremlin.structure.VertexProperty;
 import org.apache.tinkerpop.gremlin.structure.util.ElementHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.arangodb.entity.DocumentField;
-import com.arangodb.entity.DocumentField.Type;
 import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
-import com.arangodb.velocypack.annotations.Expose;
 
 /**
  * The ArangoDB base element class (used by edges and vertices). 
@@ -28,7 +23,7 @@ import com.arangodb.velocypack.annotations.Expose;
  * @author Guido Schwab (http://www.triagens.de)
  */
 
-abstract class ArangoDBElement extends AbstractHashedMap<String, Object> implements Element, ArangoDBDocument {
+public abstract class ArangoDBElement extends AbstractHashedMap<String, Object> implements Element { //, ArangoDBDocument {
 	
 	public class ArangoDBProperty<V> extends HashEntry<String, V> implements Property<V>, Entry<String, V> {
     	
@@ -78,40 +73,43 @@ abstract class ArangoDBElement extends AbstractHashedMap<String, Object> impleme
 	/**
 	 * ArangoDB internal id
 	 */
-	@DocumentField(Type.ID)
+
 	private String arango_db_id;
 	
 	/**
 	 * ArangoDB internal key - mapped to Tinkerpop's ID
 	 */
-	@DocumentField(Type.KEY)
+
 	private String arango_db_key;
 
 	/**
 	 * ArangoDB internal revision
 	 */
-	@DocumentField(Type.REV)
+
 	private String arango_db_rev;
 	
 	/**
 	 * The collection in which the element is placed
 	 */
-	@Expose(serialize = false, deserialize = false)
+
 	private String arango_db_collection;
 
 	/**
 	 * the graph of the document
 	 */
-	@Expose(serialize = false, deserialize = false)
+
 	protected ArangoDBGraph graph;
 	
 	
 	public ArangoDBElement(ArangoDBGraph graph, String collection) {
+		super(4, 0.75f);
 		this.graph = graph;
 		this.arango_db_collection = collection;
+		
 	}
 	
 	public ArangoDBElement(ArangoDBGraph graph, String collection, String key) {
+		super(4, 0.75f);
 		this.graph = graph;
 		this.arango_db_collection = collection;
 		this.arango_db_key = key;
@@ -145,7 +143,7 @@ abstract class ArangoDBElement extends AbstractHashedMap<String, Object> impleme
 		this.graph = graph;
 	}
 	
-	@Override
+//	@Override
 	public void collection(String collection) {
 		this.arango_db_collection = collection;
 	}
@@ -161,38 +159,43 @@ abstract class ArangoDBElement extends AbstractHashedMap<String, Object> impleme
 		return Collections.unmodifiableSet(keys);
 	}
 	
-	@Override
+//	@Override
 	public String _id() {
 		return arango_db_id;
 	}
 
-	@Override
+//	@Override
 	public String _rev() {
 		return arango_db_rev;
 	}
 
-	@Override
+//	@Override
 	public String _key() {
 		return arango_db_key;
 	}
 	
-	@Override
+//	@Override
 	public void _id(String id) {
 		this.arango_db_id = id;
 	}
 
-	@Override
+//	@Override
 	public void _rev(String rev) {
 		this.arango_db_rev = rev;
 	}
 
-	@Override
+//	@Override
 	public void _key(String key) {
 		this.arango_db_key = key;
 	}
 
-	@Override
+//	@Override
 	public String collection() {
+		if (arango_db_collection == null) {
+			if (arango_db_id != null) {
+				arango_db_collection = arango_db_id.split("/")[0];
+			}
+		}
 		return arango_db_collection;
 	}
 	
@@ -220,7 +223,6 @@ abstract class ArangoDBElement extends AbstractHashedMap<String, Object> impleme
     public int hashCode() {
         return ElementHelper.hashCode(this);
     }
-
 	
 //	/**
 //	 * Return the object value associated with the provided string key. If no

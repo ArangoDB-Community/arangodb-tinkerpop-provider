@@ -8,6 +8,8 @@
 
 package com.arangodb.tinkerpop.gremlin.structure;
 
+import java.io.IOException;
+
 import com.arangodb.ArangoDBException;
 
 /**
@@ -41,11 +43,12 @@ public class ArangoDBGraphException extends Exception {
 	 * @param cause
 	 *            the cause of the exception
 	 */
-	public ArangoDBGraphException(ArangoDBException cause) {
+	public ArangoDBGraphException(Exception cause) {
 		super(cause);
 	}
 
-	public ArangoDBGraphException(String message, RuntimeException cause) {
+
+	public ArangoDBGraphException(String message, Exception cause) {
 		super(message, cause);
 	}
 

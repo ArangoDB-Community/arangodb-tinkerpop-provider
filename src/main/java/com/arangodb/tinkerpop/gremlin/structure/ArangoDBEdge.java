@@ -20,8 +20,6 @@ import org.apache.tinkerpop.gremlin.structure.util.ElementHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.arangodb.entity.DocumentField;
-import com.arangodb.entity.DocumentField.Type;
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBQuery;
 
 /**
@@ -33,17 +31,28 @@ import com.arangodb.tinkerpop.gremlin.client.ArangoDBQuery;
  * @author Horacio Hoyos Rodriguez (@horaciohoyosr)
  */
 
-public class ArangoDBEdge extends ArangoDBElement implements Edge, ArangoDBDocument {
-
+public class ArangoDBEdge extends ArangoDBElement implements Edge { //, ArangoDBDocument {
 
 	private static final Logger logger = LoggerFactory.getLogger(ArangoDBEdge.class);
 
-	@DocumentField(Type.FROM)
-	private String _arango_from;
+	private String arango_db_from;
 
-	@DocumentField(Type.TO)
-	private String _arango_to;
+	private String arango_db_to;
 	
+	public ArangoDBEdge() {
+		super();
+	}
+
+	public ArangoDBEdge(ArangoDBGraph graph, String collection, String key, String fromId, String toId) {
+		super(graph, collection, key);
+		this.arango_db_from = fromId;
+		this.arango_db_to = toId;
+	}
+
+	public ArangoDBEdge(ArangoDBGraph graph, String collection, String fromId, String toId) {
+		this(graph, collection, null, fromId, toId);
+	}
+
 	/**
      * Creates an entry to store the key-value data.
      *
@@ -72,7 +81,12 @@ public class ArangoDBEdge extends ArangoDBElement implements Edge, ArangoDBDocum
 	@Override
 	public void remove() {
 		logger.info("removed {}", this._key());
-		graph.getClient().deleteEdge(graph, this);
+		try {
+			graph.getClient().deleteEdge(graph, this);
+		} catch (ArangoDBGraphException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	@SuppressWarnings("unchecked")
@@ -81,18 +95,22 @@ public class ArangoDBEdge extends ArangoDBElement implements Edge, ArangoDBDocum
 		List<String> ids = new ArrayList<>();
 		switch(direction) {
 		case BOTH:
-			ids.add(_arango_from);
-			ids.add(_arango_to);
+			ids.add(arango_db_from);
+			ids.add(arango_db_to);
 			break;
 		case IN:
-			ids.add(_arango_from);
+			ids.add(arango_db_from);
 			break;
 		case OUT:
-			ids.add(_arango_to);
+			ids.add(arango_db_to);
 			break;
 		}
 		ArangoDBQuery query = graph.getClient().getGraphVertices(graph, ids);
-		return query.getCursorResult(ArangoDBVertex.class);	
+		try {
+			return query.getCursorResult(ArangoDBVertex.class);
+		} catch (ArangoDBGraphException e) {
+			return null;
+		}	
 	}
 
 	
@@ -102,6 +120,24 @@ public class ArangoDBEdge extends ArangoDBElement implements Edge, ArangoDBDocum
 		
 		return this.entrySet().stream().map(e -> (Property<V>) e).iterator();
 	}
+
+	public String _from() {
+		return arango_db_from;
+	}
+
+	public void _from(String from) {
+		this.arango_db_from = from;
+	}
+
+	public String _to() {
+		return arango_db_to;
+	}
+
+	public void _to(String to) {
+		this.arango_db_to = to;
+	}
+	
+	
 	
 	
 	

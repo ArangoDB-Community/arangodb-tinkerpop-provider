@@ -8,6 +8,13 @@
 
 package com.arangodb.tinkerpop.gremlin.utils;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.arangodb.entity.EdgeDefinition;
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBGraphException;
 
@@ -20,19 +27,24 @@ import com.arangodb.tinkerpop.gremlin.structure.ArangoDBGraphException;
  */
 
 public class ArangoDBUtil {
+	
+	/** The Constant logger. */
+	private static final Logger logger = LoggerFactory.getLogger(ArangoDBUtil.class);
 
+	/**
+	 * Instantiates a new arango DB util.
+	 */
 	private ArangoDBUtil() {
 		// this is a helper class
 	}
 
 	/**
 	 * Since attributes that start with underscore are considered to be system attributes (), 
-	 * rename key "_XXXX" to "«a»XXXX" for storage
-	 * 
-	 * @see <a href="https://docs.arangodb.com/3.3/Manual/DataModeling/NamingConventions/AttributeNames.html">Manual</a>
-	 * @param key
-	 *            the key to convert
+	 * rename key "_XXXX" to "«a»XXXX" for storage.
+	 *
+	 * @param key            the key to convert
 	 * @return String the converted String
+	 * @see <a href="https://docs.arangodb.com/3.3/Manual/DataModeling/NamingConventions/AttributeNames.html">Manual</a>
 	 */
 	public static String normalizeKey(String key) {
 		if (key.charAt(0) == '_') {
@@ -44,11 +56,10 @@ public class ArangoDBUtil {
 	/**
 	 * Since attributes that start with underscore are considered to be system attributes (), 
 	 * rename Attribute "«a»XXXX" to "_XXXX" for retreival.
-	 * 
-	 * @see <a href="https://docs.arangodb.com/3.3/Manual/DataModeling/NamingConventions/AttributeNames.html">Manual</a>
-	 * @param key
-	 *            the key to convert
+	 *
+	 * @param key            the key to convert
 	 * @return String the converted String
+	 * @see <a href="https://docs.arangodb.com/3.3/Manual/DataModeling/NamingConventions/AttributeNames.html">Manual</a>
 	 */
 	public static String denormalizeKey(String key) {
 		if (key.startsWith("«a»")) {
@@ -60,16 +71,17 @@ public class ArangoDBUtil {
 	/**
 	 * Create an EdgeDefinition from a relation in the Configuration. The format of a relation is:
 	 * <pre>
-	 * collection:from->to
+	 * collection:from-&gt;to
 	 * </pre>
 	 * Where collection is the name of the Edge collection, and to and from are comma separated list of
 	 * node collection names.
-	 * 
-	 * @param relation
+	 *
+	 * @param relation the relation
 	 * @return an EdgeDefinition that represents the relation.
-	 * @throws ArangoDBGraphException
+	 * @throws ArangoDBGraphException the arango DB graph exception
 	 */
 	public static EdgeDefinition relationPropertyToEdgeDefinition(String relation) throws ArangoDBGraphException {
+		logger.info("Creating EdgeRelation from {}", relation);
 		EdgeDefinition result = new EdgeDefinition();
 		String[] info = relation.split(":");
 		if (info.length != 2) {
@@ -80,8 +92,13 @@ public class ArangoDBUtil {
 		if (info.length != 2) {
 			throw new ArangoDBGraphException("Error in configuration. Malformed relation> " + relation);
 		}
-		String[] from = info[0].split(",");
-		String[] to = info[1].split(",");
+		List<String> trimmed = Arrays.stream(info[0].split(",")).map(String::trim).collect(Collectors.toList());
+		String[] from = new String[trimmed.size()];
+		from = trimmed.toArray(from);
+		
+		trimmed = Arrays.stream(info[1].split(",")).map(String::trim).collect(Collectors.toList());
+		String[] to = new String[trimmed.size()];
+		to = trimmed.toArray(to);
 		result.from(from).to(to);
 		return result;
 	}

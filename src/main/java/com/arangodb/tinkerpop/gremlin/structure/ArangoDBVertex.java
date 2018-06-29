@@ -53,6 +53,7 @@ public class ArangoDBVertex extends ArangoDBElement implements Vertex, ArangoDBD
 	        private final ArangoDBVertexProperty<V> element;
 
 	        private ArangoProperty(final String key, final PV value, final ArangoDBVertexProperty<V> element) {
+	        	super();
 	            this.key = key;
 	            this.value = value;
 	            this.element = element;
@@ -171,20 +172,41 @@ public class ArangoDBVertex extends ArangoDBElement implements Vertex, ArangoDBD
 	@Override
 	public void remove() {
 		logger.info("removed {}", this._key());
-		graph.getClient().deleteVertex(graph, this);
+		try {
+			graph.getClient().deleteVertex(graph, this);
+		} catch (ArangoDBGraphException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	@Override
 	public Edge addEdge(String label, Vertex inVertex, Object... keyValues) {
-		logger.info("addEdge in collection {} to vertex {}", inVertex.id());
-		ElementHelper.validateLabel(label);
-        ElementHelper.legalPropertyKeyValueArray(keyValues);
+		logger.info("addEdge in collection {} to vertex {}", label, inVertex.id());
+		ElementHelper.legalPropertyKeyValueArray(keyValues);
 		if (!graph.edgeCollections().contains(label)) {
-			throw new IllegalArgumentException("Edge label not in defined edge collections.");
+			throw new IllegalArgumentException("Edge label not in graph edge collections.");
 		}
-		ArangoDBEdge edge = new ArangoDBEdge();
+		Object id;
+		ArangoDBEdge edge = null;
+		if (ElementHelper.getIdValue(keyValues).isPresent()) {
+        	id = ElementHelper.getIdValue(keyValues).get();
+        	if (graph.features().edge().willAllowId(id)) {
+        		edge = new ArangoDBEdge(graph, label, id.toString(), this._id(), ((ArangoDBVertex) inVertex)._id());
+        	}
+        	else {
+        		throw Vertex.Exceptions.userSuppliedIdsOfThisTypeNotSupported();
+        	}
+        }
+		else {
+			edge = new ArangoDBEdge(graph, label, this._id(), ((ArangoDBVertex) inVertex)._id());
+		}
 		ElementHelper.attachProperties(edge, keyValues);
-		graph.getClient().insertEdge(graph, edge);
+		try {
+			graph.getClient().insertEdge(graph, edge);
+		} catch (ArangoDBGraphException e) {
+			throw new IllegalArgumentException("Malformed Edge.", e);
+		}
 		return edge;
 	}
 
@@ -212,6 +234,7 @@ public class ArangoDBVertex extends ArangoDBElement implements Vertex, ArangoDBD
 			}
 			else {
 				values = new ArrayList<>();
+				put(key, values);
 			}
 			values.add(value);
 			break;
@@ -226,6 +249,7 @@ public class ArangoDBVertex extends ArangoDBElement implements Vertex, ArangoDBD
 			}
 			else {
 				setValues = new HashSet<>();
+				put(key, setValues);
 			}
 			setValues.add(value);
 			break;
@@ -241,7 +265,12 @@ public class ArangoDBVertex extends ArangoDBElement implements Vertex, ArangoDBD
 	public Iterator<Edge> edges(Direction direction, String... edgeLabels) {
 		
 		ArangoDBQuery query = graph.getClient().getVertexEdges(graph, this, Arrays.asList(edgeLabels), direction);
-		return query.getCursorResult(ArangoDBEdge.class);
+		try {
+			return query.getCursorResult(ArangoDBEdge.class);
+		} catch (ArangoDBGraphException e) {
+			// TODO Auto-generated catch block
+			return null;
+		}
 	}
 
 
@@ -249,7 +278,12 @@ public class ArangoDBVertex extends ArangoDBElement implements Vertex, ArangoDBD
 	@Override
 	public Iterator<Vertex> vertices(Direction direction, String... edgeLabels) {
 		ArangoDBQuery query = graph.getClient().getVertexNeighbors(graph, this, Arrays.asList(edgeLabels), direction);
-		return query.getCursorResult(ArangoDBVertex.class);	
+		try {
+			return query.getCursorResult(ArangoDBVertex.class);
+		} catch (ArangoDBGraphException e) {
+			// TODO Auto-generated catch block
+			return null;
+		}	
 	}
 
 	

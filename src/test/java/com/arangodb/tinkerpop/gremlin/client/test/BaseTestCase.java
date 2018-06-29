@@ -1,10 +1,12 @@
 package com.arangodb.tinkerpop.gremlin.client.test;
 
+import java.util.Properties;
+
+import org.apache.commons.configuration.ConfigurationConverter;
+import org.apache.commons.configuration.PropertiesConfiguration;
 import org.junit.After;
 import org.junit.Before;
 
-import com.arangodb.ArangoException;
-import com.arangodb.tinkerpop.gremlin.client.ArangoDBConfiguration;
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBSimpleGraphClient;
 
 public abstract class BaseTestCase {
@@ -15,46 +17,29 @@ public abstract class BaseTestCase {
 	protected final String edges = "test_edges1";
 
 	@Before
-	public void setUp() {
+	public void setUp() throws Exception {
 
 		// host name and port see: arangodb.properties
-		ArangoDBConfiguration configuration = new ArangoDBConfiguration();
-
-		client = new ArangoDBSimpleGraphClient(configuration);
-
-		try {
-			client.getDriver().deleteGraph(graphName);
-		} catch (ArangoException e) {
-		}
-
-		try {
-			client.getDriver().deleteCollection(vertices);
-		} catch (ArangoException e) {
-		}
-
-		try {
-			client.getDriver().deleteCollection(edges);
-		} catch (ArangoException e) {
-		}
-
+		PropertiesConfiguration configuration = new PropertiesConfiguration();
+		configuration.setProperty("arangodb.hosts", "127.0.0.1:8529");
+		configuration.setProperty("arangodb.user", "gremlin");
+		configuration.setProperty("arangodb.password", "gremlin");
+		Properties arangoProperties = ConfigurationConverter.getProperties(configuration);
+		
+		client = new ArangoDBSimpleGraphClient(arangoProperties, "tinkerpop", 30000);
+		
+		client.deleteGraph(graphName);
+		client.deleteCollection(vertices);
+		client.deleteCollection(edges);
+		
 	}
 
 	@After
 	public void tearDown() {
-		try {
-			client.getDriver().deleteCollection(vertices);
-		} catch (ArangoException e) {
-		}
-
-		try {
-			client.getDriver().deleteCollection(edges);
-		} catch (ArangoException e) {
-		}
-		try {
-			client.getDriver().deleteGraph(graphName);
-		} catch (ArangoException e) {
-		}
-
+		
+		client.deleteCollection(vertices);
+		client.deleteCollection(edges);
+		client.deleteGraph(graphName);
 		client = null;
 	}
 
