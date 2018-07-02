@@ -24,6 +24,7 @@ import com.arangodb.tinkerpop.gremlin.structure.ArangoDBGraphException;
  * 
  * @author Achim Brandt (http://www.triagens.de)
  * @author Johannes Gocke (http://www.triagens.de)
+ * @author Horacio Hoyos Rodriguez (@horaciohoyosr)
  */
 
 public class ArangoDBUtil {
@@ -32,7 +33,7 @@ public class ArangoDBUtil {
 	private static final Logger logger = LoggerFactory.getLogger(ArangoDBUtil.class);
 
 	/**
-	 * Instantiates a new arango DB util.
+	 * Instantiates a new ArangoDB Util.
 	 */
 	private ArangoDBUtil() {
 		// this is a helper class
@@ -48,7 +49,7 @@ public class ArangoDBUtil {
 	 */
 	public static String normalizeKey(String key) {
 		if (key.charAt(0) == '_') {
-			return "," + key.substring(1);
+			return "«a»" + key.substring(1);
 		}
 		return key;
 	}
@@ -77,10 +78,11 @@ public class ArangoDBUtil {
 	 * node collection names.
 	 *
 	 * @param relation the relation
+	 * @param value 
 	 * @return an EdgeDefinition that represents the relation.
 	 * @throws ArangoDBGraphException the arango DB graph exception
 	 */
-	public static EdgeDefinition relationPropertyToEdgeDefinition(String relation) throws ArangoDBGraphException {
+	public static EdgeDefinition relationPropertyToEdgeDefinition(String graphName, String relation) throws ArangoDBGraphException {
 		logger.info("Creating EdgeRelation from {}", relation);
 		EdgeDefinition result = new EdgeDefinition();
 		String[] info = relation.split(":");
@@ -92,15 +94,38 @@ public class ArangoDBUtil {
 		if (info.length != 2) {
 			throw new ArangoDBGraphException("Error in configuration. Malformed relation> " + relation);
 		}
-		List<String> trimmed = Arrays.stream(info[0].split(",")).map(String::trim).collect(Collectors.toList());
+		List<String> trimmed = Arrays.stream(info[0].split(","))
+				.map(String::trim)
+				.map(c -> getCollectioName(graphName, c))
+				.collect(Collectors.toList());
 		String[] from = new String[trimmed.size()];
 		from = trimmed.toArray(from);
 		
-		trimmed = Arrays.stream(info[1].split(",")).map(String::trim).collect(Collectors.toList());
+		trimmed = Arrays.stream(info[1].split(","))
+				.map(String::trim)
+				.map(c -> getCollectioName(graphName, c))
+				.collect(Collectors.toList());
 		String[] to = new String[trimmed.size()];
 		to = trimmed.toArray(to);
 		result.from(from).to(to);
 		return result;
 	}
+	
+
+	public static EdgeDefinition createDefaultEdgeDefinition(
+			String graphName,
+			List<String> verticesCollectionNames,
+			List<String> edgesCollectionNames) {
+		EdgeDefinition ed = new EdgeDefinition()
+				.collection(getCollectioName(graphName, edgesCollectionNames.get(0)))
+				.from(getCollectioName(graphName, verticesCollectionNames.get(0)))
+				.to(getCollectioName(graphName, verticesCollectionNames.get(0)));
+		return ed;
+	}
+
+	public static String getCollectioName(String graphName, String collectionName) {
+		return String.format("%s_%s", graphName, collectionName);
+	}
+	
 
 }

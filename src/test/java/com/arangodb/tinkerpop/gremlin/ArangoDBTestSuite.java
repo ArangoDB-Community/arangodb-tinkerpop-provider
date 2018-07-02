@@ -43,11 +43,14 @@ public class ArangoDBTestSuite extends AbstractGremlinSuite {
      */
     private static final Class<?>[] allTests = new Class<?>[]{
     	CommunityGeneratorTest.class,
+        /* UUIDs can be used as keys, but stored as strings, as such we can not know that they have to be turned into UUIDS.
+         * We could add a configuration flag that enables this behaviour
         DetachedGraphTest.class,
         DetachedEdgeTest.class,
         DetachedVertexPropertyTest.class,
         DetachedPropertyTest.class,
         DetachedVertexTest.class,
+        */
         DistributionGeneratorTest.class,
         EdgeTest.class,
         FeatureSupportTest.class,

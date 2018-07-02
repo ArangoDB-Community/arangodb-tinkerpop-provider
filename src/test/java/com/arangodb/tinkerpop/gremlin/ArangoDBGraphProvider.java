@@ -53,7 +53,22 @@ public class ArangoDBGraphProvider extends AbstractGraphProvider {
 		config.put(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".arangodb.password", "gremlin");
 		switch (testMethodName) {
 		case "shouldProcessVerticesEdges":
+		case "shouldGenerateSameGraph[test(NormalDistribution{stdDeviation=2.0, mean=0.0},PowerLawDistribution{gamma=2.4, multiplier=0.0},0.1)]":
+		case "shouldGenerateDifferentGraph[test(NormalDistribution{stdDeviation=2.0, mean=0.0},PowerLawDistribution{gamma=2.4, multiplier=0.0},0.1)]":
+		case "shouldGenerateSameGraph[test(NormalDistribution{stdDeviation=2.0, mean=0.0},PowerLawDistribution{gamma=2.4, multiplier=0.0},0.5)]":
+		case "shouldGenerateDifferentGraph[test(NormalDistribution{stdDeviation=2.0, mean=0.0},PowerLawDistribution{gamma=2.4, multiplier=0.0},0.5)]":
+		case "shouldGenerateSameGraph[test(NormalDistribution{stdDeviation=2.0, mean=0.0},NormalDistribution{stdDeviation=4.0, mean=0.0},0.5)]":
+		case "shouldGenerateDifferentGraph[test(NormalDistribution{stdDeviation=2.0, mean=0.0},NormalDistribution{stdDeviation=4.0, mean=0.0},0.5)]":
+		case "shouldGenerateSameGraph[test(NormalDistribution{stdDeviation=2.0, mean=0.0},NormalDistribution{stdDeviation=4.0, mean=0.0},0.1)]":
+		case "shouldGenerateDifferentGraph[test(NormalDistribution{stdDeviation=2.0, mean=0.0},NormalDistribution{stdDeviation=4.0, mean=0.0},0.1)]":
+		case "shouldGenerateSameGraph[test(PowerLawDistribution{gamma=2.3, multiplier=0.0},PowerLawDistribution{gamma=2.4, multiplier=0.0},0.25)]":
+		case "shouldGenerateDifferentGraph[test(PowerLawDistribution{gamma=2.3, multiplier=0.0},PowerLawDistribution{gamma=2.4, multiplier=0.0},0.25)]":
+		case "shouldGenerateSameGraph[test(PowerLawDistribution{gamma=2.3, multiplier=0.0},NormalDistribution{stdDeviation=4.0, mean=0.0},0.25)]":
+		case "shouldGenerateDifferentGraph[test(PowerLawDistribution{gamma=2.3, multiplier=0.0},NormalDistribution{stdDeviation=4.0, mean=0.0},0.25)]":
 			config.put(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "knows");
+			break;
+		default:
+			System.out.println("Missing Base configuration for: " + testMethodName);
 		}
 		//knows
 		return config;
@@ -74,6 +89,7 @@ public class ArangoDBGraphProvider extends AbstractGraphProvider {
 			client.clear(agraph);
 			agraph.close();
 		}
+		
 	}
 
 	@Override

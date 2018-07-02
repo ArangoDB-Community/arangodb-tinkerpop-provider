@@ -2,6 +2,7 @@ package com.arangodb.tinkerpop.gremlin.structure;
 
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
@@ -23,21 +24,59 @@ import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
  * @author Guido Schwab (http://www.triagens.de)
  */
 
-public abstract class ArangoDBElement extends AbstractHashedMap<String, Object> implements Element { //, ArangoDBDocument {
+public abstract class ArangoDBElement<T> extends AbstractHashedMap<String, T> implements Element {
 	
-	public class ArangoDBProperty<V> extends HashEntry<String, V> implements Property<V>, Entry<String, V> {
+	/**
+	 * The Class ArangoDBProperty.
+	 *
+	 * @param <T> the value type
+	 */
+	
+	public static class ArangoDBProperty<V> extends HashEntry<String, V> implements Property<V>, Entry<String, V> {
     	
-		private ArangoDBElement element;
+		/** The element. */
+		
+		private ArangoDBElement<V> element;
 
-		protected ArangoDBProperty(final HashEntry<String, V> next, final int hashCode,
-				final Object key, final V value, final ArangoDBElement element) {
+		/**
+		 * Instantiates a new ArangoDB property.
+		 *
+		 * @param next the next
+		 * @param hashCode the hash code
+		 * @param key the key
+		 * @param value the value
+		 * @param element the element
+		 */
+		
+		protected ArangoDBProperty(
+			final HashEntry<String, V> next,
+			final int hashCode,
+			final Object key,
+			final V value,
+			final ArangoDBElement<V> element) {
 			super(next, hashCode, key, value);
 			this.element = element;
 		}
 
 		@Override
+		public Element element() {
+			return element;
+		}
+
+		@Override
+		public boolean isPresent() {
+			return super.getValue() != null;
+		}
+
+		@Override
 		public String key() {
 			return getKey();
+		}
+
+		@Override
+		public void remove() {
+			element.remove(getKey());
+			
 		}
 
 		@Override
@@ -48,59 +87,87 @@ public abstract class ArangoDBElement extends AbstractHashedMap<String, Object> 
 			}
 			return value;
 		}
-
-		@Override
-		public boolean isPresent() {
-			return super.getValue() != null;
-		}
-
-		@Override
-		public Element element() {
-			return element;
-		}
-
-		@Override
-		public void remove() {
-			element.remove(getKey());
-			
-		}
     	
     }
 	
+	
+	public static class ArangoElementPropertyIterator<P extends Property<V>, V> implements Iterator<P> {
+		
+		private Set<String> filterKeys;
+		private Iterator<Entry<String, V>> delegateIt;
+		
+    	
+        protected ArangoElementPropertyIterator(
+        	final ArangoDBElement<V> parent,
+        	Set<String> validProperties) {
+            filterKeys = validProperties;
+            delegateIt = parent.entrySet().iterator();
+        }
+        
+        protected ArangoElementPropertyIterator(final ArangoDBElement<V> parent) {
+            filterKeys = new HashSet<>(0, 0.75f);            
+        }
 
+		@Override
+		public boolean hasNext() {
+			return !filterKeys.isEmpty() && delegateIt.hasNext();
+		}
+
+		@SuppressWarnings("unchecked")
+		@Override
+		public P next() {
+			ArangoDBProperty<V> nextEntry;
+            do {
+            	nextEntry = (ArangoDBProperty<V>) delegateIt.next();
+            } while(!filterKeys.contains(nextEntry.getKey()));
+            filterKeys.remove(nextEntry.getKey());
+			return (P) nextEntry;
+		}
+		
+	}
+	
+	/** The Constant logger. */
+	
 	private static final Logger logger = LoggerFactory.getLogger(ArangoDBElement.class);
 	
-	/**
-	 * ArangoDB internal id
-	 */
+	/** ArangoDB internal id. */
 
 	private String arango_db_id;
 	
-	/**
-	 * ArangoDB internal key - mapped to Tinkerpop's ID
-	 */
+	/** ArangoDB internal key - mapped to Tinkerpop's ID. */
 
 	private String arango_db_key;
 
-	/**
-	 * ArangoDB internal revision
-	 */
+	/** ArangoDB internal revision. */
 
 	private String arango_db_rev;
 	
-	/**
-	 * The collection in which the element is placed
-	 */
+	/** The collection in which the element is placed. */
 
 	private String arango_db_collection;
 
-	/**
-	 * the graph of the document
-	 */
+	/** the graph of the document. */
 
 	protected ArangoDBGraph graph;
 	
+	/**  Flag to indicate if the element is paired to a document in the DB. */
 	
+	protected boolean paired = false;
+	
+	
+	/**
+	 * Constructor used for ArabgoDB JavaBeans serialisation.
+	 */
+	public ArangoDBElement() {
+		super(4, 0.75f);
+	}
+	
+	/**
+	 * Instantiates a new ArangoDB element.
+	 *
+	 * @param graph the graph
+	 * @param collection the collection
+	 */
 	public ArangoDBElement(ArangoDBGraph graph, String collection) {
 		super(4, 0.75f);
 		this.graph = graph;
@@ -108,6 +175,13 @@ public abstract class ArangoDBElement extends AbstractHashedMap<String, Object> 
 		
 	}
 	
+	/**
+	 * Instantiates a new ArangoDB element.
+	 *
+	 * @param graph the graph
+	 * @param collection the collection
+	 * @param key the key
+	 */
 	public ArangoDBElement(ArangoDBGraph graph, String collection, String key) {
 		super(4, 0.75f);
 		this.graph = graph;
@@ -115,37 +189,164 @@ public abstract class ArangoDBElement extends AbstractHashedMap<String, Object> 
 		this.arango_db_key = key;
 	}
 	
-	/**
-	 * Constructor used for ArabgoDB JavaBeans serialisation
-	 */
-	public ArangoDBElement() {
-		super(4, 0.75f);
-	}
-	
 
-	@Override
-	public Object id() {
+	/**
+	 * Get the Element's ArangoDB Id.
+	 *
+	 * @return the id
+	 */
+	
+	public String _id() {
 		return arango_db_id;
 	}
+
+	/**
+	 * Set the Element's ArangoDB Id.
+	 *
+	 * @param id the id
+	 */
+	
+	public void _id(String id) {
+		this.arango_db_id = id;
+	}
+	
+	/**
+	 * Get the Element's ArangoDB Key.
+	 *
+	 * @return the key
+	 */
+	
+	public String _key() {
+		return arango_db_key;
+	}
+	
+	/**
+	 * Set the Element's ArangoDB Key.
+	 *
+	 * @param key the key
+	 */
+	
+	public void _key(String key) {
+		this.arango_db_key = key;
+	}
+	
+	/**
+	 * Get the Element's ArangoDB Revision.
+	 *
+	 * @return the revision
+	 */
+	
+	public String _rev() {
+		return arango_db_rev;
+	}
+
+	/**
+	 * Set the Element's ArangoDB Revision.
+	 *
+	 * @param rev the revision
+	 */
+	
+	public void _rev(String rev) {
+		this.arango_db_rev = rev;
+	}
+	
+	/**
+	 * Collection. When Elements are deserialized from the DB the collection name is recomputed
+	 * from the element's id.  
+	 *
+	 * @return the string
+	 */
+	
+	public String collection() {
+		if (arango_db_collection == null) {
+			if (arango_db_id != null) {
+				arango_db_collection = arango_db_id.split("/")[0];
+				int graphLoc = arango_db_collection.indexOf('_');
+				arango_db_collection = arango_db_collection.substring(graphLoc+1);
+			}
+		}
+		return arango_db_collection;
+	}
+
+	/**
+	 * Collection.
+	 *
+	 * @param collection the collection
+	 */
+
+	public void collection(String collection) {
+		this.arango_db_collection = collection;
+	}
+	
+	
+
+	/**
+	 * Checks if is paired.
+	 *
+	 * @return true, if is paired
+	 */
+	
+	public boolean isPaired() {
+		return paired;
+	}
+
+	/**
+	 * Sets the paired.
+	 *
+	 * @param paired the new paired
+	 */
+	
+	public void setPaired(boolean paired) {
+		this.paired = paired;
+	}
+
+	/**
+     * Creates an entry to store the key-value data.
+     *
+     * @param next  the next entry in sequence
+     * @param hashCode  the hash code to use
+     * @param key  the key to store
+     * @param value  the value to store
+     * @return the newly created entry
+     */
+    protected HashEntry<String, T> createEntry(
+    	final HashEntry<String, T> next,
+    	final int hashCode,
+    	final String key,
+    	final T value) {
+    	
+        return new ArangoDBProperty<T>(next, hashCode, convertKey(key), value, this);
+    }
+	
+	@Override
+    public boolean equals(final Object object) {
+        return ElementHelper.areEqual(this, object);
+    }
 
 	@Override
 	public Graph graph() {
 		return graph;
 	}
-	
 
-	@Override
-	public String label() {
-		return arango_db_collection;
-	}
+	/**
+	 * Graph.
+	 *
+	 * @param graph the graph
+	 */
 	
 	public void graph(ArangoDBGraph graph) {
 		this.graph = graph;
 	}
+
+	@Override
+    public int hashCode() {
+        return ElementHelper.hashCode(this);
+    }
 	
-//	@Override
-	public void collection(String collection) {
-		this.arango_db_collection = collection;
+
+	@Override
+	public Object id() {
+		return arango_db_id;
 	}
 
 	@Override
@@ -158,71 +359,11 @@ public abstract class ArangoDBElement extends AbstractHashedMap<String, Object> 
 		}
 		return Collections.unmodifiableSet(keys);
 	}
-	
-//	@Override
-	public String _id() {
-		return arango_db_id;
-	}
-
-//	@Override
-	public String _rev() {
-		return arango_db_rev;
-	}
-
-//	@Override
-	public String _key() {
-		return arango_db_key;
-	}
-	
-//	@Override
-	public void _id(String id) {
-		this.arango_db_id = id;
-	}
-
-//	@Override
-	public void _rev(String rev) {
-		this.arango_db_rev = rev;
-	}
-
-//	@Override
-	public void _key(String key) {
-		this.arango_db_key = key;
-	}
-
-//	@Override
-	public String collection() {
-		if (arango_db_collection == null) {
-			if (arango_db_id != null) {
-				arango_db_collection = arango_db_id.split("/")[0];
-			}
-		}
-		return arango_db_collection;
-	}
-	
-	/**
-     * Creates an entry to store the key-value data.
-     *
-     * @param next  the next entry in sequence
-     * @param hashCode  the hash code to use
-     * @param key  the key to store
-     * @param value  the value to store
-     * @return the newly created entry
-     */
-    protected HashEntry<String, Object> createEntry(final HashEntry<String, Object> next, final int hashCode,
-    		final String key, final Object value) {
-    	
-        return new ArangoDBProperty<Object>(next, hashCode, convertKey(key), value, this);
-    }
-
-	@Override
-    public boolean equals(final Object object) {
-        return ElementHelper.areEqual(this, object);
-    }
 
     @Override
-    public int hashCode() {
-        return ElementHelper.hashCode(this);
-    }
+	public String label() {
+		return arango_db_collection;
+	}
 	
 //	/**
 //	 * Return the object value associated with the provided string key. If no

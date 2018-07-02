@@ -9,8 +9,12 @@
 package com.arangodb.tinkerpop.gremlin.structure;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Set;
 
 import org.apache.tinkerpop.gremlin.structure.Direction;
 import org.apache.tinkerpop.gremlin.structure.Edge;
@@ -31,7 +35,7 @@ import com.arangodb.tinkerpop.gremlin.client.ArangoDBQuery;
  * @author Horacio Hoyos Rodriguez (@horaciohoyosr)
  */
 
-public class ArangoDBEdge extends ArangoDBElement implements Edge { //, ArangoDBDocument {
+public class ArangoDBEdge<T> extends ArangoDBElement<T> implements Edge { //, ArangoDBDocument {
 
 	private static final Logger logger = LoggerFactory.getLogger(ArangoDBEdge.class);
 
@@ -62,19 +66,29 @@ public class ArangoDBEdge extends ArangoDBElement implements Edge { //, ArangoDB
      * @param value  the value to store
      * @return the newly created entry
      */
-    protected HashEntry<String, Object> createEntry(final HashEntry<String, Object> next, final int hashCode,
-    		final String key, final Object value) {
-    	
-        return new ArangoDBProperty<Object>(next, hashCode, convertKey(key), value, this);
+    protected HashEntry<String, T> createEntry(
+    	final HashEntry<String, T> next,
+    	final int hashCode,
+    	final String key,
+    	final T value) {
+        return new ArangoDBProperty<T>(next, hashCode, convertKey(key), value, this);
     }
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public <V> Property<V> property(String key, V value) {
+	public <PV> Property<PV> property(String key, PV value) {
 		logger.info("property {} = {}", key, value);
 		ElementHelper.validateProperty(key, value);
-		put(key, value);
-		return (ArangoDBProperty<V>) getEntry(key);
+		Object oldValue = put(key, (T) value);
+		if (paired && !value.equals(oldValue)) {
+			try {
+				graph.getClient().updateEdge(graph, this);
+			} catch (ArangoDBGraphException e) {
+				logger.error("Unable to update edge in DB", e);
+				throw new IllegalStateException("Unable to update edge in DB", e);
+			}
+		}
+		return (ArangoDBProperty<PV>) getEntry(key);
 	}
 	
 	
@@ -84,8 +98,8 @@ public class ArangoDBEdge extends ArangoDBElement implements Edge { //, ArangoDB
 		try {
 			graph.getClient().deleteEdge(graph, this);
 		} catch (ArangoDBGraphException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error("Unable to remove edge in DB", e);
+			throw new IllegalStateException("Unable to remove edge in DB", e);
 		}
 	}
 
@@ -112,13 +126,31 @@ public class ArangoDBEdge extends ArangoDBElement implements Edge { //, ArangoDB
 			return null;
 		}	
 	}
-
 	
 	@SuppressWarnings("unchecked")
 	@Override
 	public <V> Iterator<Property<V>> properties(String... propertyKeys) {
-		
-		return this.entrySet().stream().map(e -> (Property<V>) e).iterator();
+		Set<String> validProperties = new HashSet<>(Arrays.asList(propertyKeys));
+		validProperties.retainAll(keySet());
+		return new ArangoElementPropertyIterator<Property<V>, V>((ArangoDBElement<V>) this, validProperties);
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public <V> Property<V> property(String key) {
+		return (Property<V>) entrySet().stream().filter(e -> e.getKey().equals(key)).findFirst().get();
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public <V> V value(String key) throws NoSuchElementException {
+		return (V) get(key);
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public <V> Iterator<V> values(String... propertyKeys) {
+		return (Iterator<V>) Arrays.stream(propertyKeys).map(this::get).iterator();
 	}
 
 	public String _from() {

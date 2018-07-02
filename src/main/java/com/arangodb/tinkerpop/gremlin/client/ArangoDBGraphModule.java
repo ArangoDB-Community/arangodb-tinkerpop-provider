@@ -1,5 +1,6 @@
 package com.arangodb.tinkerpop.gremlin.client;
 
+import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -45,12 +46,15 @@ public class ArangoDBGraphModule implements VPackModule {
 		add(DocumentField.Type.TO.getSerializeName());
 	}};
 	
-	public static final VPackDeserializer<ArangoDBVertex> VERTEX_DESERIALIZER = new VPackDeserializer<ArangoDBVertex>() {
+	public static final VPackDeserializer<ArangoDBVertex<Object>> VERTEX_DESERIALIZER = new VPackDeserializer<ArangoDBVertex<Object>>() {
 
 		@Override
-		public ArangoDBVertex deserialize(VPackSlice parent, VPackSlice vpack, VPackDeserializationContext context)
-				throws VPackException {
-			ArangoDBVertex vertex = new ArangoDBVertex();
+		public ArangoDBVertex<Object> deserialize(
+			VPackSlice parent,
+			VPackSlice vpack,
+			VPackDeserializationContext context)
+			throws VPackException {
+			ArangoDBVertex<Object> vertex = new ArangoDBVertex<>();
 			vertex._id(vpack.get(DocumentField.Type.ID.getSerializeName()).getAsString());
 			vertex._key(vpack.get(DocumentField.Type.KEY.getSerializeName()).getAsString());
 			vertex._rev(vpack.get(DocumentField.Type.REV.getSerializeName()).getAsString());
@@ -58,7 +62,7 @@ public class ArangoDBGraphModule implements VPackModule {
 			while (it.hasNext()){
 				Entry<String, VPackSlice> entry = it.next();
 				if (!ARANGODB_GRAPH_FIELDS.contains(entry.getKey())) {
-					vertex.put(entry.getKey(), context.deserialize(entry.getValue(), Object.class));
+					vertex.put(entry.getKey(), getCorretctPrimitive(context.deserialize(entry.getValue(), Object.class))); // FIXME This will not work for nested values!
 				}
 			}
 			return vertex;
@@ -66,11 +70,15 @@ public class ArangoDBGraphModule implements VPackModule {
 		
 	};
 	
-	public static final VPackSerializer<ArangoDBVertex> VERTEX_SERIALIZER = new VPackSerializer<ArangoDBVertex>() {
+	public static final VPackSerializer<ArangoDBVertex<Object>> VERTEX_SERIALIZER = new VPackSerializer<ArangoDBVertex<Object>>() {
 		
 		@Override
-		public void serialize(VPackBuilder builder, String attribute, ArangoDBVertex value,
-				VPackSerializationContext context) throws VPackException {
+		public void serialize(
+			VPackBuilder builder,
+			String attribute,
+			ArangoDBVertex<Object> value,
+			VPackSerializationContext context)
+					throws VPackException {
 			final Map<String, Object> doc = new HashMap<String, Object>();
 			doc.put(DocumentField.Type.ID.getSerializeName(), value._id());
 			doc.put(DocumentField.Type.KEY.getSerializeName(), value._key());
@@ -80,12 +88,15 @@ public class ArangoDBGraphModule implements VPackModule {
 		}
 	};
 	
-	public static final VPackDeserializer<ArangoDBEdge> EDGE_DESERIALIZER = new VPackDeserializer<ArangoDBEdge>() {
+	public static final VPackDeserializer<ArangoDBEdge<Object>> EDGE_DESERIALIZER = new VPackDeserializer<ArangoDBEdge<Object>>() {
 
 		@Override
-		public ArangoDBEdge deserialize(VPackSlice parent, VPackSlice vpack, VPackDeserializationContext context)
-				throws VPackException {
-			ArangoDBEdge edge = new ArangoDBEdge();
+		public ArangoDBEdge<Object> deserialize(
+			VPackSlice parent,
+			VPackSlice vpack, 
+			VPackDeserializationContext context)
+			throws VPackException {
+			ArangoDBEdge<Object> edge = new ArangoDBEdge<>();
 			edge._id(vpack.get(DocumentField.Type.ID.getSerializeName()).getAsString());
 			edge._key(vpack.get(DocumentField.Type.KEY.getSerializeName()).getAsString());
 			edge._rev(vpack.get(DocumentField.Type.REV.getSerializeName()).getAsString());
@@ -95,7 +106,7 @@ public class ArangoDBGraphModule implements VPackModule {
 			while (it.hasNext()){
 				Entry<String, VPackSlice> entry = it.next();
 				if (!ARANGODB_GRAPH_FIELDS.contains(entry.getKey())) {
-					edge.put(entry.getKey(), context.deserialize(entry.getValue(), Object.class));
+					edge.put(entry.getKey(), getCorretctPrimitive(context.deserialize(entry.getValue(), Object.class))); // FIXME This will not work for nested values!
 				}
 			}
 			return edge;
@@ -103,11 +114,15 @@ public class ArangoDBGraphModule implements VPackModule {
 		
 	};
 	
-	public static final VPackSerializer<ArangoDBEdge> EDGE_SERIALIZER = new VPackSerializer<ArangoDBEdge>() {
+	public static final VPackSerializer<ArangoDBEdge<Object>> EDGE_SERIALIZER = new VPackSerializer<ArangoDBEdge<Object>>() {
 		
 		@Override
-		public void serialize(VPackBuilder builder, String attribute, ArangoDBEdge value,
-				VPackSerializationContext context) throws VPackException {
+		public void serialize(
+			VPackBuilder builder, 
+			String attribute, 
+			ArangoDBEdge<Object> value,
+			VPackSerializationContext context) 
+			throws VPackException {
 			final Map<String, Object> doc = new HashMap<String, Object>();
 			doc.put(DocumentField.Type.ID.getSerializeName(), value._id());
 			doc.put(DocumentField.Type.KEY.getSerializeName(), value._key());
@@ -118,5 +133,33 @@ public class ArangoDBGraphModule implements VPackModule {
 			context.serialize(builder, attribute, doc);
 		}
 	};
+	
+	public static Object getCorretctPrimitive(Object value) {
+		if (value instanceof Number) {
+			if (value instanceof Float) {
+				return value;
+			}
+			else if (value instanceof Double) {
+				return value;
+			}
+			else {
+				String numberStr = value.toString();
+				BigInteger number = new BigInteger(numberStr);
+	            if(number.longValue() < Integer.MAX_VALUE && number.longValue() > Integer.MIN_VALUE) {
+	            	return new Integer(numberStr);
+	            }
+	            else if(number.longValueExact() < Long.MAX_VALUE && number.longValue() > Long.MIN_VALUE) {
+	            	return new Long(numberStr);
+	            }
+	            else {
+	            	return number;
+	            }
+			} 
+		}
+		else {
+			return value;
+		}
+		
+	}
 
 }
