@@ -1,6 +1,7 @@
 package com.arangodb.tinkerpop.gremlin.client;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -133,6 +134,7 @@ public class ArangoDBGraphModule implements VPackModule {
 			context.serialize(builder, attribute, doc);
 		}
 	};
+
 	
 	public static Object getCorretctPrimitive(Object value) {
 		if (value instanceof Number) {

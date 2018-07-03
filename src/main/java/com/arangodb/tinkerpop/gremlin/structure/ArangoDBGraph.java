@@ -306,7 +306,7 @@ public class ArangoDBGraph implements Graph {
 		}
     }
 
-	class ArangoDBIterator<IType extends Element> implements Iterator<IType> {
+	static class ArangoDBIterator<IType extends Element> implements Iterator<IType> {
 		
 		private final Iterator<IType> delegate;
 		private final ArangoDBGraph graph;
@@ -360,7 +360,15 @@ public class ArangoDBGraph implements Graph {
 	/** The Constant DEFAULT_VERTEX_COLLECTION. */
     public static final String DEFAULT_EDGE_COLLECTION = "edge";
 
-	public static ArangoDBGraph open(Configuration configuration) throws ArangoDBGraphException {
+    /**
+     * Create a new ArangoDBGraph from the provided configuration.
+     *
+     * @param configuration 	the configuration
+     * @return the Arango B graph
+     * @throws ArangoDBGraphException if there was an error craeting the graph.
+     */
+    
+    public static ArangoDBGraph open(Configuration configuration) throws ArangoDBGraphException {
 		return new ArangoDBGraph(configuration);
 	}
 	
@@ -595,11 +603,12 @@ public class ArangoDBGraph implements Graph {
         		throw new ArangoDBGraphException("No relations where specified but the graph has more than one EdgeDefinition.");
     		}
         }
-        Map<String, EdgeDefinition> requiredDefinitions = new HashMap<>(relations.size());
+        Map<String, EdgeDefinition> requiredDefinitions;
 		if (relations.isEmpty()) {
-			EdgeDefinition ed = ArangoDBUtil.createDefaultEdgeDefinition(name, verticesCollectionNames, edgesCollectionNames);
-			requiredDefinitions.put(ed.getCollection(), ed);
+			List<EdgeDefinition> eds = ArangoDBUtil.createDefaultEdgeDefinitions(name, verticesCollectionNames, edgesCollectionNames);
+			requiredDefinitions = eds.stream().collect(Collectors.toMap(ed -> ed.getCollection(), ed -> ed));
 		} else {
+			requiredDefinitions = new HashMap<>(relations.size());
 			for (Object value : relations) {
 				EdgeDefinition ed = ArangoDBUtil.relationPropertyToEdgeDefinition(graph.name(), (String) value);
 				requiredDefinitions.put(ed.getCollection(), ed);

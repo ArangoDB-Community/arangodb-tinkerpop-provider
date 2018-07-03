@@ -10,6 +10,7 @@ package com.arangodb.tinkerpop.gremlin.structure;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -21,10 +22,13 @@ import org.apache.tinkerpop.gremlin.structure.Edge;
 import org.apache.tinkerpop.gremlin.structure.Property;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
 import org.apache.tinkerpop.gremlin.structure.util.ElementHelper;
+import org.apache.tinkerpop.gremlin.structure.util.StringFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.arangodb.ArangoCursor;
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBQuery;
+import com.arangodb.tinkerpop.gremlin.structure.ArangoDBGraph.ArangoDBIterator;
 
 /**
  * The ArangoDB edge class
@@ -113,15 +117,15 @@ public class ArangoDBEdge<T> extends ArangoDBElement<T> implements Edge { //, Ar
 			ids.add(arango_db_to);
 			break;
 		case IN:
-			ids.add(arango_db_from);
+			ids.add(arango_db_to);
 			break;
 		case OUT:
-			ids.add(arango_db_to);
+			ids.add(arango_db_from);
 			break;
 		}
 		ArangoDBQuery query = graph.getClient().getGraphVertices(graph, ids);
 		try {
-			return query.getCursorResult(ArangoDBVertex.class);
+			return new ArangoDBIterator<Vertex>(graph, query.getCursorResult(ArangoDBVertex.class));
 		} catch (ArangoDBGraphException e) {
 			return null;
 		}	
@@ -130,10 +134,11 @@ public class ArangoDBEdge<T> extends ArangoDBElement<T> implements Edge { //, Ar
 	@SuppressWarnings("unchecked")
 	@Override
 	public <V> Iterator<Property<V>> properties(String... propertyKeys) {
-		Set<String> validProperties = new HashSet<>(Arrays.asList(propertyKeys));
-		validProperties.retainAll(keySet());
+		List<String> validProperties = getValidProperties(propertyKeys);
 		return new ArangoElementPropertyIterator<Property<V>, V>((ArangoDBElement<V>) this, validProperties);
 	}
+
+	
 
 	@SuppressWarnings("unchecked")
 	@Override
@@ -150,6 +155,7 @@ public class ArangoDBEdge<T> extends ArangoDBElement<T> implements Edge { //, Ar
 	@SuppressWarnings("unchecked")
 	@Override
 	public <V> Iterator<V> values(String... propertyKeys) {
+		// FIXME Is this a filtering operation too?
 		return (Iterator<V>) Arrays.stream(propertyKeys).map(this::get).iterator();
 	}
 
@@ -169,6 +175,10 @@ public class ArangoDBEdge<T> extends ArangoDBElement<T> implements Edge { //, Ar
 		this.arango_db_to = to;
 	}
 	
+	@Override
+    public String toString() {
+    	return StringFactory.edgeString(this);
+    }
 	
 	
 	

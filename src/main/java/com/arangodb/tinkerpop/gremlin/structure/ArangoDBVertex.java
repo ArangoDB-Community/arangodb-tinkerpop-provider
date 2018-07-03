@@ -22,6 +22,7 @@ import org.apache.commons.collections4.map.HashedMap;
 import org.apache.tinkerpop.gremlin.structure.Direction;
 import org.apache.tinkerpop.gremlin.structure.Edge;
 import org.apache.tinkerpop.gremlin.structure.Element;
+import org.apache.tinkerpop.gremlin.structure.Graph;
 import org.apache.tinkerpop.gremlin.structure.Property;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
 import org.apache.tinkerpop.gremlin.structure.VertexProperty;
@@ -32,6 +33,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBQuery;
+import com.arangodb.tinkerpop.gremlin.structure.ArangoDBGraph.ArangoDBIterator;
 
 
 /**
@@ -190,10 +192,14 @@ public class ArangoDBVertex<T> extends ArangoDBElement<T> implements Vertex {
 
 	@Override
 	public Edge addEdge(String label, Vertex inVertex, Object... keyValues) {
-		logger.info("addEdge in collection {} to vertex {}", label, inVertex.id());
+		logger.info("addEdge in collection {} to vertex {}", label, inVertex == null ? "?" :inVertex.id());
 		ElementHelper.legalPropertyKeyValueArray(keyValues);
+		ElementHelper.validateLabel(label);
 		if (!graph.edgeCollections().contains(label)) {
 			throw new IllegalArgumentException(String.format("Edge label (%s)not in graph edge collections.", label));
+		}
+		if (inVertex == null) {
+			Graph.Exceptions.argumentCanNotBeNull("vertex");
 		}
 		Object id;
 		ArangoDBEdge<Object> edge = null;
@@ -288,7 +294,7 @@ public class ArangoDBVertex<T> extends ArangoDBElement<T> implements Vertex {
 		
 		ArangoDBQuery query = graph.getClient().getVertexEdges(graph, this, Arrays.asList(edgeLabels), direction);
 		try {
-			return query.getCursorResult(ArangoDBEdge.class);
+			return new ArangoDBIterator<Edge>(graph, query.getCursorResult(ArangoDBEdge.class));
 		} catch (ArangoDBGraphException e) {
 			// TODO Auto-generated catch block
 			return null;
@@ -301,7 +307,7 @@ public class ArangoDBVertex<T> extends ArangoDBElement<T> implements Vertex {
 	public Iterator<Vertex> vertices(Direction direction, String... edgeLabels) {
 		ArangoDBQuery query = graph.getClient().getVertexNeighbors(graph, this, Arrays.asList(edgeLabels), direction);
 		try {
-			return query.getCursorResult(ArangoDBVertex.class);
+			return new ArangoDBIterator<Vertex>(graph, query.getCursorResult(ArangoDBVertex.class));
 		} catch (ArangoDBGraphException e) {
 			return Collections.emptyIterator();
 		}	
@@ -311,8 +317,7 @@ public class ArangoDBVertex<T> extends ArangoDBElement<T> implements Vertex {
 	@SuppressWarnings("unchecked")
 	@Override
 	public <V> Iterator<VertexProperty<V>> properties(String... propertyKeys) {
-		Set<String> validProperties = new HashSet<>(Arrays.asList(propertyKeys));
-		validProperties.retainAll(keySet());
+		List<String> validProperties = getValidProperties(propertyKeys);
 		return new ArangoElementPropertyIterator<VertexProperty<V>, V>((ArangoDBElement<V>) this, validProperties);
 	}
 
@@ -333,6 +338,11 @@ public class ArangoDBVertex<T> extends ArangoDBElement<T> implements Vertex {
 	public <V> Iterator<V> values(String... propertyKeys) {
 		return (Iterator<V>) Arrays.stream(propertyKeys).map(this::get).iterator();
 	}
+	
+	@Override
+    public String toString() {
+    	return StringFactory.vertexString(this);
+    }
 
 }
 

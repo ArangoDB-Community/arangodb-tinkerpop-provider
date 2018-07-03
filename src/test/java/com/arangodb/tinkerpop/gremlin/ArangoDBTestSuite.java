@@ -35,6 +35,13 @@ import org.junit.runners.model.RunnerBuilder;
 
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBStructureCheck;
 
+/**
+ * Run with {@code GREMLIN_TESTS} environment variable set to a list of any of these to enable
+ * particular tests:
+ * org.apache.tinkerpop.gremlin.algorithm.generator.CommunityGeneratorTest,
+ * org.apache.tinkerpop.gremlin.algorithm.generator.DistributionGeneratorTest,
+ * org.apache.tinkerpop.gremlin.structure.EdgeTest
+ */
 public class ArangoDBTestSuite extends AbstractGremlinSuite {
 	
 	/**

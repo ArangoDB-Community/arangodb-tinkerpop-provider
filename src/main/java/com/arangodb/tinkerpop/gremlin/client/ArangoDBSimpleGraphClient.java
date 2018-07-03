@@ -677,12 +677,12 @@ public class ArangoDBSimpleGraphClient {
 		List<String> relations)
 		throws ArangoDBGraphException {
 		logger.info("Creating graph {}", name);
-		final Collection<EdgeDefinition> edgeDefinitions = new ArrayList<EdgeDefinition>();
+		final Collection<EdgeDefinition> edgeDefinitions;
 		if (relations.isEmpty()) {
 			logger.info("No relations, creating default one.");
-			EdgeDefinition ed = ArangoDBUtil.createDefaultEdgeDefinition(name, verticesCollectionNames, edgesCollectionNames);
-			edgeDefinitions.add(ed);
+			edgeDefinitions = ArangoDBUtil.createDefaultEdgeDefinitions(name, verticesCollectionNames, edgesCollectionNames);
 		} else {
+			edgeDefinitions = new ArrayList<EdgeDefinition>();
 			for (String value : relations) {
 				EdgeDefinition ed = ArangoDBUtil.relationPropertyToEdgeDefinition(name, value);
 				edgeDefinitions.add(ed);

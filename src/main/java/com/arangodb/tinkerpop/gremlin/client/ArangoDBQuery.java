@@ -18,11 +18,11 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import com.arangodb.ArangoCursor;
-import com.arangodb.ArangoDBException;
 import com.arangodb.model.AqlQueryOptions;
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBGraph;
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBGraphException;
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBVertex;
+import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
 
 
 /**
@@ -52,13 +52,13 @@ public class ArangoDBQuery {
 	 */
 	protected QueryType queryType;
 
-	protected ArangoDBVertex startVertex;
+	protected ArangoDBVertex<?> startVertex;
 	protected ArangoDBPropertyFilter propertyFilter;
-	protected List<String> labelsFilter;
+	protected List<String> labelsFilter = new ArrayList<>();
 	protected Direction direction;
 	protected Long limit;
 	protected boolean count;
-	private List<String> idsFilter;
+	private List<String> idsFilter = new ArrayList<>();
 
 	/**
 	 * Direction
@@ -124,21 +124,26 @@ public class ArangoDBQuery {
 				if (graph.vertexCollections().size() > 1) {
 					sb.append("FOR v in UNION( \n");	// Union of all vertex collections
 					sb.append(graph.vertexCollections().stream()
+						.map(vc -> ArangoDBUtil.getCollectioName(graph.name(), vc))
 						.map(vc -> String.format("FOR v IN %s  RETURN v", vc))
 						.collect(Collectors.joining(", ", "(", ")\n")));
 					sb.append(")");
 					sb.append("RETURN v");
 				}
 				else {
-					String collectionName = graph.vertexCollections().get(0);
+					String collectionName = ArangoDBUtil.getCollectioName(graph.name(), graph.vertexCollections().get(0));
 					sb.append(String.format("FOR v IN %s \n", collectionName));
 					sb.append("RETURN v");
 				}
 			}
 			else {
-				sb.append(String.format("WITH %s \n", StringUtils.join(graph.vertexCollections(), ", ")));
-				sb.append("    RETURN DOCUMENT(@idString)");
-				bindVars.put("@idString", idsFilter);
+				String with = graph.vertexCollections().stream()
+						.map(vc -> ArangoDBUtil.getCollectioName(graph.name(), vc))
+						.collect(Collectors.joining(","));
+				sb.append(String.format("WITH %s ", with));
+				sb.append("FOR n in DOCUMENT(@idString)");
+				sb.append("  RETURN n");
+				bindVars.put("idString", idsFilter);
 			}
 			break;
 		case GRAPH_EDGES:
@@ -147,38 +152,51 @@ public class ArangoDBQuery {
 					if (graph.edgeCollections().size() > 1) {
 						sb.append("FOR e in UNION( \n");	// Union of all vertex collections
 						sb.append(graph.edgeCollections().stream()
-							.map(ec -> String.format("FOR e IN %s  RETURN e", ec))
-							.collect(Collectors.joining(", ", "(", ")\n")));
+								.map(ec -> ArangoDBUtil.getCollectioName(graph.name(), ec))
+								.map(ec -> String.format("FOR e IN %s  RETURN e", ec))
+								.collect(Collectors.joining(", ", "(", ")\n")));
 						sb.append(")\n");
 						sb.append("RETURN e");
 					}
 					else {
-						String collectionName = graph.edgeCollections().get(0);
+						String collectionName = ArangoDBUtil.getCollectioName(graph.name(), graph.edgeCollections().get(0));
 						sb.append(String.format("FOR e IN %s \n", collectionName));
 						sb.append("RETURN e");
 					}
 				}
 				else {
-					sb.append(String.format("WITH %s \n", StringUtils.join(graph.edgeCollections(), ", ")));
-					sb.append("    RETURN DOCUMENT(@idString)");
-					bindVars.put("@idString", idsFilter);
+					String with = graph.edgeCollections().stream()
+							.map(vc -> ArangoDBUtil.getCollectioName(graph.name(), vc))
+							.collect(Collectors.joining(","));
+					sb.append(String.format("WITH %s ", with));
+					sb.append("FOR n in DOCUMENT(@idString)");
+					sb.append("  RETURN n");
+					bindVars.put("idString", idsFilter);
 				}
 			}
 			else {
-				sb.append(String.format("FOR v, e IN {} @startId GRAPH @graphName \n", getDirectionString()));
+				sb.append(String.format("FOR v, e IN %s @startId GRAPH @graphName \n", getDirectionString()));
 				if (!idsFilter.isEmpty()) {
 					sb.append("FILTER e._id IN @edgeIds");
-					bindVars.put("@edgeIds", idsFilter);
+					bindVars.put("edgeIds", idsFilter);
 				}
 				sb.append("RETURN DISTINCT e");;
-				bindVars.put("@startId", startVertex._id());
-				bindVars.put("@graphName", graph.name());
+				bindVars.put("startId", startVertex._id());
+				bindVars.put("graphName", graph.name());
 			}
 			break;
 		case GRAPH_NEIGHBORS:
 		default:
-			sb.append("for i in GRAPH_EDGES(@graphName , @vertexExample, @options)");
-			//returnExp = " return DOCUMENT(" + getDocumentByDirection() + ")";
+			if (labelsFilter.isEmpty()) {
+				sb.append(String.format("FOR v IN %s @startId GRAPH @graphName OPTIONS {bfs: true, uniqueVertices: 'global'} RETURN v", getDirectionString()));	
+			}
+			else {
+				sb.append(String.format("FOR v, e IN %s GRAPH @graphName OPTIONS {bfs: true} FILTER e.label IN @edgeLabels RETURN DISTINCT v", getDirectionString()));
+				bindVars.put("@edgeLabels", labelsFilter);
+			}
+			// FIXME Can we filter on vertex label?
+			bindVars.put("startId", startVertex._id());
+			bindVars.put("graphName", graph.name());
 			break;
 		}
 
@@ -231,23 +249,11 @@ public class ArangoDBQuery {
 		return "ANY";
 	}
 
-	private String getDocumentByDirection() {
-		if (direction != null) {
-			if (direction == Direction.IN) {
-				return "i._from";
-			} else if (direction == Direction.OUT) {
-				return "i._to";
-			}
-		}
-
-		return "i._to == @vertexExample ? i._from : i._to";
-	}
-
-	public ArangoDBVertex getStartVertex() {
+	public ArangoDBVertex<?> getStartVertex() {
 		return startVertex;
 	}
 
-	public ArangoDBQuery setStartVertex(ArangoDBVertex startVertex) {
+	public ArangoDBQuery setStartVertex(ArangoDBVertex<?> startVertex) {
 		this.startVertex = startVertex;
 		return this;
 	}
@@ -266,7 +272,7 @@ public class ArangoDBQuery {
 	}
 
 	public ArangoDBQuery setLabelsFilter(List<String> labelsFilter) {
-		this.labelsFilter = labelsFilter;
+		this.labelsFilter = labelsFilter;	//.stream().map(lbl -> String.format("\"%s\"", lbl)).collect(Collectors.toList());;
 		return this;
 	}
 
@@ -298,7 +304,7 @@ public class ArangoDBQuery {
 	}
 
 	public ArangoDBQuery setVertexIds(List<String> ids) {
-		this.idsFilter =ids;
+		this.idsFilter = ids; //.stream().map(id -> String.format("\"%s\"", id)).collect(Collectors.toList());
 		return this;
 	}
 

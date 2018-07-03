@@ -12,3 +12,7 @@ target
 /bin/
 
 \.DS_Store
+
+old/
+
+tikerpopTests\.log

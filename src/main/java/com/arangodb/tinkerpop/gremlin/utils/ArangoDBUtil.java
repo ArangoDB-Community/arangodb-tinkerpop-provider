@@ -8,7 +8,9 @@
 
 package com.arangodb.tinkerpop.gremlin.utils;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -112,16 +114,35 @@ public class ArangoDBUtil {
 	}
 	
 
-	public static EdgeDefinition createDefaultEdgeDefinition(
+	/**
+	 * Creates the default edge definitions. When no relations are provided, the graph schema is
+	 * assumed to be fully connected, i.e. there is an EdgeDefintion for each possible combination
+	 * of Vertex-Edge-Vertex triplets.
+	 *
+	 * @param graphName the graph name
+	 * @param verticesCollectionNames the vertices collection names
+	 * @param edgesCollectionNames the edges collection names
+	 * @return the list
+	 */
+	public static List<EdgeDefinition> createDefaultEdgeDefinitions (
 			String graphName,
 			List<String> verticesCollectionNames,
 			List<String> edgesCollectionNames) {
-		EdgeDefinition ed = new EdgeDefinition()
-				.collection(getCollectioName(graphName, edgesCollectionNames.get(0)))
-				.from(getCollectioName(graphName, verticesCollectionNames.get(0)))
-				.to(getCollectioName(graphName, verticesCollectionNames.get(0)));
-		return ed;
+		List<EdgeDefinition> result = new ArrayList<>();
+		for (String e : edgesCollectionNames) {
+			for (String from : verticesCollectionNames) {
+				for (String to : verticesCollectionNames) {
+					EdgeDefinition ed = new EdgeDefinition()
+						.collection(getCollectioName(graphName, e))
+						.from(getCollectioName(graphName, from))
+						.to(getCollectioName(graphName, to));	
+					result.add(ed);
+				}
+			}
+		}
+		return result;
 	}
+	
 
 	public static String getCollectioName(String graphName, String collectionName) {
 		return String.format("%s_%s", graphName, collectionName);

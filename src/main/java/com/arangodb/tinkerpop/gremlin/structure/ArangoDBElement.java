@@ -1,8 +1,11 @@
 package com.arangodb.tinkerpop.gremlin.structure;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
@@ -11,6 +14,7 @@ import org.apache.tinkerpop.gremlin.structure.Element;
 import org.apache.tinkerpop.gremlin.structure.Graph;
 import org.apache.tinkerpop.gremlin.structure.Property;
 import org.apache.tinkerpop.gremlin.structure.util.ElementHelper;
+import org.apache.tinkerpop.gremlin.structure.util.StringFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -93,37 +97,69 @@ public abstract class ArangoDBElement<T> extends AbstractHashedMap<String, T> im
 	
 	public static class ArangoElementPropertyIterator<P extends Property<V>, V> implements Iterator<P> {
 		
-		private Set<String> filterKeys;
-		private Iterator<Entry<String, V>> delegateIt;
+		/** The parent map */
+        private final ArangoDBElement<V> parent;
+        /** The current index into the array of buckets */
+        private Set<String> keys;
+        /** The last returned entry */
+        private P last;
+        /** The next entry */
+        private P next;
+        /** The modification count expected */
+        private int expectedModCount;
+        /** Keys to skip */
+		private List<String> filterKeys;
 		
     	
-        protected ArangoElementPropertyIterator(
+        @SuppressWarnings("unchecked")
+		protected ArangoElementPropertyIterator(
         	final ArangoDBElement<V> parent,
-        	Set<String> validProperties) {
-            filterKeys = validProperties;
-            delegateIt = parent.entrySet().iterator();
+        	List<String> filterKeys) {
+        	this.parent = parent;
+        	this.filterKeys = filterKeys;
+        	this.keys = new HashSet<>(parent.keySet());
+        	if (this.keys.isEmpty()) {
+        		this.next = null; 
+        	}
+        	else {
+        		if (filterKeys.isEmpty()) {
+        			this.filterKeys = new ArrayList<>(keys);
+        		}
+        		next = (P)parent.getEntry(this.filterKeys.remove(0));
+        	}
         }
         
         protected ArangoElementPropertyIterator(final ArangoDBElement<V> parent) {
-            filterKeys = new HashSet<>(0, 0.75f);            
+        	this(parent, new ArrayList<>(0));            
         }
-
-		@Override
-		public boolean hasNext() {
-			return !filterKeys.isEmpty() && delegateIt.hasNext();
-		}
+        
+        public boolean hasNext() {
+            return next != null;
+        }
 
 		@SuppressWarnings("unchecked")
 		@Override
 		public P next() {
-			ArangoDBProperty<V> nextEntry;
-            do {
-            	nextEntry = (ArangoDBProperty<V>) delegateIt.next();
-            } while(!filterKeys.contains(nextEntry.getKey()));
-            filterKeys.remove(nextEntry.getKey());
-			return (P) nextEntry;
+			final P newCurrent = next;
+            if (newCurrent == null)  {
+                throw new NoSuchElementException(AbstractHashedMap.NO_NEXT_ENTRY);
+            }
+            if (filterKeys.isEmpty()) {
+    			next = null;
+    		}
+    		else {
+    			// The property may have been removed, get the next
+    			do {
+    				next = (P)parent.getEntry(filterKeys.remove(0));
+    			} while (!filterKeys.isEmpty() && (next == null) );
+    		}
+            last = newCurrent;
+            return newCurrent;
 		}
 		
+		protected P currentEntry() {
+            return last;
+        }
 	}
 	
 	/** The Constant logger. */
@@ -364,6 +400,13 @@ public abstract class ArangoDBElement<T> extends AbstractHashedMap<String, T> im
 	public String label() {
 		return arango_db_collection;
 	}
+    
+    protected List<String> getValidProperties(String... propertyKeys) {
+		Set<String> validProperties = new HashSet<>(Arrays.asList(propertyKeys));
+		validProperties.retainAll(keySet());
+		return new ArrayList<>(validProperties);
+	}
+    
 	
 //	/**
 //	 * Return the object value associated with the provided string key. If no
