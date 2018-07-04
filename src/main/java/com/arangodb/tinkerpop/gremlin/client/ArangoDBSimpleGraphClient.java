@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.Properties;
 
 import org.apache.tinkerpop.gremlin.structure.Direction;
+import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,6 +37,7 @@ import com.arangodb.entity.EdgeUpdateEntity;
 import com.arangodb.entity.VertexEntity;
 import com.arangodb.entity.VertexUpdateEntity;
 import com.arangodb.model.AqlQueryOptions;
+import com.arangodb.model.GraphCreateOptions;
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBPropertyFilter.Compare;
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBQuery.QueryType;
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBEdge;
@@ -541,27 +543,24 @@ public class ArangoDBSimpleGraphClient {
 	 * Create a query to get all vertices of a graph.
 	 *
 	 * @param graph            		the simple graph
-	 * @param ids 					the ids to filter the results
+	 * @param keys 					the keys (Tinkerpop ids) to filter the results
 	 * @return ArangoDBBaseQuery 	the query object
 	 */
 
 	public ArangoDBQuery getGraphVertices(
 		ArangoDBGraph graph,
-		List<String> ids) {
-		logger.debug("Get all {} graph vertices, filterd by ids: {}", graph.name(), ids);
-//		ArangoDBPropertyFilter propertyFilter = new ArangoDBPropertyFilter();
-//		for(String id : ids) {
-//			propertyFilter.has(DocumentField.Type.ID.getSerializeName(), id, Compare.EQUAL);
-//		}
+		List<String> keys) {
+		logger.debug("Get all {} graph vertices, filterd by ids: {}", graph.name(), keys);
 		return new ArangoDBQuery(graph, this, QueryType.GRAPH_VERTICES)
-				.setVertexIds(ids);
+				.setKeysFilter(keys);
 	}
 	
 	public ArangoDBQuery getGraphEdges(
 		ArangoDBGraph graph,
 		List<String> ids) {
+		logger.debug("Get all {} graph edges, filterd by ids: {}", graph.name(), ids);
 		return new ArangoDBQuery(graph, this, QueryType.GRAPH_EDGES)
-				.setVertexIds(ids);
+				.setKeysFilter(ids);
 	}
 
 
@@ -676,6 +675,15 @@ public class ArangoDBSimpleGraphClient {
 		List<String> edgesCollectionNames,
 		List<String> relations)
 		throws ArangoDBGraphException {
+		this.createGraph(name, verticesCollectionNames, edgesCollectionNames, relations, null);
+	}
+	
+	public void createGraph(String name,
+		List<String> verticesCollectionNames,
+		List<String> edgesCollectionNames,
+		List<String> relations,
+		GraphCreateOptions options)
+		throws ArangoDBGraphException {
 		logger.info("Creating graph {}", name);
 		final Collection<EdgeDefinition> edgeDefinitions;
 		if (relations.isEmpty()) {
@@ -690,10 +698,11 @@ public class ArangoDBSimpleGraphClient {
 		}
 		try {
 			logger.info("Creating graph in database.");
-			db.createGraph(name, edgeDefinitions);
+			db.createGraph(name, edgeDefinitions, options);
 		} catch (ArangoDBException e) {
 			throw new ArangoDBGraphException("Error creating graph.", e);
 		}
+		
 	}
 
 
@@ -706,6 +715,28 @@ public class ArangoDBSimpleGraphClient {
 	
 	public ArangoGraph getGraph(String name) {
 		return db.graph(name);
+	}
+
+	@SuppressWarnings("unchecked")
+	public void updateDocument(String collectionName, String key, Object value) {
+		JSONObject obj = new JSONObject();
+		obj.put("_key", key);
+		obj.put("value", value);
+		db.collection(collectionName).updateDocument(key, obj);
+		
+	}
+
+	public void deleteDocument(String collectionName, String key) {
+		db.collection(collectionName).deleteDocument(key);
+		
+	}
+
+	@SuppressWarnings("unchecked")
+	public void createDocument(String collectionName, String key, Object value) {
+		JSONObject obj = new JSONObject();
+		obj.put("_key", key);
+		obj.put("value", value);
+		db.collection(collectionName).insertDocument(value);
 	}
 	
 	/**

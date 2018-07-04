@@ -2,6 +2,7 @@ package com.arangodb.tinkerpop.gremlin.structure;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -13,11 +14,15 @@ import org.apache.commons.collections4.map.AbstractHashedMap;
 import org.apache.tinkerpop.gremlin.structure.Element;
 import org.apache.tinkerpop.gremlin.structure.Graph;
 import org.apache.tinkerpop.gremlin.structure.Property;
+import org.apache.tinkerpop.gremlin.structure.T;
+import org.apache.tinkerpop.gremlin.structure.VertexProperty;
+import org.apache.tinkerpop.gremlin.structure.VertexProperty.Cardinality;
 import org.apache.tinkerpop.gremlin.structure.util.ElementHelper;
 import org.apache.tinkerpop.gremlin.structure.util.StringFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.arangodb.tinkerpop.gremlin.structure.ArangoDBVertex.ArangoDBVertexProperty;
 import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
 
 /**
@@ -28,12 +33,12 @@ import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
  * @author Guido Schwab (http://www.triagens.de)
  */
 
-public abstract class ArangoDBElement<T> extends AbstractHashedMap<String, T> implements Element {
+public abstract class ArangoDBElement<U> extends AbstractHashedMap<String, U> implements Element {
 	
 	/**
 	 * The Class ArangoDBProperty.
 	 *
-	 * @param <T> the value type
+	 * @param <U> the value type
 	 */
 	
 	public static class ArangoDBProperty<V> extends HashEntry<String, V> implements Property<V>, Entry<String, V> {
@@ -41,6 +46,9 @@ public abstract class ArangoDBElement<T> extends AbstractHashedMap<String, T> im
 		/** The element. */
 		
 		private ArangoDBElement<V> element;
+		
+		/** The cardinality */
+		private Cardinality cardinality;
 
 		/**
 		 * Instantiates a new ArangoDB property.
@@ -60,6 +68,12 @@ public abstract class ArangoDBElement<T> extends AbstractHashedMap<String, T> im
 			final ArangoDBElement<V> element) {
 			super(next, hashCode, key, value);
 			this.element = element;
+		}
+
+		public ArangoDBProperty(Object key, V value, ArangoDBVertex<V> element) {
+			super(null, 0, key, value);
+			this.element = element;
+			this.cardinality = Cardinality.single;
 		}
 
 		@Override
@@ -91,7 +105,26 @@ public abstract class ArangoDBElement<T> extends AbstractHashedMap<String, T> im
 			}
 			return value;
 		}
-    	
+		
+		public void cardinality(Cardinality cardinality) {
+			this.cardinality = cardinality;
+		}
+		
+		public Cardinality cardinality() {
+			return this.cardinality;
+		}
+		
+		@Override
+	    public String toString() {
+	    	return StringFactory.propertyString(this);
+	    }
+
+		@Override
+		public boolean equals(Object obj) {
+			return ElementHelper.areEqual(this, obj);
+		}
+		
+		
     }
 	
 	
@@ -105,11 +138,12 @@ public abstract class ArangoDBElement<T> extends AbstractHashedMap<String, T> im
         private P last;
         /** The next entry */
         private P next;
-        /** The modification count expected */
-        private int expectedModCount;
         /** Keys to skip */
 		private List<String> filterKeys;
 		
+		private boolean inMultiple = false;
+		private P multiNext;
+		private Iterator<Object> multiIt;
     	
         @SuppressWarnings("unchecked")
 		protected ArangoElementPropertyIterator(
@@ -134,25 +168,53 @@ public abstract class ArangoDBElement<T> extends AbstractHashedMap<String, T> im
         }
         
         public boolean hasNext() {
-            return next != null;
+        	return next != null;
         }
 
 		@SuppressWarnings("unchecked")
 		@Override
 		public P next() {
-			final P newCurrent = next;
-            if (newCurrent == null)  {
+			P newCurrent = next;
+            if (next == null)  {
                 throw new NoSuchElementException(AbstractHashedMap.NO_NEXT_ENTRY);
             }
-            if (filterKeys.isEmpty()) {
-    			next = null;
-    		}
-    		else {
-    			// The property may have been removed, get the next
-    			do {
-    				next = (P)parent.getEntry(filterKeys.remove(0));
-    			} while (!filterKeys.isEmpty() && (next == null) );
-    		}
+			if (!inMultiple) {
+				if (filterKeys.isEmpty()) {
+	    			next = null;
+	    		}
+				else {
+    				do {
+        				next = (P)parent.getEntry(filterKeys.remove(0));
+        			} while (!filterKeys.isEmpty() && (next == null));
+    				
+    				ArangoDBProperty<?> arangoprop = (ArangoDBProperty<?>)newCurrent;
+                	if (arangoprop.cardinality() != Cardinality.single) {
+                		multiNext = next;
+                    	if (arangoprop.getValue() instanceof Collection) {
+                    		multiIt = ((Collection<Object>)arangoprop.getValue()).iterator();
+                    		if (multiIt.hasNext()) {
+                    			newCurrent = (P) new ArangoDBVertexProperty<Object>(arangoprop.getKey(), multiIt.next(), (ArangoDBVertex<Object>) multiNext.element());
+                    			if (multiIt.hasNext()) {
+                					next = (P) new ArangoDBVertexProperty<Object>(newCurrent.key(), multiIt.next(), (ArangoDBVertex<Object>) multiNext.element());
+                					inMultiple = true;
+                				}
+                    		}
+                    		else {
+                    			throw new NoSuchElementException("Multivalued property has no values. " + AbstractHashedMap.NO_NEXT_ENTRY);
+                    		}
+                    	}
+                    }
+    			}
+			}
+			else {
+				if (multiIt.hasNext()) {
+					next = (P) new ArangoDBVertexProperty<Object>(newCurrent.key(), multiIt.next(), (ArangoDBVertex<Object>) multiNext.element());
+				}
+				else {
+					inMultiple = false;
+					next = multiNext;
+				}
+			}
             last = newCurrent;
             return newCurrent;
 		}
@@ -345,13 +407,13 @@ public abstract class ArangoDBElement<T> extends AbstractHashedMap<String, T> im
      * @param value  the value to store
      * @return the newly created entry
      */
-    protected HashEntry<String, T> createEntry(
-    	final HashEntry<String, T> next,
+    protected HashEntry<String, U> createEntry(
+    	final HashEntry<String, U> next,
     	final int hashCode,
     	final String key,
-    	final T value) {
+    	final U value) {
     	
-        return new ArangoDBProperty<T>(next, hashCode, convertKey(key), value, this);
+        return new ArangoDBProperty<U>(next, hashCode, convertKey(key), value, this);
     }
 	
 	@Override
@@ -382,7 +444,7 @@ public abstract class ArangoDBElement<T> extends AbstractHashedMap<String, T> im
 
 	@Override
 	public Object id() {
-		return arango_db_id;
+		return arango_db_key;
 	}
 
 	@Override
@@ -398,7 +460,7 @@ public abstract class ArangoDBElement<T> extends AbstractHashedMap<String, T> im
 
     @Override
 	public String label() {
-		return arango_db_collection;
+		return collection();
 	}
     
     protected List<String> getValidProperties(String... propertyKeys) {
@@ -406,6 +468,17 @@ public abstract class ArangoDBElement<T> extends AbstractHashedMap<String, T> im
 		validProperties.retainAll(keySet());
 		return new ArrayList<>(validProperties);
 	}
+
+	@Override
+	public U put(String key, U value) {
+		if (key == T.id.name()) {
+			if (!graph.features().vertex().properties().willAllowId(value)) {
+				throw VertexProperty.Exceptions.userSuppliedIdsOfThisTypeNotSupported();
+			}
+		}
+		return super.put(key, value);
+	}
+    
     
 	
 //	/**

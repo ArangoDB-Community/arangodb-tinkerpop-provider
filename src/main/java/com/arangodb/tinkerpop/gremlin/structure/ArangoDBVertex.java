@@ -15,6 +15,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.Set;
 
 import org.apache.commons.collections4.IterableMap;
@@ -24,6 +25,7 @@ import org.apache.tinkerpop.gremlin.structure.Edge;
 import org.apache.tinkerpop.gremlin.structure.Element;
 import org.apache.tinkerpop.gremlin.structure.Graph;
 import org.apache.tinkerpop.gremlin.structure.Property;
+import org.apache.tinkerpop.gremlin.structure.T;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
 import org.apache.tinkerpop.gremlin.structure.VertexProperty;
 import org.apache.tinkerpop.gremlin.structure.VertexProperty.Cardinality;
@@ -32,6 +34,7 @@ import org.apache.tinkerpop.gremlin.structure.util.StringFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.arangodb.ArangoDBException;
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBQuery;
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBGraph.ArangoDBIterator;
 
@@ -45,9 +48,9 @@ import com.arangodb.tinkerpop.gremlin.structure.ArangoDBGraph.ArangoDBIterator;
  * @author Horacio Hoyos Rodriguez (@horaciohoyosr)
  */
 
-public class ArangoDBVertex<T> extends ArangoDBElement<T> implements Vertex {
+public class ArangoDBVertex<U> extends ArangoDBElement<U> implements Vertex {
 	
-	public class ArangoDBVertexProperty<V> extends ArangoDBProperty<V> implements VertexProperty<V>, Entry<String, V>, Element {
+	public static class ArangoDBVertexProperty<V> extends ArangoDBProperty<V> implements VertexProperty<V>, Entry<String, V>, Element {
 		
 		private final class ArangoProperty<PV> implements Property<PV> {
 
@@ -104,9 +107,9 @@ public class ArangoDBVertex<T> extends ArangoDBElement<T> implements Vertex {
 
 	    }
 		
-		protected String label;
 		
 		protected IterableMap<String, ArangoProperty<?>> properties = new HashedMap<>(4, 0.75f);
+
 
 		protected ArangoDBVertexProperty(
 			HashEntry<String, V> next,
@@ -116,16 +119,28 @@ public class ArangoDBVertex<T> extends ArangoDBElement<T> implements Vertex {
 			ArangoDBVertex<V> element) {
 			super(next, hashCode, key, value, element);
 		}
-
-		@Override
-		public Object id() {
-			return label;
+		
+		public ArangoDBVertexProperty(
+			Object key,
+			V value,
+			ArangoDBVertex<V> element) {
+			super(key, value, element);
 		}
 
 		@Override
-		public <U> Property<U> property(String key, U value) {
+		public Object id() {
+			return key;
+		}
+
+		@Override
+		public <VP> Property<VP> property(String key, VP value) {
 			ElementHelper.validateProperty(key, value);
-			ArangoProperty<U> property = new ArangoProperty<U>(key, value, this);
+			if (key == T.id.name()) {
+				if (!element().graph().features().vertex().properties().willAllowId(key)) {
+					VertexProperty.Exceptions.userSuppliedIdsOfThisTypeNotSupported();
+				}
+			}
+			ArangoProperty<VP> property = new ArangoProperty<VP>(key, value, this);
 			this.properties.put(key, property);
 			return property;
 		}
@@ -137,13 +152,19 @@ public class ArangoDBVertex<T> extends ArangoDBElement<T> implements Vertex {
 
 		@SuppressWarnings("unchecked")
 		@Override
-		public <U> Iterator<Property<U>> properties(String... propertyKeys) {
+		public <VP> Iterator<Property<VP>> properties(String... propertyKeys) {
 			return this.properties.entrySet().stream()
 					.filter(entry -> ElementHelper.keyExists(entry.getKey(), propertyKeys))
 					.map(entry -> entry.getValue())
-					.map(v -> (Property<U>)v)
+					.map(v -> (Property<VP>)v)
 					.iterator();
 		}
+
+		@Override
+		public boolean equals(Object obj) {
+			return ElementHelper.areEqual(this, obj);
+		}
+
 		
 	}
 	
@@ -170,13 +191,13 @@ public class ArangoDBVertex<T> extends ArangoDBElement<T> implements Vertex {
      * @param value  the value to store
      * @return the newly created entry
      */
-    protected HashEntry<String, T> createEntry(
-    	final HashEntry<String, T> next,
+    protected HashEntry<String, U> createEntry(
+    	final HashEntry<String, U> next,
     	final int hashCode,
     	final String key,
-    	final T value) {
+    	final U value) {
     	
-        return new ArangoDBVertexProperty<T>(next, hashCode, convertKey(key), value, this);
+        return new ArangoDBVertexProperty<U>(next, hashCode, convertKey(key), value, this);
     }
     
 	@Override
@@ -206,20 +227,20 @@ public class ArangoDBVertex<T> extends ArangoDBElement<T> implements Vertex {
 		if (ElementHelper.getIdValue(keyValues).isPresent()) {
         	id = ElementHelper.getIdValue(keyValues).get();
         	if (graph.features().edge().willAllowId(id)) {
-        		edge = new ArangoDBEdge<Object>(graph, label, id.toString(), this._id(), ((ArangoDBVertex<?>) inVertex)._id());
+        		edge = new ArangoDBEdge<Object>(graph, label, id.toString(), this, ((ArangoDBVertex<?>) inVertex));
         	}
         	else {
         		throw Vertex.Exceptions.userSuppliedIdsOfThisTypeNotSupported();
         	}
         }
 		else {
-			edge = new ArangoDBEdge<Object>(graph, label, this._id(), ((ArangoDBVertex<?>) inVertex)._id());
+			edge = new ArangoDBEdge<Object>(graph, label, this, ((ArangoDBVertex<?>) inVertex));
 		}
 		ElementHelper.attachProperties(edge, keyValues);
 		try {
 			graph.getClient().insertEdge(graph, edge);
 		} catch (ArangoDBGraphException e) {
-			throw new IllegalArgumentException("Malformed Edge.", e);
+			throw ArangoDBGraph.Exceptions.getArangoDBException((ArangoDBException) e.getCause());
 		}
 		return edge;
 	}
@@ -235,43 +256,56 @@ public class ArangoDBVertex<T> extends ArangoDBElement<T> implements Vertex {
 		logger.debug("property {} = {} ({})", key, value, keyValues);
 		ElementHelper.validateProperty(key, value);
 		ElementHelper.legalPropertyKeyValueArray(keyValues);
+		Optional<Object> id = ElementHelper.getIdValue(keyValues);
+		if (id.isPresent()) {
+			if (!graph.features().vertex().willAllowId(id.get())) {
+				VertexProperty.Exceptions.userSuppliedIdsOfThisTypeNotSupported();
+			}
+		}
 		ArangoDBVertexProperty<V> result;
-		Object rawValues;
 		boolean added = false;
 		switch(cardinality) {
 		case single:
-			Object oldValue = put(key, (T) value);
+			Object oldValue = put(key, (U) value);
 			added = !value.equals(oldValue);
 			break;
 		case list:
-			List<V> values;
 			if (containsKey(key)) {
-				rawValues = get(key);
-				if (!(rawValues instanceof List<?>)) {
-					throw new IllegalArgumentException("The current value does not match the desired cardinality");
+				List<V> values;
+				oldValue = get(key);
+				if (!(oldValue instanceof List<?>)) {
+					values = new ArrayList<>();
+					values.add((V) oldValue);
+					put(key, (U) values);
 				}
-				values = (List<V>) rawValues; 
+				else {
+					values = (List<V>) oldValue;
+				}
+				added = values.add(value);
 			}
 			else {
-				values = new ArrayList<>();
-				put(key, (T) values);
+				put(key, (U) value);
+				added = true;
 			}
-			added = values.add(value);
 			break;
 		case set:
-			Set<V> setValues;
 			if (containsKey(key)) {
-				rawValues = get(key);
-				if (!(rawValues instanceof Set<?>)) {
-					throw new IllegalArgumentException("The current value does not match the desired cardinality");
+				Set<V> setValues;
+				oldValue = get(key);
+				if (!(oldValue instanceof Set<?>)) {
+					setValues = new HashSet<>();
+					setValues.add((V) oldValue);
+					put(key, (U) setValues);
 				}
-				setValues = (Set<V>) rawValues; 
+				else {
+					setValues = (Set<V>) oldValue;
+				}
+				added = setValues.add(value);
 			}
 			else {
-				setValues = new HashSet<>();
-				put(key, (T) setValues);
+				put(key, (U) value);
+				added = true;
 			}
-			added = setValues.add(value);
 			break;
 		}
 		if (paired && added) {
@@ -284,6 +318,7 @@ public class ArangoDBVertex<T> extends ArangoDBElement<T> implements Vertex {
 		}
 		result = (ArangoDBVertexProperty<V>) getEntry(key);
 		ElementHelper.attachProperties(result, keyValues);
+		result.cardinality(cardinality);
 		return result;
 	}
 

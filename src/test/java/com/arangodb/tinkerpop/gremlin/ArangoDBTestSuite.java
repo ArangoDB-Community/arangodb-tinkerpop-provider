@@ -40,7 +40,11 @@ import com.arangodb.tinkerpop.gremlin.structure.ArangoDBStructureCheck;
  * particular tests:
  * org.apache.tinkerpop.gremlin.algorithm.generator.CommunityGeneratorTest,
  * org.apache.tinkerpop.gremlin.algorithm.generator.DistributionGeneratorTest,
- * org.apache.tinkerpop.gremlin.structure.EdgeTest
+ * org.apache.tinkerpop.gremlin.structure.EdgeTest,
+ * org.apache.tinkerpop.gremlin.structure.FeatureSupportTest,
+ * org.apache.tinkerpop.gremlin.structure.io.IoCustomTest,
+ * org.apache.tinkerpop.gremlin.structure.io.IoGraphTest,
+ * org.apache.tinkerpop.gremlin.structure.io.IoVertexTest
  */
 public class ArangoDBTestSuite extends AbstractGremlinSuite {
 	
@@ -50,19 +54,19 @@ public class ArangoDBTestSuite extends AbstractGremlinSuite {
      */
     private static final Class<?>[] allTests = new Class<?>[]{
     	CommunityGeneratorTest.class,
-        /* UUIDs can be used as keys, but stored as strings, as such we can not know that they have to be turned into UUIDS.
-         * We could add a configuration flag that enables this behaviour
+    	// Missing
         DetachedGraphTest.class,
         DetachedEdgeTest.class,
         DetachedVertexPropertyTest.class,
         DetachedPropertyTest.class,
         DetachedVertexTest.class,
-        */
+        // Missing
+        
         DistributionGeneratorTest.class,
         EdgeTest.class,
         FeatureSupportTest.class,
         IoCustomTest.class,
-        IoEdgeTest.class,
+        IoEdgeTest.class,		
         IoGraphTest.class,
         IoVertexTest.class,
         IoPropertyTest.class,

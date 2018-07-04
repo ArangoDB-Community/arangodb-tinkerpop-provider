@@ -17,6 +17,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
@@ -29,19 +31,21 @@ import org.apache.tinkerpop.gremlin.structure.Element;
 import org.apache.tinkerpop.gremlin.structure.Graph;
 import org.apache.tinkerpop.gremlin.structure.Transaction;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
-import org.apache.tinkerpop.gremlin.structure.VertexProperty;
-import org.apache.tinkerpop.gremlin.structure.VertexProperty.Cardinality;
 import org.apache.tinkerpop.gremlin.structure.util.ElementHelper;
 import org.apache.tinkerpop.gremlin.structure.util.StringFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.arangodb.ArangoCursor;
+import com.arangodb.ArangoDBException;
 import com.arangodb.ArangoGraph;
 import com.arangodb.entity.EdgeDefinition;
 import com.arangodb.entity.GraphEntity;
+import com.arangodb.model.GraphCreateOptions;
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBQuery;
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBSimpleGraphClient;
 import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
+import com.google.gson.JsonObject;
 
 /**
  * The ArangoDB graph class.
@@ -131,10 +135,63 @@ import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
 @Graph.OptIn(Graph.OptIn.SUITE_STRUCTURE_INTEGRATE)
 @Graph.OptIn(Graph.OptIn.SUITE_PROCESS_STANDARD)
 @Graph.OptIn("com.arangodb.tinkerpop.gremlin.ArangoDBTestSuite")
+@Graph.OptOut(
+		test = "org.apache.tinkerpop.gremlin.structure.io.IoCustomTest",
+		method = "shouldSupportUUID",
+		specific = "graphson-v3",
+		reason = "There is a problem with graphson-v3 recreating the edge from a Map.")
+@Graph.OptOut(
+		test = "org.apache.tinkerpop.gremlin.structure.io.IoEdgeTest",
+		method = "shouldReadWriteEdge",
+		specific = "graphson-v3",
+		reason = "There is a problem with graphson-v3 recreating the edge from a Map.")
+// OptOut ALL graph IO out tests. Not possible with ArangoDBedge definitions
+@Graph.OptOut(
+		test = "org.apache.tinkerpop.gremlin.structure.io.IoGraphTest",
+		method = "shouldReadWriteModernToFileWithHelpers",
+		reason = "Doubles with 0 decimal values are deserialized as Integers: 1.0 == 1. But the test expects a Double.")
+@Graph.OptOut(
+		test = "org.apache.tinkerpop.gremlin.structure.io.IoGraphTest",
+		method = "shouldReadWriteClassic",
+		reason = "Doubles with 0 decimal values are deserialized as Integers: 1.0 == 1. But the test expects a Double.")
+@Graph.OptOut(
+		test = "org.apache.tinkerpop.gremlin.structure.io.IoGraphTest",
+		method = "shouldReadWriteModern",
+		reason = "Doubles with 0 decimal values are deserialized as Integers: 1.0 == 1. But the test expects a Double.")
+@Graph.OptOut(
+		test = "org.apache.tinkerpop.gremlin.structure.io.IoGraphTest",
+		method = "shouldReadWriteClassicToFileWithHelpers",
+		reason = "Doubles with 0 decimal values are deserialized as Integers: 1.0 == 1. But the test expects a Double.")
+@Graph.OptOut(
+		test = "org.apache.tinkerpop.gremlin.structure.io.IoGraphTest",
+		method = "shouldMigrateModernGraph",
+		reason = "Doubles with 0 decimal values are deserialized as Integers: 1.0 == 1. But the test expects a Double.")
+@Graph.OptOut(
+		test = "org.apache.tinkerpop.gremlin.structure.io.IoGraphTest",
+		method = "shouldMigrateClassicGraph",
+		reason = "Doubles with 0 decimal values are deserialized as Integers: 1.0 == 1. But the test expects a Double.")
+
+
+@Graph.OptOut(
+		test = "org.apache.tinkerpop.gremlin.structure.io.IoVertexTest",
+		method = "shouldReadWriteVertexWithBOTHEdges",
+		reason = "Doubles with 0 decimal values are deserialized as Integers: 1.0 == 1. But the test expects a Double.")
+@Graph.OptOut(
+		test = "org.apache.tinkerpop.gremlin.structure.io.IoVertexTest",
+		method = "shouldReadWriteVerticesNoEdgesToGraphSONManual",
+		reason = "Doubles with 0 decimal values are deserialized as Integers: 1.0 == 1. But the test expects a Double.")
+@Graph.OptOut(
+		test = "org.apache.tinkerpop.gremlin.structure.io.IoVertexTest",
+		method = "shouldReadWriteVerticesNoEdges",
+		reason = "Doubles with 0 decimal values are deserialized as Integers: 1.0 == 1. But the test expects a Double.")
 public class ArangoDBGraph implements Graph {
 
 	/**
      * The Class ArangoDBGraphFeatures.
+     * We can not use Java Obejcts as keys, ergo we can not support UUID and Integer ids. However, 
+     * the string representation of these is fine for ArangoDB, which makes the test complain 
+     * because it expects not even the toString() representation of these to be allowed. We can test
+     * to see if a string is accepted for deserialization.
      */
     public class ArangoDBGraphFeatures implements Features {
 	    
@@ -147,7 +204,7 @@ public class ArangoDBGraph implements Graph {
     		private final EdgePropertyFeatures edgePropertyFeatures = new ArangoDBGraphEdgePropertyFeatures();
 
             /**
-             * Instantiates a new arango DB graph edge features.
+             * Instantiates a new ArangoDB graph edge features.
              */
             ArangoDBGraphEdgeFeatures() { }
 
@@ -155,6 +212,26 @@ public class ArangoDBGraph implements Graph {
             public EdgePropertyFeatures properties() {
                 return edgePropertyFeatures;
             }
+			
+			@Override
+			public boolean supportsAnyIds() {
+				return false;
+			}
+			
+			@Override
+			public boolean supportsCustomIds() {
+				return false;
+			}
+			
+			@Override
+			public boolean supportsNumericIds() {
+				return false;
+			}
+
+			@Override
+			public boolean supportsUuidIds() {
+				return false;
+			}
         }
         
         /**
@@ -163,7 +240,7 @@ public class ArangoDBGraph implements Graph {
         private class ArangoDBGraphEdgePropertyFeatures implements EdgePropertyFeatures {
 
 		    /**
-    		 * Instantiates a new arango DB graph edge property features.
+    		 * Instantiates a new ArangoDB graph edge property features.
     		 */
     		ArangoDBGraphEdgePropertyFeatures() {
             }
@@ -176,7 +253,7 @@ public class ArangoDBGraph implements Graph {
         public class ArangoDBGraphElementFeatures implements ElementFeatures {
 
             /**
-             * Instantiates a new arango DB graph element features.
+             * Instantiates a new ArangoDB graph element features.
              */
             ArangoDBGraphElementFeatures() {
             }
@@ -191,7 +268,7 @@ public class ArangoDBGraph implements Graph {
 			private VariableFeatures variableFeatures = new ArangoDBGraphVariables.ArangoDBGraphVariableFeatures();
 
 			/**
-			 * Instantiates a new arango DB graph graph features.
+			 * Instantiates a new ArangoDB graph graph features.
 			 */
 			ArangoDBGraphGraphFeatures () {
 
@@ -227,34 +304,23 @@ public class ArangoDBGraph implements Graph {
     		private final VertexPropertyFeatures vertexPropertyFeatures = new ArangoDBGraphVertexPropertyFeatures();
 
             /**
-             * Instantiates a new arango DB graph vertex features.
+             * Instantiates a new ArangoDB graph vertex features.
              */
             ArangoDBGraphVertexFeatures () { }
-            
-            @Override
-			public Cardinality getCardinality(String key) {
-				return VertexProperty.Cardinality.single;
-			}
+
 
 			@Override
             public VertexPropertyFeatures properties() {
                 return vertexPropertyFeatures;
             }
-        
-        }
-
-		/**
-         * The Class ArangoDBGraphVertexPropertyFeatures.
-         */
-        private class ArangoDBGraphVertexPropertyFeatures implements VertexPropertyFeatures {
-
-		    /**
-    		 * Instantiates a new arango DB graph vertex property features.
-    		 */
-    		ArangoDBGraphVertexPropertyFeatures() { }
-
+			
 			@Override
 			public boolean supportsAnyIds() {
+				return false;
+			}
+			
+			@Override
+			public boolean supportsCustomIds() {
 				return false;
 			}
 			
@@ -264,15 +330,42 @@ public class ArangoDBGraph implements Graph {
 			}
 
 			@Override
-			public boolean supportsUserSuppliedIds() {
-				return true;
+			public boolean supportsUuidIds() {
+				return false;
+			}
+        
+        }
+
+		/**
+         * The Class ArangoDBGraphVertexPropertyFeatures.
+         */
+        private class ArangoDBGraphVertexPropertyFeatures implements VertexPropertyFeatures {
+
+		    /**
+    		 * Instantiates a new ArangoDB graph vertex property features.
+    		 */
+    		ArangoDBGraphVertexPropertyFeatures() { }
+
+			@Override
+			public boolean supportsAnyIds() {
+				return false;
+			}
+			
+			@Override
+			public boolean supportsCustomIds() {
+				return false;
+			}
+			
+			@Override
+			public boolean supportsNumericIds() {
+				return false;
 			}
 
 			@Override
 			public boolean supportsUuidIds() {
 				return false;
 			}
-		    
+
         }
 
 		/** The graph features. */
@@ -306,7 +399,7 @@ public class ArangoDBGraph implements Graph {
 		}
     }
 
-	static class ArangoDBIterator<IType extends Element> implements Iterator<IType> {
+	public static class ArangoDBIterator<IType extends Element> implements Iterator<IType> {
 		
 		private final Iterator<IType> delegate;
 		private final ArangoDBGraph graph;
@@ -359,6 +452,9 @@ public class ArangoDBGraph implements Graph {
     
 	/** The Constant DEFAULT_VERTEX_COLLECTION. */
     public static final String DEFAULT_EDGE_COLLECTION = "edge";
+    
+    private static final Pattern DOCUMENT_KEY = Pattern.compile("^[A-Za-z0-9_:\\.@()\\+,=;\\$!\\*'%-]*");
+	
 
     /**
      * Create a new ArangoDBGraph from the provided configuration.
@@ -392,6 +488,10 @@ public class ArangoDBGraph implements Graph {
 	
 	/** Flat to indicate that the graph has no schema */
 	private boolean schemaless = false;
+
+	private Variables variables;
+
+	private Configuration configuration;
 	
 
 	/**
@@ -415,7 +515,8 @@ public class ArangoDBGraph implements Graph {
 		relations = arangoConfig.getList(CONFIG_RELATIONS).stream()
 				.map(String.class::cast)
 				.collect(Collectors.toList());
-		checkValues(arangoConfig.getString(CONFIG_DB_NAME), arangoConfig.getString(CONFIG_GRAPH_NAME),	vertexCollections,
+		String graphName = arangoConfig.getString(CONFIG_GRAPH_NAME);
+		checkValues(arangoConfig.getString(CONFIG_DB_NAME), graphName,	vertexCollections,
 				edgeCollections, relations);
 		if (CollectionUtils.isEmpty(vertexCollections)) {
 			schemaless = true;
@@ -427,18 +528,25 @@ public class ArangoDBGraph implements Graph {
 		Properties arangoProperties = ConfigurationConverter.getProperties(arangoConfig);
 		int batchSize = 0;
 		client = new ArangoDBSimpleGraphClient(arangoProperties, arangoConfig.getString(CONFIG_DB_NAME), batchSize);
-        ArangoGraph graph = client.getGraph(arangoConfig.getString(CONFIG_GRAPH_NAME));
+        ArangoGraph graph = client.getGraph(graphName);
         if (graph.exists()) {
-            graphHasError(vertexCollections, edgeCollections, relations, graph);
+            checkGraphForErrors(vertexCollections, edgeCollections, relations, graph);
+            String query = String.format("FOR d IN %s RETURN c", ArangoDBGraphVariables.GRAPH_VARIABLES_COLLECTION);
+            ArangoCursor<JsonObject> iter = client.executeAqlQuery(query, null, null, JsonObject.class);
+            iter.forEach(jo -> this.variables.set(jo.get("_key").getAsString(), jo.get("value")));
         }
         else {
-			client.createGraph(arangoConfig.getString(CONFIG_GRAPH_NAME), vertexCollections,
-            		edgeCollections,
-            		relations);
+        	GraphCreateOptions options = new  GraphCreateOptions();
+        	options.orphanCollections(ArangoDBUtil.getCollectioName(graphName, ArangoDBGraphVariables.GRAPH_VARIABLES_COLLECTION));
+			client.createGraph(graphName, vertexCollections,
+            		edgeCollections, relations, options);
 		}
 		this.name = graph.name();
+		variables = new ArangoDBGraphVariables(this);
+		this.configuration = configuration;
 	}
 
+	
 	@Override
 	public Vertex addVertex(Object... keyValues) {
         ElementHelper.legalPropertyKeyValueArray(keyValues);
@@ -452,17 +560,24 @@ public class ArangoDBGraph implements Graph {
         	collection = DEFAULT_VERTEX_COLLECTION;
         }
         if (!vertexCollections().contains(collection)) {
-			throw new IllegalArgumentException("Vertex label not in graph vertex collections.");
+			throw new IllegalArgumentException(String.format("Vertex label (%s) not in graph (%s) vertex collections.", collection, name));
 		}
         ArangoDBVertex<Object> vertex = null;
         if (ElementHelper.getIdValue(keyValues).isPresent()) {
         	id = ElementHelper.getIdValue(keyValues).get();
         	if (this.features().vertex().willAllowId(id)) {
-        		vertex = new ArangoDBVertex<Object>(this, collection, id.toString());
+        		Matcher m = DOCUMENT_KEY.matcher((String)id);
+        		if (m.matches()) {
+        			vertex = new ArangoDBVertex<Object>(this, collection, id.toString());
+        		}
+        		else {
+            		throw new ArangoDBTinkerpopException(String.format("Given id (%s) has unsupported characters.", id));
+            	}
         	}
         	else {
         		throw Vertex.Exceptions.userSuppliedIdsOfThisTypeNotSupported();
         	}
+        	
         }
         else {
         	vertex = new ArangoDBVertex<Object>(this, collection);
@@ -471,8 +586,7 @@ public class ArangoDBGraph implements Graph {
         try {
 			client.insertVertex(this, vertex);
 		} catch (ArangoDBGraphException e) {
-			// TODO Auto-generated catch block
-			return null;
+			throw Exceptions.getArangoDBException((ArangoDBException) e.getCause());
 		}
         return vertex;
 	}
@@ -485,7 +599,7 @@ public class ArangoDBGraph implements Graph {
 	 * @param vertices the vertices
 	 * @param edges the edges
 	 * @param relations the relations
-	 * @throws ArangoDBGraphException the arango DB graph exception
+	 * @throws ArangoDBGraphException the ArangoDB graph exception
 	 */
 	private void checkValues(String db, String name, List<String> vertices, List<String> edges, List<String> relations)
 			throws ArangoDBGraphException {
@@ -513,7 +627,7 @@ public class ArangoDBGraph implements Graph {
 
 	@Override
 	public GraphComputer compute() throws IllegalArgumentException {
-        throw new IllegalArgumentException();
+        throw Graph.Exceptions.graphComputerNotSupported();
 	}
 
 	@Override
@@ -523,7 +637,7 @@ public class ArangoDBGraph implements Graph {
 
 	@Override
 	public Configuration configuration() {
-		return null;
+		return configuration;
 	}
 
 	/**
@@ -581,9 +695,9 @@ public class ArangoDBGraph implements Graph {
 	 * @param edgesCollectionNames The names of collections for edges
 	 * @param relations The description of edge definitions
 	 * @param graph the graph
-	 * @throws ArangoDBGraphException the arango DB graph exception
+	 * @throws ArangoDBGraphException the ArangoDB graph exception
 	 */
-	private void graphHasError(List<String> verticesCollectionNames,
+	private void checkGraphForErrors(List<String> verticesCollectionNames,
 			List<String> edgesCollectionNames,
 			List<String> relations,
 			ArangoGraph graph) throws ArangoDBGraphException {
@@ -676,12 +790,12 @@ public class ArangoDBGraph implements Graph {
 
 	@Override
 	public Transaction tx() {
-		return null;
+		throw Graph.Exceptions.transactionsNotSupported();
 	}
 
 	@Override
 	public Variables variables() {
-		return null;
+		return variables;
 	}
 
 	/**
@@ -707,6 +821,69 @@ public class ArangoDBGraph implements Graph {
 			return null;
 		}
 	}
+    
+    /**
+     * Common exceptions to use with an ArangoDB graph. This class is intended to translate ArangoDB
+     * error codes into meaningful exceptions with standard messages. ArangoDBException exception
+     * is a RuntimeException intended to stop execution.
+     */
+    public static class Exceptions {
+    	
+    	private static Pattern ERROR_CODE = Pattern.compile("^Response:\\s\\d+,\\sError:\\s(\\d+)\\s-\\s([a-z\\s]+)");
+    	
+        private Exceptions() {
+        }
+        
+        /**
+         * Translate ArangoDB Error code into exception (@see <a href="https://docs.arangodb.com/latest/Manual/Appendix/ErrorCodes.html">Error codes</a>)
+         * @param errorCode
+         * @return
+         */
+        public static ArangoDBTinkerpopException getArangoDBException(ArangoDBException ex) {
+        	String errorMessage = ex.getMessage();
+			Matcher m = ERROR_CODE.matcher(errorMessage);
+        	if (m.matches()) {
+        		int code = Integer.parseInt(m.group(1));
+        		String msg = m.group(2);
+        		switch ((int)code/100) {
+        		case 10:	// Internal ArangoDB storage errors
+        			return new ArangoDBTinkerpopException(String.format("Internal ArangoDB storage error (%s): %s", code, msg));
+        		case 11:
+        			return new ArangoDBTinkerpopException(String.format("External ArangoDB storage error (%s): %s", code, msg));
+        		case 12:
+        			return new ArangoDBTinkerpopException(String.format("General ArangoDB storage error (%s): %s", code, msg));
+        		case 13:
+        			return new ArangoDBTinkerpopException(String.format("Checked ArangoDB storage error (%s): %s", code, msg));
+        		case 14:
+        			return new ArangoDBTinkerpopException(String.format("ArangoDB replication/cluster error (%s): %s", code, msg));
+        		case 15:
+        			return new ArangoDBTinkerpopException(String.format("ArangoDB query error (%s): %s", code, msg));
+        		case 19:
+        			return new ArangoDBTinkerpopException(String.format("Graph / traversal errors (%s): %s", code, msg));
+        		}
+        	}
+        	return new ArangoDBTinkerpopException("General ArangoDB error (unkown error)");
+        }
+
+    }
+    
+    public static class ArangoDBTinkerpopException extends RuntimeException {
+
+		private static final long serialVersionUID = -8478050406116402002L;
+
+		public ArangoDBTinkerpopException(String message, Throwable cause) {
+			super(message, cause);
+		}
+
+		public ArangoDBTinkerpopException(String message) {
+			super(message);
+		}
+
+		public ArangoDBTinkerpopException(Throwable cause) {
+			super(cause);
+		}
+    	
+    }
 
 //
 //	@Override

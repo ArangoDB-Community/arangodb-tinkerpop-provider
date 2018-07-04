@@ -1,7 +1,6 @@
 package com.arangodb.tinkerpop.gremlin.client;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -45,6 +44,8 @@ public class ArangoDBGraphModule implements VPackModule {
 		add(DocumentField.Type.REV.getSerializeName());
 		add(DocumentField.Type.FROM.getSerializeName());
 		add(DocumentField.Type.TO.getSerializeName());
+		add(ArangoDBEdge.FROM_KEY);
+		add(ArangoDBEdge.TO_KEY);
 	}};
 	
 	public static final VPackDeserializer<ArangoDBVertex<Object>> VERTEX_DESERIALIZER = new VPackDeserializer<ArangoDBVertex<Object>>() {
@@ -103,11 +104,13 @@ public class ArangoDBGraphModule implements VPackModule {
 			edge._rev(vpack.get(DocumentField.Type.REV.getSerializeName()).getAsString());
 			edge._from(vpack.get(DocumentField.Type.FROM.getSerializeName()).getAsString());
 			edge._to(vpack.get(DocumentField.Type.TO.getSerializeName()).getAsString());
+			edge.from_key(vpack.get(ArangoDBEdge.FROM_KEY).getAsString());
+			edge.to_key(vpack.get(ArangoDBEdge.TO_KEY).getAsString());
 			Iterator<Entry<String, VPackSlice>> it = vpack.objectIterator();
 			while (it.hasNext()){
 				Entry<String, VPackSlice> entry = it.next();
 				if (!ARANGODB_GRAPH_FIELDS.contains(entry.getKey())) {
-					edge.put(entry.getKey(), getCorretctPrimitive(context.deserialize(entry.getValue(), Object.class))); // FIXME This will not work for nested values!
+					edge.put(entry.getKey(), getCorretctPrimitive(context.deserialize(entry.getValue(), Object.class)));
 				}
 			}
 			return edge;
@@ -128,13 +131,14 @@ public class ArangoDBGraphModule implements VPackModule {
 			doc.put(DocumentField.Type.ID.getSerializeName(), value._id());
 			doc.put(DocumentField.Type.KEY.getSerializeName(), value._key());
 			doc.put(DocumentField.Type.REV.getSerializeName(), value._rev());
-			doc.put(DocumentField.Type.TO.getSerializeName(), value._to());
 			doc.put(DocumentField.Type.FROM.getSerializeName(), value._from());
+			doc.put(DocumentField.Type.TO.getSerializeName(), value._to());
+			doc.put(ArangoDBEdge.FROM_KEY, value.from_key());
+			doc.put(ArangoDBEdge.TO_KEY, value.to_key());
 			doc.putAll(value);
 			context.serialize(builder, attribute, doc);
 		}
 	};
-
 	
 	public static Object getCorretctPrimitive(Object value) {
 		if (value instanceof Number) {

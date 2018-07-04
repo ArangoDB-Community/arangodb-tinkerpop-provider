@@ -91,7 +91,7 @@ public class ArangoDBUtil {
 		if (info.length != 2) {
 			throw new ArangoDBGraphException("Error in configuration. Malformed relation> " + relation);
 		}
-		result.collection(info[0]);
+		result.collection(getCollectioName(graphName, info[0]));
 		info = info[1].split("->");
 		if (info.length != 2) {
 			throw new ArangoDBGraphException("Error in configuration. Malformed relation> " + relation);
