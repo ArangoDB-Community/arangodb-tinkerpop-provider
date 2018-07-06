@@ -16,7 +16,7 @@ import org.apache.tinkerpop.gremlin.structure.Graph;
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBSimpleGraphClient;
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBEdge;
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBElement;
-import com.arangodb.tinkerpop.gremlin.structure.ArangoDBElement.ArangoDBProperty;
+import com.arangodb.tinkerpop.gremlin.structure.ArangoDBElement.ArangoDBElementProperty;
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBGraph;
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBGraphVariables;
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBVertex;
@@ -36,7 +36,7 @@ public class ArangoDBGraphProvider extends AbstractGraphProvider {
         add(ArangoDBElement.class);
         add(ArangoDBGraph.class);
         add(ArangoDBGraphVariables.class);
-        add(ArangoDBProperty.class);
+        add(ArangoDBElementProperty.class);
         add(ArangoDBVertex.class);
         add(ArangoDBVertexProperty.class);
     }};
@@ -113,8 +113,18 @@ public class ArangoDBGraphProvider extends AbstractGraphProvider {
 			break;
 		case "shouldValidateIdEquality":
 		case "shouldValidateEquality":
+		case "shouldIterateEdgesWithStringIdSupportUsingEdge":
+		case "shouldIterateEdgesWithStringIdSupportUsingEdgeId":
+		case "shouldIterateEdgesWithStringIdSupportUsingStringRepresentation":
+		case "shouldIterateEdgesWithStringIdSupportUsingEdges":
+		case "shouldIterateEdgesWithStringIdSupportUsingEdgeIds":
+		case "shouldIterateEdgesWithStringIdSupportUsingStringRepresentations":
 			conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "self");
 			break;
+			
+		case "shouldTraverseInOutFromVertexWithMultipleEdgeLabelFilter":
+		case "shouldTraverseInOutFromVertexWithSingleEdgeLabelFilter":
+			conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "hate");
 		case "shouldGetPropertyKeysOnEdge":
 		case "shouldNotGetConcurrentModificationException":
 		case "shouldSupportUUID[graphson-v1-embedded]":
@@ -192,6 +202,12 @@ public class ArangoDBGraphProvider extends AbstractGraphProvider {
 		case "shouldReadWriteCrew[graphsonv2d0]":
 		case "shouldReadWriteCrew[graphsonv3d0]":
 		case "shouldReadWriteCrew[gryo]":
+		case "shouldReadWriteVertexPropertyWithMetaProperties[graphson-v1]":
+		case "shouldReadWriteVertexPropertyWithMetaProperties[graphson-v1-embedded]":
+		case "shouldReadWriteVertexPropertyWithMetaProperties[graphson-v2]":
+		case "shouldReadWriteVertexPropertyWithMetaProperties[graphson-v2-embedded]":
+		case "shouldReadWriteVertexPropertyWithMetaProperties[graphson-v3]":
+		case "shouldReadWriteVertexPropertyWithMetaProperties[gryo]":
 			conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.vertex", "software");
 			conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.vertex", "person");
 			conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "uses");
@@ -199,6 +215,16 @@ public class ArangoDBGraphProvider extends AbstractGraphProvider {
 			conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "traverses");
 			conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.relation", "uses:person->software");
 			conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.relation", "develops:person->software");
+			conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.relation", "traverses:software->software");
+			break;
+			
+		case "shouldReadWriteModernWrappedInJsonObject":
+			conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.vertex", "software");
+			conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.vertex", "person");
+			conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "knows");
+			conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "created");
+			conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.relation", "knows:person->person");
+			conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.relation", "created:person->software");
 			break;
 		case "shouldReadWriteModernToFileWithHelpers[graphml]":
 		case "shouldReadWriteModern[graphml]":
@@ -232,7 +258,6 @@ public class ArangoDBGraphProvider extends AbstractGraphProvider {
 		case "shouldMigrateClassicGraph[gryo]":
 			//conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.vertex", "vertex");
 			if (graphName == "standard") {
-				System.out.println("readGraph needs oher vertices?");
 				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.vertex", "vertex");
 				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.vertex", "person");
 				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.vertex", "software");
@@ -250,8 +275,7 @@ public class ArangoDBGraphProvider extends AbstractGraphProvider {
 				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "created");
 				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "knows");
 				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.relation", "created:person->software");
-				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.relation", "knows:person->person");
-				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.relation", "knows:vertex->vertex");
+				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.relation", "knows:person,vertex->person,vertex");
 			}
 		case "shouldReadWriteVerticesNoEdgesToGryoManual[graphson-v1]":
 		case "shouldReadWriteVerticesNoEdgesToGraphSONManual[graphson-v1]":
@@ -271,6 +295,22 @@ public class ArangoDBGraphProvider extends AbstractGraphProvider {
 		case "shouldReadWriteVerticesNoEdgesToGryoManual[gryo]":
 		case "shouldReadWriteVerticesNoEdgesToGraphSONManual[gryo]":
 		case "shouldReadWriteVerticesNoEdges[gryo]":
+		case "shouldReadWritePropertyGraphSON[graphson-v1]":
+		case "shouldReadWriteVertexPropertyNoMetaProperties[graphson-v1]":
+		case "shouldReadWritePropertyGraphSON[graphson-v1-embedded]":
+		case "shouldReadWriteVertexPropertyNoMetaProperties[graphson-v1-embedded]":
+		case "shouldReadWritePropertyGraphSON[graphson-v2]":
+		case "shouldReadWriteVertexPropertyNoMetaProperties[graphson-v2]":
+		case "shouldReadWritePropertyGraphSON[graphson-v2-embedded]":
+		case "shouldReadWriteVertexPropertyNoMetaProperties[graphson-v2-embedded]":
+		case "shouldReadWritePropertyGraphSON[graphson-v3]":
+		case "shouldReadWriteVertexPropertyNoMetaProperties[graphson-v3]":
+		case "shouldReadWritePropertyGraphSON[gryo]":
+		case "shouldReadWriteVertexPropertyNoMetaProperties[gryo]":
+		
+		case "shouldReadGraphML":
+		case "shouldTransformGraphMLV2ToV3ViaXSLT":
+			
 			conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "knows");
 			conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "created");
 			break;
@@ -279,6 +319,34 @@ public class ArangoDBGraphProvider extends AbstractGraphProvider {
 		case "shouldSupportUserSuppliedIdsOfTypeNumericLong":
 		case "shouldSupportUserSuppliedIdsOfTypeNumericInt":
 			conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "test");
+			break;
+		case "shouldPersistDataOnClose":
+			conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "collaborator");
+			break;
+		case "shouldTestTreeConnectivity":
+			conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "test1");
+			conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "test2");
+			conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "test3");
+			break;
+		case "shouldRemoveEdgesWithoutConcurrentModificationException":
+			conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "link");
+			break;
+		case "shouldEvaluateConnectivityPatterns":
+			conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "knows");
+			conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "hates");
+			break;
+			
+		case "shouldReadWriteSelfLoopingEdges":
+			conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "CONTROL");
+			conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "SELFLOOP");
+			break;
+			
+
+			
+		case "shouldReadLegacyGraphSON":
+		case "shouldReadGraphMLUnorderedElements":
+			conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "created");
+			conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "knows");
 			break;
 		default:
 			System.out.println("case \"" + testMethodName + "\":");

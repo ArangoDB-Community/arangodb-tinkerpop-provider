@@ -41,11 +41,11 @@ public abstract class ArangoDBElement<U> extends AbstractHashedMap<String, U> im
 	 * @param <U> the value type
 	 */
 	
-	public static class ArangoDBProperty<V> extends HashEntry<String, V> implements Property<V>, Entry<String, V> {
+	public static class ArangoDBElementProperty<V> extends HashEntry<String, V> implements Property<V>, Entry<String, V> {
     	
-		/** The element. */
+		/** The property owner. */
 		
-		private ArangoDBElement<V> element;
+		protected ArangoDBElement<V> owner;
 		
 		/** The cardinality */
 		private Cardinality cardinality;
@@ -57,28 +57,36 @@ public abstract class ArangoDBElement<U> extends AbstractHashedMap<String, U> im
 		 * @param hashCode the hash code
 		 * @param key the key
 		 * @param value the value
-		 * @param element the element
+		 * @param owner the element
 		 */
 		
-		protected ArangoDBProperty(
+		protected ArangoDBElementProperty(
 			final HashEntry<String, V> next,
 			final int hashCode,
 			final Object key,
 			final V value,
-			final ArangoDBElement<V> element) {
+			final ArangoDBElement<V> owner) {
 			super(next, hashCode, key, value);
-			this.element = element;
+			this.owner = owner;
 		}
-
-		public ArangoDBProperty(Object key, V value, ArangoDBVertex<V> element) {
+		
+		/**
+		 * Util constructor to use ArangoDBProperty in the ArangoElementPropertyIterator when 
+		 * flattening multi-Cardinality properties.
+		 * @param key
+		 * @param value
+		 * @param element
+		 * @param cardinality
+		 */
+		protected ArangoDBElementProperty(Object key, V value, ArangoDBVertex<V> element, Cardinality cardinality) {
 			super(null, 0, key, value);
-			this.element = element;
-			this.cardinality = Cardinality.single;
+			this.owner = element;
+			this.cardinality = cardinality;
 		}
 
 		@Override
 		public Element element() {
-			return element;
+			return owner;
 		}
 
 		@Override
@@ -93,8 +101,16 @@ public abstract class ArangoDBElement<U> extends AbstractHashedMap<String, U> im
 
 		@Override
 		public void remove() {
-			element.remove(getKey());
-			
+			if (cardinality.equals(Cardinality.single)) {
+				owner.remove(key);
+			}
+			else {		// The value might be inside a collection
+				V oldValue = owner.remove(key);
+				if (oldValue instanceof Collection) {
+					((Collection<?>)oldValue).remove(value);
+					owner.put((String) key, oldValue);
+				}
+			}
 		}
 
 		@Override
@@ -114,6 +130,16 @@ public abstract class ArangoDBElement<U> extends AbstractHashedMap<String, U> im
 			return this.cardinality;
 		}
 		
+		
+		@Override
+		public V setValue(V value) {
+			V oldValue = super.setValue(value);
+			if (!value.equals(oldValue)) {
+				owner.save();
+			}
+			return oldValue;
+		}
+
 		@Override
 	    public String toString() {
 	    	return StringFactory.propertyString(this);
@@ -125,6 +151,8 @@ public abstract class ArangoDBElement<U> extends AbstractHashedMap<String, U> im
 		}
 		
 		
+		
+		
     }
 	
 	
@@ -132,8 +160,6 @@ public abstract class ArangoDBElement<U> extends AbstractHashedMap<String, U> im
 		
 		/** The parent map */
         private final ArangoDBElement<V> parent;
-        /** The current index into the array of buckets */
-        private Set<String> keys;
         /** The last returned entry */
         private P last;
         /** The next entry */
@@ -149,17 +175,19 @@ public abstract class ArangoDBElement<U> extends AbstractHashedMap<String, U> im
 		protected ArangoElementPropertyIterator(
         	final ArangoDBElement<V> parent,
         	List<String> filterKeys) {
-        	this.parent = parent;
-        	this.filterKeys = filterKeys;
-        	this.keys = new HashSet<>(parent.keySet());
-        	if (this.keys.isEmpty()) {
+    		this.parent = parent;
+        	Set<String> keys = new HashSet<>(parent.keySet());
+        	if (keys.isEmpty()) {
         		this.next = null; 
         	}
         	else {
-        		if (filterKeys.isEmpty()) {
+            	if (filterKeys.isEmpty()) {
         			this.filterKeys = new ArrayList<>(keys);
         		}
-        		next = (P)parent.getEntry(this.filterKeys.remove(0));
+            	else {
+            		this.filterKeys = filterKeys;
+            	}
+            	next = (P)parent.getEntry(this.filterKeys.remove(0));
         	}
         }
         
@@ -183,32 +211,30 @@ public abstract class ArangoDBElement<U> extends AbstractHashedMap<String, U> im
 	    			next = null;
 	    		}
 				else {
-    				do {
-        				next = (P)parent.getEntry(filterKeys.remove(0));
-        			} while (!filterKeys.isEmpty() && (next == null));
-    				
-    				ArangoDBProperty<?> arangoprop = (ArangoDBProperty<?>)newCurrent;
-                	if (arangoprop.cardinality() != Cardinality.single) {
-                		multiNext = next;
-                    	if (arangoprop.getValue() instanceof Collection) {
-                    		multiIt = ((Collection<Object>)arangoprop.getValue()).iterator();
-                    		if (multiIt.hasNext()) {
-                    			newCurrent = (P) new ArangoDBVertexProperty<Object>(arangoprop.getKey(), multiIt.next(), (ArangoDBVertex<Object>) multiNext.element());
-                    			if (multiIt.hasNext()) {
-                					next = (P) new ArangoDBVertexProperty<Object>(newCurrent.key(), multiIt.next(), (ArangoDBVertex<Object>) multiNext.element());
-                					inMultiple = true;
-                				}
-                    		}
-                    		else {
-                    			throw new NoSuchElementException("Multivalued property has no values. " + AbstractHashedMap.NO_NEXT_ENTRY);
-                    		}
-                    	}
-                    }
-    			}
+					next = (P)parent.getEntry(filterKeys.remove(0));
+				}
+				assert newCurrent instanceof ArangoDBVertexProperty;
+				ArangoDBVertexProperty<?> arangoprop = (ArangoDBVertexProperty<?>)newCurrent;
+            	if (arangoprop.cardinality() != Cardinality.single) {
+            		multiNext = next;
+                	if (arangoprop.getValue() instanceof Collection) {
+                		multiIt = ((Collection<Object>)arangoprop.getValue()).iterator();
+                		if (multiIt.hasNext()) {
+                			newCurrent = (P) new ArangoDBVertexProperty<Object>(arangoprop.getKey(), multiIt.next(), (ArangoDBVertex<Object>) arangoprop.element(), arangoprop.cardinality());
+                			if (multiIt.hasNext()) {
+            					next = (P) new ArangoDBVertexProperty<Object>(newCurrent.key(), multiIt.next(), (ArangoDBVertex<Object>) arangoprop.element(), arangoprop.cardinality());
+            					inMultiple = true;
+            				}
+                		}
+                		else {
+                			throw new NoSuchElementException("Multivalued property has no values. " + AbstractHashedMap.NO_NEXT_ENTRY);
+                		}
+                	}
+                }
 			}
 			else {
 				if (multiIt.hasNext()) {
-					next = (P) new ArangoDBVertexProperty<Object>(newCurrent.key(), multiIt.next(), (ArangoDBVertex<Object>) multiNext.element());
+					next = (P) new ArangoDBVertexProperty<Object>(newCurrent.key(), multiIt.next(), (ArangoDBVertex<Object>) newCurrent.element(), ((ArangoDBElementProperty<?>) newCurrent).cardinality());
 				}
 				else {
 					inMultiple = false;
@@ -222,7 +248,10 @@ public abstract class ArangoDBElement<U> extends AbstractHashedMap<String, U> im
 		protected P currentEntry() {
             return last;
         }
+		
+		
 	}
+	
 	
 	/** The Constant logger. */
 	
@@ -286,6 +315,9 @@ public abstract class ArangoDBElement<U> extends AbstractHashedMap<String, U> im
 		this.arango_db_collection = collection;
 		this.arango_db_key = key;
 	}
+	
+	
+	public abstract void save();
 	
 
 	/**
@@ -413,7 +445,7 @@ public abstract class ArangoDBElement<U> extends AbstractHashedMap<String, U> im
     	final String key,
     	final U value) {
     	
-        return new ArangoDBProperty<U>(next, hashCode, convertKey(key), value, this);
+        return new ArangoDBElementProperty<U>(next, hashCode, convertKey(key), value, this);
     }
 	
 	@Override
@@ -478,138 +510,14 @@ public abstract class ArangoDBElement<U> extends AbstractHashedMap<String, U> im
 		}
 		return super.put(key, value);
 	}
-    
-    
 	
-//	/**
-//	 * Return the object value associated with the provided string key. If no
-//	 * value exists for that key, return null.
-//	 * 
-//	 * @param key
-//	 *            the key of the key/value property
-//	 * @return the object value related to the string key
-//	 */
-//	@SuppressWarnings("unchecked")
-//	@Override
-//	public <T> T getProperty(String key) {
-//		return (T) this.properties.get(ArangoDBUtil.normalizeKey(key));
-//	}
-//
-//	/**
-//	 * Set/Reset the vertex/edge document
-//	 * 
-//	 * @param document
-//	 *            the new internal data of the element
-//	 */
-//	public void setDocument(ArangoDBBaseDocument document) {
-//		this.document = document;
-//	}
-//
-//	@Override
-//	public Set<String> getPropertyKeys() {
-//		Set<String> ps = document.getPropertyKeys();
-//		HashSet<String> result = new HashSet<String>();
-//
-//		if (this instanceof Edge) {
-//			// do not return lable property
-//			for (String key : ps) {
-//				if (!StringFactory.LABEL.equals(key)) {
-//					result.add(ArangoDBUtil.denormalizeKey(key));
-//				}
-//			}
-//		} else {
-//			for (String key : ps) {
-//				result.add(ArangoDBUtil.denormalizeKey(key));
-//			}
-//		}
-//		return result;
-//	}
-//
-//	@Override
-//	public void setProperty(String key, Object value) {
-//
-//		if (StringFactory. ID.equals(key)) {
-//			throw ExceptionFactory.propertyKeyIdIsReserved();
-//		}
-//
-//		if (StringFactory.LABEL.equals(key) && this instanceof Edge) {
-//			throw ExceptionFactory.propertyKeyLabelIsReservedForEdges();
-//		}
-//
-//		if (StringUtils.isBlank(key)) {
-//			throw ExceptionFactory.propertyKeyCanNotBeEmpty();
-//		}
-//
-//		try {
-//			document.setProperty(ArangoDBUtil.normalizeKey(key), value);
-//			save();
-//		} catch (ArangoDBException e) {
-//			logger.debug("error while setting a property", e);
-//			throw new IllegalArgumentException(e.getMessage());
-//		}
-//	}
-//
-//	@SuppressWarnings("unchecked")
-//	@Override
-//	public <T> T removeProperty(String key) {
-//
-//		if (StringUtils.isBlank(key)) {
-//			throw ExceptionFactory.propertyKeyCanNotBeEmpty();
-//		}
-//
-//		if (key.equals(StringFactory.LABEL) && this instanceof Edge) {
-//			throw ExceptionFactory.propertyKeyLabelIsReservedForEdges();
-//		}
-//
-//		T o = null;
-//		try {
-//			o = (T) document.removeProperty(ArangoDBUtil.normalizeKey(key));
-//			save();
-//
-//		} catch (ArangoDBException e) {
-//			logger.debug("error while removing a property", e);
-//			throw new IllegalArgumentException(e.getMessage());
-//		}
-//		return o;
-//	}
-//
-//	@Override
-//	public Object getId() {
-//		return document.getDocumentKey();
-//	}
-//
-//	/**
-//	 * Returns the internal data of the element
-//	 * 
-//	 * @return the internal data
-//	 */
-//	public ArangoDBBaseDocument getRaw() {
-//		return document;
-//	}
-//
-//	@Override
-//	public int hashCode() {
-//		final int prime = 31;
-//		int result = 1;
-//		result = prime * result + ((document == null) ? 0 : document.hashCode());
-//		return result;
-//	}
-//
-//	@Override
-//	public boolean equals(Object obj) {
-//		if (this == obj)
-//			return true;
-//		if (obj == null)
-//			return false;
-//		if (getClass() != obj.getClass())
-//			return false;
-//		ArangoDBElement other = (ArangoDBElement) obj;
-//		if (document == null) {
-//			if (other.document != null)
-//				return false;
-//		} else if (!document.equals(other.document))
-//			return false;
-//		return true;
-//	}
+	@Override
+	public boolean remove(Object key, Object value) {
+		boolean result = super.remove(key, value);
+		if (result) {
+			save();
+		}
+		return result;
+	}
 
 }

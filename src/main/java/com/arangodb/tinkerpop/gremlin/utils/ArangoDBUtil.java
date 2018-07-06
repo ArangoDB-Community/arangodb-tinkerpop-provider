@@ -10,14 +10,22 @@ package com.arangodb.tinkerpop.gremlin.utils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.arangodb.ArangoGraph;
 import com.arangodb.entity.EdgeDefinition;
+import com.arangodb.entity.GraphEntity;
+import com.arangodb.model.GraphCreateOptions;
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBGraphException;
 
 /**
@@ -148,5 +156,76 @@ public class ArangoDBUtil {
 		return String.format("%s_%s", graphName, collectionName);
 	}
 	
-
+	/**
+	 * Validate if an existing graph is correctly configured to handle the desired vertex, edges 
+	 * and relations.
+	 *
+	 * @param verticesCollectionNames The names of collections for nodes
+	 * @param edgesCollectionNames The names of collections for edges
+	 * @param relations The description of edge definitions
+	 * @param graph the graph
+	 * @param options The options used to create the graph
+	 * @throws ArangoDBGraphException the ArangoDB graph exception
+	 */
+	public static void checkGraphForErrors(List<String> verticesCollectionNames,
+			List<String> edgesCollectionNames,
+			List<String> relations,
+			ArangoGraph graph, GraphCreateOptions options) throws ArangoDBGraphException {
+		
+		
+		List<String> allVertexCollections = verticesCollectionNames.stream()
+				.map(vc -> ArangoDBUtil.getCollectioName(graph.name(), vc))
+				.collect(Collectors.toList());
+		allVertexCollections.addAll(options.getOrphanCollections());
+		if (!allVertexCollections.containsAll(graph.getVertexCollections())) {
+			throw new ArangoDBGraphException("Not all declared vertex names appear in the graph.");
+		}
+		GraphEntity ge = graph.getInfo();
+        Collection<EdgeDefinition> graphEdgeDefinitions = ge.getEdgeDefinitions();
+        if (CollectionUtils.isEmpty(relations)) {
+        	// If no relations are defined, vertices and edges can only have one value
+        	if ((verticesCollectionNames.size() != 1) || (edgesCollectionNames.size() != 1)) {
+        		throw new ArangoDBGraphException("No relations where specified but more than one vertex/edge where defined.");
+        	}
+        	if (graphEdgeDefinitions.size() != 1) {
+        		throw new ArangoDBGraphException("No relations where specified but the graph has more than one EdgeDefinition.");
+    		}
+        }
+        Map<String, EdgeDefinition> requiredDefinitions;
+		if (relations.isEmpty()) {
+			List<EdgeDefinition> eds = ArangoDBUtil.createDefaultEdgeDefinitions(graph.name(), verticesCollectionNames, edgesCollectionNames);
+			requiredDefinitions = eds.stream().collect(Collectors.toMap(ed -> ed.getCollection(), ed -> ed));
+		} else {
+			requiredDefinitions = new HashMap<>(relations.size());
+			for (Object value : relations) {
+				EdgeDefinition ed = ArangoDBUtil.relationPropertyToEdgeDefinition(graph.name(), (String) value);
+				requiredDefinitions.put(ed.getCollection(), ed);
+			}
+		}
+		Iterator<EdgeDefinition> it = graphEdgeDefinitions.iterator();
+        while (it.hasNext()) {
+        	EdgeDefinition existing = it.next();
+        	if (requiredDefinitions.containsKey(existing.getCollection())) {
+        		EdgeDefinition requiredEdgeDefinition = requiredDefinitions.remove(existing.getCollection());
+        		HashSet<String> existingSet = new HashSet<String>(existing.getFrom());
+        		HashSet<String> requiredSet = new HashSet<String>(requiredEdgeDefinition.getFrom());
+        		if (!existingSet.equals(requiredSet)) {
+        			throw new ArangoDBGraphException(String.format("The from collections dont match for edge definition %s", existing.getCollection()));
+        		}
+        		existingSet.clear();
+        		existingSet.addAll(existing.getTo());
+        		requiredSet.clear();
+        		requiredSet.addAll(requiredEdgeDefinition.getTo());
+        		if (!existingSet.equals(requiredSet)) {
+        			throw new ArangoDBGraphException(String.format("The to collections dont match for edge definition %s", existing.getCollection()));
+        		}
+        	} else {
+        		throw new ArangoDBGraphException(String.format("The graph has a surplus edge definition %s", edgeDefinitionString(existing)));
+        	}
+        }
+	}
+	
+	public static String edgeDefinitionString(EdgeDefinition ed) {
+		return String.format("[%s]: %s->%s", ed.getCollection(), ed.getFrom(), ed.getTo());
+	}
 }

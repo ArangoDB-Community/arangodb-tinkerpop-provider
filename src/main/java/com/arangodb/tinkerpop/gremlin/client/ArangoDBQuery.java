@@ -161,9 +161,14 @@ public class ArangoDBQuery {
 			}
 			else {
 				sb.append(String.format("FOR v, e IN %s @startId GRAPH @graphName \n", getDirectionString()));
+				sb.append("  OPTIONS {bfs: true}\n");
 				if (!keysFilter.isEmpty()) {
 					sb.append("FILTER e._id IN @keys ");
 					bindVars.put("keys", keysFilter);
+				}
+				if (!labelsFilter.isEmpty()) {
+					String filter = labelsFilter.stream().collect(Collectors.joining(", e) OR IS_SAME_COLLECTION(", "FILTER IS_SAME_COLLECTION(", ", e) "));
+					sb.append(filter);
 				}
 				sb.append("RETURN DISTINCT e");
 				bindVars.put("startId", startVertex._id());
@@ -172,13 +177,13 @@ public class ArangoDBQuery {
 			break;
 		case GRAPH_NEIGHBORS:
 		default:
-			if (labelsFilter.isEmpty()) {
-				sb.append(String.format("FOR v IN %s @startId GRAPH @graphName OPTIONS {bfs: true, uniqueVertices: 'global'} RETURN v", getDirectionString()));	
+			sb.append(String.format("FOR v IN %s @startId GRAPH @graphName\n", getDirectionString()));
+			sb.append("  OPTIONS {bfs: true, uniqueVertices: 'global'}\n");
+			if (!labelsFilter.isEmpty()) {
+				String filter = labelsFilter.stream().collect(Collectors.joining(", v) OR IS_SAME_COLLECTION(", "FILTER IS_SAME_COLLECTION(", ", v) "));
+				sb.append(filter);
 			}
-			else {
-				sb.append(String.format("FOR v, e IN %s GRAPH @graphName OPTIONS {bfs: true} FILTER e.label IN @edgeLabels RETURN DISTINCT v", getDirectionString()));
-				bindVars.put("@edgeLabels", labelsFilter);
-			}
+			sb.append("  RETURN v");
 			// FIXME Can we filter on vertex label?
 			bindVars.put("startId", startVertex._id());
 			bindVars.put("graphName", graph.name());
@@ -257,7 +262,7 @@ public class ArangoDBQuery {
 	}
 
 	public ArangoDBQuery setLabelsFilter(List<String> labelsFilter) {
-		this.labelsFilter = labelsFilter;	//.stream().map(lbl -> String.format("\"%s\"", lbl)).collect(Collectors.toList());;
+		this.labelsFilter = labelsFilter;
 		return this;
 	}
 

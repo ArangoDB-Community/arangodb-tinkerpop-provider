@@ -8,9 +8,14 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import org.apache.tinkerpop.gremlin.structure.VertexProperty;
+
 import com.arangodb.entity.DocumentField;
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBEdge;
+import com.arangodb.tinkerpop.gremlin.structure.ArangoDBElement.ArangoDBElementProperty;
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBVertex;
+import com.arangodb.tinkerpop.gremlin.structure.ArangoDBVertex.ArangoDBVertexProperty;
+import com.arangodb.tinkerpop.gremlin.structure.ArangoDBVertex.ArangoDBVertexProperty.ArangoDBVertexPropertyProperty;
 import com.arangodb.velocypack.VPackBuilder;
 import com.arangodb.velocypack.VPackDeserializationContext;
 import com.arangodb.velocypack.VPackDeserializer;
@@ -35,6 +40,12 @@ public class ArangoDBGraphModule implements VPackModule {
 		context.registerSerializer(ArangoDBVertex.class, VERTEX_SERIALIZER);
 		context.registerDeserializer(ArangoDBEdge.class, EDGE_DESERIALIZER);
 		context.registerSerializer(ArangoDBEdge.class, EDGE_SERIALIZER);
+		context.registerDeserializer(ArangoDBElementProperty.class, ELEMENT_PROPERTY_DESERIALIZER);
+		context.registerSerializer(ArangoDBElementProperty.class, PROPERTY_SERIALIZER);
+		context.registerDeserializer(ArangoDBVertexProperty.class, VERTEX_PROPERTY_DESERIALIZER);
+		context.registerSerializer(ArangoDBVertexProperty.class, VERTEX_PROPERTY_SERIALIZER);
+		context.registerDeserializer(ArangoDBVertexPropertyProperty.class, VERTEX_PROPERTY_PROPERTY_DESERIALIZER);
+		context.registerSerializer(ArangoDBVertexPropertyProperty.class, VERTEX_PROPERTY_PROPERTY_SERIALIZER);
 	}
 	
 	@SuppressWarnings("serial")
@@ -85,7 +96,11 @@ public class ArangoDBGraphModule implements VPackModule {
 			doc.put(DocumentField.Type.ID.getSerializeName(), value._id());
 			doc.put(DocumentField.Type.KEY.getSerializeName(), value._key());
 			doc.put(DocumentField.Type.REV.getSerializeName(), value._rev());
-			doc.putAll(value);
+			Iterator<VertexProperty<Object>> it = value.properties();
+			while (it.hasNext()) {
+				VertexProperty<Object> prop = it.next();
+				doc.put(prop.key(), prop);
+			}
 			context.serialize(builder, attribute, doc);
 		}
 	};
@@ -136,6 +151,120 @@ public class ArangoDBGraphModule implements VPackModule {
 			doc.put(ArangoDBEdge.FROM_KEY, value.from_key());
 			doc.put(ArangoDBEdge.TO_KEY, value.to_key());
 			doc.putAll(value);
+			context.serialize(builder, attribute, doc);
+		}
+	};
+	
+	public static final VPackDeserializer<ArangoDBElementProperty<Object>> ELEMENT_PROPERTY_DESERIALIZER = new VPackDeserializer<ArangoDBElementProperty<Object>>() {
+
+		@Override
+		public ArangoDBElementProperty<Object> deserialize(
+			VPackSlice parent,
+			VPackSlice vpack, 
+			VPackDeserializationContext context)
+			throws VPackException {
+			
+			System.out.println("ELEMENT_PROPERTY_DESERIALIZER " + parent);
+//			ArangoDBProperty<Object> property = new ArangoDBProperty<>();
+//			edge._id(vpack.get(DocumentField.Type.ID.getSerializeName()).getAsString());
+//			Iterator<Entry<String, VPackSlice>> it = vpack.objectIterator();
+//			while (it.hasNext()){
+//				Entry<String, VPackSlice> entry = it.next();
+//				if (!ARANGODB_GRAPH_FIELDS.contains(entry.getKey())) {
+//					edge.put(entry.getKey(), getCorretctPrimitive(context.deserialize(entry.getValue(), Object.class)));
+//				}
+//			}
+			return null;
+		}
+		
+	};
+	
+	public static final VPackSerializer<ArangoDBElementProperty<Object>> PROPERTY_SERIALIZER = new VPackSerializer<ArangoDBElementProperty<Object>>() {
+		
+		@Override
+		public void serialize(
+			VPackBuilder builder, 
+			String attribute, 
+			ArangoDBElementProperty<Object> value,
+			VPackSerializationContext context) 
+			throws VPackException {
+			final Map<String, Object> doc = new HashMap<String, Object>();
+			doc.put(ArangoDBEdge.CARDINALITY, value.cardinality());
+			doc.put(ArangoDBEdge.VALUE, value.getValue());
+			context.serialize(builder, attribute, doc);
+		}
+	};
+	
+	public static final VPackDeserializer<ArangoDBVertexProperty<Object>> VERTEX_PROPERTY_DESERIALIZER = new VPackDeserializer<ArangoDBVertexProperty<Object>>() {
+
+		@Override
+		public ArangoDBVertexProperty<Object> deserialize(
+			VPackSlice parent,
+			VPackSlice vpack, 
+			VPackDeserializationContext context)
+			throws VPackException {
+			
+			System.out.println("ELEMENT_PROPERTY_DESERIALIZER " + parent);
+//			ArangoDBProperty<Object> property = new ArangoDBProperty<>();
+//			edge._id(vpack.get(DocumentField.Type.ID.getSerializeName()).getAsString());
+//			Iterator<Entry<String, VPackSlice>> it = vpack.objectIterator();
+//			while (it.hasNext()){
+//				Entry<String, VPackSlice> entry = it.next();
+//				if (!ARANGODB_GRAPH_FIELDS.contains(entry.getKey())) {
+//					edge.put(entry.getKey(), getCorretctPrimitive(context.deserialize(entry.getValue(), Object.class)));
+//				}
+//			}
+			return null;
+		}
+		
+	};
+	
+	public static final VPackSerializer<ArangoDBVertexProperty<Object>> VERTEX_PROPERTY_SERIALIZER = new VPackSerializer<ArangoDBVertexProperty<Object>>() {
+		
+		@Override
+		public void serialize(
+			VPackBuilder builder, 
+			String attribute, 
+			ArangoDBVertexProperty<Object> value,
+			VPackSerializationContext context) 
+			throws VPackException {
+			final Map<String, Object> doc = new HashMap<String, Object>();
+			doc.put(ArangoDBEdge.CARDINALITY, value.cardinality());
+			doc.put(ArangoDBEdge.PROPERTIES, value.getElementProperties());
+			doc.put(ArangoDBEdge.VALUE, value.getValue());
+			context.serialize(builder, attribute, doc);
+		}
+	};
+	
+	public static final VPackDeserializer<ArangoDBVertexPropertyProperty<Object>> VERTEX_PROPERTY_PROPERTY_DESERIALIZER = new VPackDeserializer<ArangoDBVertexPropertyProperty<Object>>() {
+
+		@Override
+		public ArangoDBVertexPropertyProperty<Object> deserialize(
+			VPackSlice parent,
+			VPackSlice vpack, 
+			VPackDeserializationContext context)
+			throws VPackException {
+			
+			System.out.println("ELEMENT_PROPERTY_DESERIALIZER " + parent);
+			ArangoDBVertexProperty<Object> element = null;  //parent.algo!
+			Entry<String, VPackSlice> vp = vpack.objectIterator().next();
+			ArangoDBVertexPropertyProperty<Object> p = new ArangoDBVertexPropertyProperty<>(vp.getKey(), vp.getValue(), element);
+			return p;
+		}
+		
+	};
+	
+	public static final VPackSerializer<ArangoDBVertexPropertyProperty<Object>> VERTEX_PROPERTY_PROPERTY_SERIALIZER = new VPackSerializer<ArangoDBVertexPropertyProperty<Object>>() {
+		
+		@Override
+		public void serialize(
+			VPackBuilder builder, 
+			String attribute, 
+			ArangoDBVertexPropertyProperty<Object> value,
+			VPackSerializationContext context) 
+			throws VPackException {
+			final Map<String, Object> doc = new HashMap<String, Object>();
+			doc.put(value.key(), value.value());
 			context.serialize(builder, attribute, doc);
 		}
 	};

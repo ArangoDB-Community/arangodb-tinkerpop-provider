@@ -18,8 +18,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.regex.Matcher;
 
 import org.apache.tinkerpop.gremlin.structure.Direction;
+import org.apache.tinkerpop.gremlin.structure.Graph;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -290,7 +292,16 @@ public class ArangoDBSimpleGraphClient {
 					.vertexCollection(ArangoDBUtil.getCollectioName(graph.name(), vertex.collection()))
 					.insertVertex(vertex);
 		} catch (ArangoDBException e) {
-			logger.error("Failed to insert vertex: {}", e.getErrorMessage());
+			// Think is better to let this bubble to the graph.
+			String message = e.getMessage();
+			Matcher m = ArangoDBGraph.Exceptions.ERROR_CODE.matcher(message);
+			if (m.matches()) {
+				String errorCode = m.group(1);
+				if (errorCode.equals("1210")) {		// 1210 - ERROR_ARANGO_UNIQUE_CONSTRAINT_VIOLATED
+					throw Graph.Exceptions.vertexWithIdAlreadyExists(vertex.id());
+				}
+			}
+			logger.error("Failed to insert vertex: {}", message);
 			throw new ArangoDBGraphException("Failed to insert vertex.", e);
 		}
 		vertex._id(vertexEntity.getId());
@@ -482,26 +493,21 @@ public class ArangoDBSimpleGraphClient {
 		Direction direction)
 		throws ArangoDBException {
 		logger.debug("Get Vertex's {}:{} Edges, in {}, from collections {}", vertex, direction, graph.name(), edgeLabels);
-		ArangoDBPropertyFilter propertyFilter = new ArangoDBPropertyFilter();	
 		ArangoDBQuery.Direction arangoDirection = null;
 		switch(direction) {
 		case BOTH:
 			arangoDirection = ArangoDBQuery.Direction.ALL;
-			propertyFilter.has(DocumentField.Type.TO.getSerializeName(), vertex._id(), Compare.EQUAL);
-			propertyFilter.has(DocumentField.Type.FROM.getSerializeName(), vertex._id(), Compare.EQUAL);
 			break;
 		case IN:
 			arangoDirection = ArangoDBQuery.Direction.IN;
-			propertyFilter.has(DocumentField.Type.TO.getSerializeName(), vertex._id(), Compare.EQUAL);
 			break;
 		case OUT:
 			arangoDirection = ArangoDBQuery.Direction.OUT;
-			propertyFilter.has(DocumentField.Type.FROM.getSerializeName(), vertex._id(), Compare.EQUAL);
 			break;
 		}
 		logger.debug("Creating query");
 		return new ArangoDBQuery(graph, this, QueryType.GRAPH_EDGES).setStartVertex(vertex)
-				.setLabelsFilter(edgeLabels).setDirection(arangoDirection).setPropertyFilter(propertyFilter);
+				.setLabelsFilter(edgeLabels).setDirection(arangoDirection);
 	}
 	
 	/**

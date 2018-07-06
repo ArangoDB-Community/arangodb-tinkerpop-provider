@@ -11,11 +11,8 @@ package com.arangodb.tinkerpop.gremlin.structure;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -39,8 +36,6 @@ import org.slf4j.LoggerFactory;
 import com.arangodb.ArangoCursor;
 import com.arangodb.ArangoDBException;
 import com.arangodb.ArangoGraph;
-import com.arangodb.entity.EdgeDefinition;
-import com.arangodb.entity.GraphEntity;
 import com.arangodb.model.GraphCreateOptions;
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBQuery;
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBSimpleGraphClient;
@@ -170,8 +165,6 @@ import com.google.gson.JsonObject;
 		test = "org.apache.tinkerpop.gremlin.structure.io.IoGraphTest",
 		method = "shouldMigrateClassicGraph",
 		reason = "Doubles with 0 decimal values are deserialized as Integers: 1.0 == 1. But the test expects a Double.")
-
-
 @Graph.OptOut(
 		test = "org.apache.tinkerpop.gremlin.structure.io.IoVertexTest",
 		method = "shouldReadWriteVertexWithBOTHEdges",
@@ -184,6 +177,40 @@ import com.google.gson.JsonObject;
 		test = "org.apache.tinkerpop.gremlin.structure.io.IoVertexTest",
 		method = "shouldReadWriteVerticesNoEdges",
 		reason = "Doubles with 0 decimal values are deserialized as Integers: 1.0 == 1. But the test expects a Double.")
+@Graph.OptOut(
+		test = "org.apache.tinkerpop.gremlin.structure.io.IoPropertyTest",
+		method = "shouldReadWriteVertexPropertyWithMetaProperties",
+		reason = "Tests expected LoadGraphWith.GraphData.CREW to be loaded, but another graph is, so property navigation fails.")
+@Graph.OptOut(
+		test = "org.apache.tinkerpop.gremlin.structure.GraphTest",
+		method = "shouldRemoveVertices",
+		reason = "Test creates vertices with random labels, which does not work with our schema-based approach.")
+@Graph.OptOut(
+		test = "org.apache.tinkerpop.gremlin.structure.GraphTest",
+		method = "shouldRemoveEdges",
+		reason = "Test creates edges with random labels, which does not work with our schema-based approach.")
+/* How to pot out inner classes?
+Graph.OptOut(
+		test = "org.apache.tinkerpop.gremlin.structure.io.IoTest.GraphSONTest",
+		method = "shouldReadWriteModernWrappedInJsonObject",
+		reason = "Double/Float serialize/deserialize discrepancies.")
+@Graph.OptOut(
+		test = "org.apache.tinkerpop.gremlin.structure.io.GraphSONLegacyTest",
+		method = "shouldReadLegacyGraphSON",
+		reason = "Double/Float serialize/deserialize discrepancies.")
+@Graph.OptOut(
+		test = "org.apache.tinkerpop.gremlin.structure.io.GraphMLTest",
+		method = "shouldReadGraphML",
+		reason = "Double/Float serialize/deserialize discrepancies.")
+@Graph.OptOut(
+		test = "org.apache.tinkerpop.gremlin.structure.io.GraphMLTest",
+		method = "shouldReadGraphMLWithAllSupportedDataTypes",
+		reason = "Double/Float serialize/deserialize discrepancies.")
+@Graph.OptOut(
+		test = "org.apache.tinkerpop.gremlin.structure.io.GraphMLTest",
+		method = "shouldTransformGraphMLV2ToV3ViaXSLT",
+		reason = "Double/Float serialize/deserialize discrepancies.")
+		*/
 public class ArangoDBGraph implements Graph {
 
 	/**
@@ -293,6 +320,9 @@ public class ArangoDBGraph implements Graph {
 			public VariableFeatures variables() {
 				return variableFeatures;
 			}
+			
+			
+			
 		}
 
 		/**
@@ -529,20 +559,21 @@ public class ArangoDBGraph implements Graph {
 		int batchSize = 0;
 		client = new ArangoDBSimpleGraphClient(arangoProperties, arangoConfig.getString(CONFIG_DB_NAME), batchSize);
         ArangoGraph graph = client.getGraph(graphName);
+        GraphCreateOptions options = new  GraphCreateOptions();
+    	options.orphanCollections(ArangoDBUtil.getCollectioName(graphName, ArangoDBGraphVariables.GRAPH_VARIABLES_COLLECTION));
         if (graph.exists()) {
-            checkGraphForErrors(vertexCollections, edgeCollections, relations, graph);
-            String query = String.format("FOR d IN %s RETURN c", ArangoDBGraphVariables.GRAPH_VARIABLES_COLLECTION);
+            ArangoDBUtil.checkGraphForErrors(vertexCollections, edgeCollections, relations, graph, options);
+            variables = new ArangoDBGraphVariables(this);
+            String query = String.format("FOR v IN %s RETURN v", ArangoDBUtil.getCollectioName(graph.name(), ArangoDBGraphVariables.GRAPH_VARIABLES_COLLECTION));
             ArangoCursor<JsonObject> iter = client.executeAqlQuery(query, null, null, JsonObject.class);
             iter.forEach(jo -> this.variables.set(jo.get("_key").getAsString(), jo.get("value")));
         }
         else {
-        	GraphCreateOptions options = new  GraphCreateOptions();
-        	options.orphanCollections(ArangoDBUtil.getCollectioName(graphName, ArangoDBGraphVariables.GRAPH_VARIABLES_COLLECTION));
 			client.createGraph(graphName, vertexCollections,
             		edgeCollections, relations, options);
+			variables = new ArangoDBGraphVariables(this);
 		}
 		this.name = graph.name();
-		variables = new ArangoDBGraphVariables(this);
 		this.configuration = configuration;
 	}
 
@@ -653,7 +684,8 @@ public class ArangoDBGraph implements Graph {
 	@Override
 	public Iterator<Edge> edges(Object... edgeIds) {
 		List<String> ids = Arrays.stream(edgeIds)
-        		.map(String.class::cast)
+        		.map(id -> id instanceof Element ? ((Element)id).id() : id)
+        		.map(Object::toString)
         		.collect(Collectors.toList());
 		ArangoDBQuery query = getClient().getGraphEdges(this, ids);
 		try {
@@ -686,67 +718,6 @@ public class ArangoDBGraph implements Graph {
 	public String getId() {
 		ArangoGraph graph = client.getGraph(name);
 		return graph.getInfo().getName();
-	}
-
-	/**
-	 * Validate if an existing graph is correctly configured to handle the desired nodes, edges and relations.
-	 *
-	 * @param verticesCollectionNames The names of collections for nodes
-	 * @param edgesCollectionNames The names of collections for edges
-	 * @param relations The description of edge definitions
-	 * @param graph the graph
-	 * @throws ArangoDBGraphException the ArangoDB graph exception
-	 */
-	private void checkGraphForErrors(List<String> verticesCollectionNames,
-			List<String> edgesCollectionNames,
-			List<String> relations,
-			ArangoGraph graph) throws ArangoDBGraphException {
-		
-		
-		if (!verticesCollectionNames.containsAll(graph.getVertexCollections())) {
-			throw new ArangoDBGraphException("Not all declared vertex names appear in the graph.");
-		}
-		GraphEntity ge = graph.getInfo();
-        Collection<EdgeDefinition> graphEdgeDefinitions = ge.getEdgeDefinitions();
-        if (CollectionUtils.isEmpty(relations)) {
-        	// If no relations are defined, vertices and edges can only have one value
-        	if ((verticesCollectionNames.size() != 1) || (edgesCollectionNames.size() != 1)) {
-        		throw new ArangoDBGraphException("No relations where specified but more than one vertex/edge where defined.");
-        	}
-        	if (graphEdgeDefinitions.size() != 1) {
-        		throw new ArangoDBGraphException("No relations where specified but the graph has more than one EdgeDefinition.");
-    		}
-        }
-        Map<String, EdgeDefinition> requiredDefinitions;
-		if (relations.isEmpty()) {
-			List<EdgeDefinition> eds = ArangoDBUtil.createDefaultEdgeDefinitions(name, verticesCollectionNames, edgesCollectionNames);
-			requiredDefinitions = eds.stream().collect(Collectors.toMap(ed -> ed.getCollection(), ed -> ed));
-		} else {
-			requiredDefinitions = new HashMap<>(relations.size());
-			for (Object value : relations) {
-				EdgeDefinition ed = ArangoDBUtil.relationPropertyToEdgeDefinition(graph.name(), (String) value);
-				requiredDefinitions.put(ed.getCollection(), ed);
-			}
-		}
-		Iterator<EdgeDefinition> it = graphEdgeDefinitions.iterator();
-        while (it.hasNext()) {
-        	EdgeDefinition existing = it.next();
-        	if (requiredDefinitions.containsKey(existing.getCollection())) {
-        		EdgeDefinition requiredEdgeDefinition = requiredDefinitions.remove(existing.getCollection());
-        		HashSet<String> existingSet = new HashSet<String>(existing.getFrom());
-        		HashSet<String> requiredSet = new HashSet<String>(requiredEdgeDefinition.getFrom());
-        		if (!existingSet.equals(requiredSet)) {
-        			throw new ArangoDBGraphException(String.format("The from collections dont match for edge definition %s", existing.getCollection()));
-        		}
-        		existingSet.clear();
-        		existingSet.addAll(existing.getTo());
-        		requiredSet.clear();
-        		requiredSet.addAll(requiredEdgeDefinition.getTo());
-        		if (!existingSet.equals(requiredSet)) {
-        			throw new ArangoDBGraphException(String.format("The to collections dont match for edge definition %s", existing.getCollection()));
-        		}
-        	}
-        }
 	}
 
 	/**
@@ -810,8 +781,9 @@ public class ArangoDBGraph implements Graph {
     @SuppressWarnings("unchecked")
 	@Override
 	public Iterator<Vertex> vertices(Object... vertexIds) {
-        List<String> ids = Arrays.stream(vertexIds)
-        		.map(String.class::cast)
+    	List<String> ids = Arrays.stream(vertexIds)
+        		.map(id -> id instanceof Element ? ((Element)id).id() : id)
+        		.map(Object::toString)
         		.collect(Collectors.toList());
 		ArangoDBQuery query = getClient().getGraphVertices(this, ids);
 		try {
@@ -829,7 +801,7 @@ public class ArangoDBGraph implements Graph {
      */
     public static class Exceptions {
     	
-    	private static Pattern ERROR_CODE = Pattern.compile("^Response:\\s\\d+,\\sError:\\s(\\d+)\\s-\\s([a-z\\s]+)");
+    	public static Pattern ERROR_CODE = Pattern.compile("^Response:\\s\\d+,\\sError:\\s(\\d+)\\s-\\s([a-z\\s]+).+");
     	
         private Exceptions() {
         }

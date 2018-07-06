@@ -44,7 +44,13 @@ import com.arangodb.tinkerpop.gremlin.structure.ArangoDBStructureCheck;
  * org.apache.tinkerpop.gremlin.structure.FeatureSupportTest,
  * org.apache.tinkerpop.gremlin.structure.io.IoCustomTest,
  * org.apache.tinkerpop.gremlin.structure.io.IoGraphTest,
- * org.apache.tinkerpop.gremlin.structure.io.IoVertexTest
+ * org.apache.tinkerpop.gremlin.structure.io.IoVertexTest,
+ * org.apache.tinkerpop.gremlin.structure.io.IoPropertyTest,
+ * org.apache.tinkerpop.gremlin.structure.GraphTest,
+ * org.apache.tinkerpop.gremlin.structure.GraphConstructionTest,
+ * org.apache.tinkerpop.gremlin.structure.io.IoTest,
+ * org.apache.tinkerpop.gremlin.structure.VertexPropertyTest
+ * 
  */
 public class ArangoDBTestSuite extends AbstractGremlinSuite {
 	

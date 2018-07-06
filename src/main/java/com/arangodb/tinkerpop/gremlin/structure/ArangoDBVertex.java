@@ -10,6 +10,7 @@ package com.arangodb.tinkerpop.gremlin.structure;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -17,9 +18,9 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-import org.apache.commons.collections4.IterableMap;
-import org.apache.commons.collections4.map.HashedMap;
 import org.apache.tinkerpop.gremlin.structure.Direction;
 import org.apache.tinkerpop.gremlin.structure.Edge;
 import org.apache.tinkerpop.gremlin.structure.Element;
@@ -37,6 +38,7 @@ import org.slf4j.LoggerFactory;
 import com.arangodb.ArangoDBException;
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBQuery;
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBGraph.ArangoDBIterator;
+import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
 
 
 /**
@@ -50,19 +52,19 @@ import com.arangodb.tinkerpop.gremlin.structure.ArangoDBGraph.ArangoDBIterator;
 
 public class ArangoDBVertex<U> extends ArangoDBElement<U> implements Vertex {
 	
-	public static class ArangoDBVertexProperty<V> extends ArangoDBProperty<V> implements VertexProperty<V>, Entry<String, V>, Element {
+	public static class ArangoDBVertexProperty<V> extends ArangoDBElementProperty<V> implements VertexProperty<V>, Entry<String, V>, Element {
 		
-		private final class ArangoProperty<PV> implements Property<PV> {
+		public static class ArangoDBVertexPropertyProperty<PV> implements Property<PV> {
 
 	        private final String key;
-	        private final PV value;
-	        private final ArangoDBVertexProperty<V> element;
-
-	        private ArangoProperty(final String key, final PV value, final ArangoDBVertexProperty<V> element) {
+	        private PV value;
+	        private final ArangoDBVertexProperty<?> owner;
+	        
+	        public ArangoDBVertexPropertyProperty(final String key, final PV value, final ArangoDBVertexProperty<?> element) {
 	        	super();
 	            this.key = key;
 	            this.value = value;
-	            this.element = element;
+	            this.owner = element;
 	        }
 
 	        @Override
@@ -82,12 +84,16 @@ public class ArangoDBVertex<U> extends ArangoDBElement<U> implements Vertex {
 
 	        @Override
 	        public Element element() {
-	            return this.element;
+	            return this.owner;
 	        }
 
 	        @Override
 	        public void remove() {
-	            this.element.properties.remove(key);
+	        	boolean removed = this.owner.properties.remove(this);
+	        	if (removed) {
+	        		this.owner.owner.save();
+	        	}
+	        	
 	        }
 
 	        @Override
@@ -107,31 +113,35 @@ public class ArangoDBVertex<U> extends ArangoDBElement<U> implements Vertex {
 
 	    }
 		
+		private final Set<ArangoDBVertexPropertyProperty<Object>> properties = new HashSet<>(4, 0.75f);
 		
-		protected IterableMap<String, ArangoProperty<?>> properties = new HashedMap<>(4, 0.75f);
-
-
-		protected ArangoDBVertexProperty(
+		public ArangoDBVertexProperty(
 			HashEntry<String, V> next,
 			int hashCode,
 			Object key,
 			V value,
-			ArangoDBVertex<V> element) {
-			super(next, hashCode, key, value, element);
+			ArangoDBVertex<V> owner) {
+			super(next, hashCode, key, value, owner);
 		}
 		
 		public ArangoDBVertexProperty(
 			Object key,
 			V value,
-			ArangoDBVertex<V> element) {
-			super(key, value, element);
+			ArangoDBVertex<V> element,
+			Cardinality cardinality) {
+			super(key, value, element, cardinality);
 		}
 
 		@Override
 		public Object id() {
 			return key;
 		}
+		
+		public Set<ArangoDBVertexPropertyProperty<Object>> getElementProperties() {
+			return properties;
+		}
 
+		@SuppressWarnings("unchecked")
 		@Override
 		public <VP> Property<VP> property(String key, VP value) {
 			ElementHelper.validateProperty(key, value);
@@ -140,8 +150,16 @@ public class ArangoDBVertex<U> extends ArangoDBElement<U> implements Vertex {
 					VertexProperty.Exceptions.userSuppliedIdsOfThisTypeNotSupported();
 				}
 			}
-			ArangoProperty<VP> property = new ArangoProperty<VP>(key, value, this);
-			this.properties.put(key, property);
+			ArangoDBVertexPropertyProperty<VP> property;
+			Optional<ArangoDBVertexPropertyProperty<Object>> existing = this.properties.stream().filter(p -> p.key.equals(key)).findFirst(); 
+			if (existing.isPresent()) {
+				property = (ArangoDBVertexPropertyProperty<VP>) existing.get();
+				property.value = value;
+			} else {
+				property = new ArangoDBVertexPropertyProperty<VP>(key, value, this);
+				this.properties.add((ArangoDBVertexPropertyProperty<Object>) property);
+			}
+			owner.save();
 			return property;
 		}
 
@@ -153,19 +171,23 @@ public class ArangoDBVertex<U> extends ArangoDBElement<U> implements Vertex {
 		@SuppressWarnings("unchecked")
 		@Override
 		public <VP> Iterator<Property<VP>> properties(String... propertyKeys) {
-			return this.properties.entrySet().stream()
-					.filter(entry -> ElementHelper.keyExists(entry.getKey(), propertyKeys))
-					.map(entry -> entry.getValue())
+			if (propertyKeys.length == 0) {		// No filter
+				return properties.stream()
+						.map(v -> (Property<VP>)v)
+						.iterator();
+			}
+			Set<String> filterProperties = new HashSet<>(Arrays.asList(propertyKeys));
+			return this.properties.stream()
+					.filter(p -> filterProperties.contains(p.key()))
 					.map(v -> (Property<VP>)v)
 					.iterator();
 		}
+		
 
 		@Override
 		public boolean equals(Object obj) {
 			return ElementHelper.areEqual(this, obj);
 		}
-
-		
 	}
 	
 	private static final Logger logger = LoggerFactory.getLogger(ArangoDBVertex.class);
@@ -207,7 +229,7 @@ public class ArangoDBVertex<U> extends ArangoDBElement<U> implements Vertex {
 			graph.getClient().deleteVertex(graph, this);
 		} catch (ArangoDBGraphException e) {
 			logger.error("Unable to remove vertex in DB", e);
-			throw new IllegalStateException("Unable to remove edge in DB", e);
+			throw new IllegalStateException("Unable to remove vertex in DB", e);
 		}
 	}
 
@@ -217,7 +239,7 @@ public class ArangoDBVertex<U> extends ArangoDBElement<U> implements Vertex {
 		ElementHelper.legalPropertyKeyValueArray(keyValues);
 		ElementHelper.validateLabel(label);
 		if (!graph.edgeCollections().contains(label)) {
-			throw new IllegalArgumentException(String.format("Edge label (%s)not in graph edge collections.", label));
+			throw new IllegalArgumentException(String.format("Edge label (%s)not in graph (%s) edge collections.", label, graph.name()));
 		}
 		if (inVertex == null) {
 			Graph.Exceptions.argumentCanNotBeNull("vertex");
@@ -308,30 +330,36 @@ public class ArangoDBVertex<U> extends ArangoDBElement<U> implements Vertex {
 			}
 			break;
 		}
-		if (paired && added) {
-			try {
-				graph.getClient().updateVertex(graph, this);
-			} catch (ArangoDBGraphException e) {
-				logger.error("Unable to update vertex in DB", e);
-				throw new IllegalStateException("Unable to update vertex in DB", e);
-			}
-		}
 		result = (ArangoDBVertexProperty<V>) getEntry(key);
 		ElementHelper.attachProperties(result, keyValues);
 		result.cardinality(cardinality);
+		if (added) {
+			save();
+		}
 		return result;
 	}
 
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public Iterator<Edge> edges(Direction direction, String... edgeLabels) {
-		
-		ArangoDBQuery query = graph.getClient().getVertexEdges(graph, this, Arrays.asList(edgeLabels), direction);
+	public Iterator<Edge> edges(Direction direction,
+		String... edgeLabels) {
+		// Query will raise an exception if the edge_collection name is not in the graph, so we need
+		// to filter out edgeLabels not in the graph. 
+		List<String> edgeCollections = Arrays.stream(edgeLabels)
+				.filter(el -> graph.edgeCollections().contains(el))
+				.map(el -> ArangoDBUtil.getCollectioName(graph.name(), el)).collect(Collectors.toList());
+		// However, if edgeLabels was not empty but all were discarded, this means that we should
+		// return an empty iterator, i.e. no edges for that edgeLabels exist.
+		if ((edgeLabels.length > 0) && edgeCollections.isEmpty()) {
+			return Collections.emptyIterator();
+		}
+		ArangoDBQuery query = graph.getClient().getVertexEdges(graph, this, edgeCollections, direction);
 		try {
 			return new ArangoDBIterator<Edge>(graph, query.getCursorResult(ArangoDBEdge.class));
 		} catch (ArangoDBGraphException e) {
 			// TODO Auto-generated catch block
+			// return Collections.emptyIterator()?
 			return null;
 		}
 	}
@@ -339,12 +367,23 @@ public class ArangoDBVertex<U> extends ArangoDBElement<U> implements Vertex {
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public Iterator<Vertex> vertices(Direction direction, String... edgeLabels) {
-		ArangoDBQuery query = graph.getClient().getVertexNeighbors(graph, this, Arrays.asList(edgeLabels), direction);
+	public Iterator<Vertex> vertices(Direction direction,
+		String... edgeLabels) {
+		// Query will raise an exception if the edge_collection name is not in the graph, so we need
+		// to filter out edgeLabels not in the graph. 
+		List<String> edgeCollections = Arrays.stream(edgeLabels)
+				.filter(el -> graph.edgeCollections().contains(el))
+				.map(el -> ArangoDBUtil.getCollectioName(graph.name(), el)).collect(Collectors.toList());
+		// However, if edgeLabels was not empty but all were discarded, this means that we should
+		// return an empty iterator, i.e. no edges for that edgeLabels exist.
+		if ((edgeLabels.length > 0) && edgeCollections.isEmpty()) {
+			return Collections.emptyIterator();
+		}
+		ArangoDBQuery query = graph.getClient().getVertexNeighbors(graph, this, edgeCollections, direction);
 		try {
 			return new ArangoDBIterator<Vertex>(graph, query.getCursorResult(ArangoDBVertex.class));
 		} catch (ArangoDBGraphException e) {
-			return Collections.emptyIterator();
+			return null;
 		}	
 	}
 
@@ -353,6 +392,11 @@ public class ArangoDBVertex<U> extends ArangoDBElement<U> implements Vertex {
 	@Override
 	public <V> Iterator<VertexProperty<V>> properties(String... propertyKeys) {
 		List<String> validProperties = getValidProperties(propertyKeys);
+		// If propertyKeys was not empty but all were discarded, this means that we should
+		// return an empty iterator, i.e. no properties for that propertyKeys exist.
+		if ((propertyKeys.length > 0) && validProperties.isEmpty()) {
+			return Collections.emptyIterator();
+		}
 		return new ArangoElementPropertyIterator<VertexProperty<V>, V>((ArangoDBElement<V>) this, validProperties);
 	}
 
@@ -371,13 +415,30 @@ public class ArangoDBVertex<U> extends ArangoDBElement<U> implements Vertex {
 	@SuppressWarnings("unchecked")
 	@Override
 	public <V> Iterator<V> values(String... propertyKeys) {
-		return (Iterator<V>) Arrays.stream(propertyKeys).map(this::get).iterator();
+		return (Iterator<V>) Arrays.stream(propertyKeys)
+				.filter(k -> containsKey(k))
+				.map(this::get)
+				.flatMap(v -> v instanceof Collection<?> ? ((Collection<?>)v).stream() : Stream.of(v))
+				.iterator();
 	}
 	
 	@Override
     public String toString() {
     	return StringFactory.vertexString(this);
     }
+
+	@Override
+	public void save() {
+		if (paired) {
+			try {
+				graph.getClient().updateVertex(graph, this);
+			} catch (ArangoDBGraphException e) {
+				logger.error("Unable to update vertex in DB", e);
+				throw new IllegalStateException("Unable to update vertex in DB", e);
+			}
+		}
+		
+	}
 
 }
 
