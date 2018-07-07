@@ -52,7 +52,7 @@ public class ArangoDBQuery {
 	 */
 	protected QueryType queryType;
 
-	protected ArangoDBVertex<?> startVertex;
+	protected ArangoDBVertex startVertex;
 	protected ArangoDBPropertyFilter propertyFilter;
 	protected List<String> labelsFilter = new ArrayList<>();
 	protected Direction direction;
@@ -239,11 +239,11 @@ public class ArangoDBQuery {
 		return "ANY";
 	}
 
-	public ArangoDBVertex<?> getStartVertex() {
+	public ArangoDBVertex getStartVertex() {
 		return startVertex;
 	}
 
-	public ArangoDBQuery setStartVertex(ArangoDBVertex<?> startVertex) {
+	public ArangoDBQuery setStartVertex(ArangoDBVertex startVertex) {
 		this.startVertex = startVertex;
 		return this;
 	}

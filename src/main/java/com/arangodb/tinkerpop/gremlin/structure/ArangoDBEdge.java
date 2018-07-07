@@ -10,9 +10,14 @@ package com.arangodb.tinkerpop.gremlin.structure;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Set;
 
 import org.apache.tinkerpop.gremlin.structure.Direction;
 import org.apache.tinkerpop.gremlin.structure.Edge;
@@ -23,8 +28,11 @@ import org.apache.tinkerpop.gremlin.structure.util.StringFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.arangodb.entity.DocumentField;
+import com.arangodb.entity.DocumentField.Type;
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBQuery;
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBGraph.ArangoDBIterator;
+import com.arangodb.velocypack.annotations.Expose;
 
 /**
  * The ArangoDB edge class
@@ -35,80 +43,78 @@ import com.arangodb.tinkerpop.gremlin.structure.ArangoDBGraph.ArangoDBIterator;
  * @author Horacio Hoyos Rodriguez (@horaciohoyosr)
  */
 
-public class ArangoDBEdge<T> extends ArangoDBElement<T> implements Edge { //, ArangoDBDocument {
+public class ArangoDBEdge extends AbstractArangoDBElement implements Edge {
 
 	private static final Logger logger = LoggerFactory.getLogger(ArangoDBEdge.class);
 
-	public static final String FROM_KEY = "arangodb_from_key";
-	public static final String TO_KEY = "arangodb_to_key";
-	public static final String CARDINALITY = "arangodb_property_cardinality";
-	public static final String VALUE = "arangodb_property_value";
-	public static final String PROPERTIES = "arangodb_vertex_properties";
+//	public static final String FROM_KEY = "arangodb_from_key";
+//	public static final String TO_KEY = "arangodb_to_key";
+//	public static final String CARDINALITY = "arangodb_property_cardinality";
+//	public static final String VALUE = "arangodb_property_value";
+//	public static final String PROPERTIES = "arangodb_vertex_properties";
 
-	private String arango_db_from;
+	/** ArangoDB internal from. */
+	
+	@DocumentField(Type.FROM)
+	private String _from;
 
-	private String arango_db_to;
+	/** ArangoDB internal to. */
+	
+	@DocumentField(Type.TO)
+	private String _to;
 	
 	/** Tinkerpop ids are managed through keys, so we need to keep that information */
+	
 	private String from_key;
 
 	/** Tinkerpop ids are managed through keys, so we need to keep that information */
+	
 	private String to_key;
+	
+	/**  Map to store the element properties */
+	
+	@Expose(serialize = false, deserialize = false)
+	protected Map<String, ArangoDBElementProperty<?>> properties = new HashMap<>(4, 0.75f);
+	
 	
 	public ArangoDBEdge() {
 		super();
 	}
 
-	public ArangoDBEdge(ArangoDBGraph graph, String collection, String key, ArangoDBVertex<?> from, ArangoDBVertex<?> to) {
+	public ArangoDBEdge(ArangoDBGraph graph, String collection, String key, ArangoDBVertex from, ArangoDBVertex to) {
 		super(graph, collection, key);
-		this.arango_db_from = from._id();
-		this.arango_db_to = to._id();
+		this._from = from._id();
+		this._to = to._id();
 		this.from_key = from._key();
 		this.to_key = to._key();
 	}
 
-	public ArangoDBEdge(ArangoDBGraph graph, String collection, ArangoDBVertex<?> from, ArangoDBVertex<?> to) {
+	public ArangoDBEdge(ArangoDBGraph graph, String collection, ArangoDBVertex from, ArangoDBVertex to) {
 		this(graph, collection, null, from, to);
 	}
 
-	/**
-     * Creates an entry to store the key-value data.
-     *
-     * @param next  the next entry in sequence
-     * @param hashCode  the hash code to use
-     * @param key  the key to store
-     * @param value  the value to store
-     * @return the newly created entry
-     */
-    protected HashEntry<String, T> createEntry(
-    	final HashEntry<String, T> next,
-    	final int hashCode,
-    	final String key,
-    	final T value) {
-        return new ArangoDBElementProperty<T>(next, hashCode, convertKey(key), value, this);
-    }
-
 	@SuppressWarnings("unchecked")
 	@Override
-	public <PV> Property<PV> property(String key, PV value) {
+	public <V> Property<V> property(String key, V value) {
 		logger.info("property {} = {}", key, value);
 		ElementHelper.validateProperty(key, value);
-		Object oldValue = put(key, (T) value);
-		if (paired && !value.equals(oldValue)) {
-			try {
-				graph.getClient().updateEdge(graph, this);
-			} catch (ArangoDBGraphException e) {
-				logger.error("Unable to update edge in DB", e);
-				throw new IllegalStateException("Unable to update edge in DB", e);
+		ArangoDBElementProperty<V> p = (ArangoDBElementProperty<V>) property(key);
+		if (p == null) {
+			p = new ArangoDBElementProperty<V>(key, value, this);
+		}
+		else {
+			V oldValue = p.value(value);
+			if ((oldValue != null) && !oldValue.equals(value)) {
+				save();
 			}
 		}
-		return (ArangoDBElementProperty<PV>) getEntry(key);
+		return p;
 	}
 	
 	
 	@Override
 	public void remove() {
-		logger.info("removed {}", this._key());
+		logger.info("removing {} from graph {}.", this._key(), graph.name());
 		try {
 			graph.getClient().deleteEdge(graph, this);
 		} catch (ArangoDBGraphException e) {
@@ -141,64 +147,54 @@ public class ArangoDBEdge<T> extends ArangoDBElement<T> implements Edge { //, Ar
 		}	
 	}
 	
+	/**
+	 * Removing a property while iterating will throw ConcurrentModificationException 
+	 */
 	@SuppressWarnings("unchecked")
 	@Override
 	public <V> Iterator<Property<V>> properties(String... propertyKeys) {
-		List<String> validProperties = getValidProperties(propertyKeys);
-		return new ArangoElementPropertyIterator<Property<V>, V>((ArangoDBElement<V>) this, validProperties);
+		
+		Set<String> allProperties = new HashSet<>(properties.keySet());
+		if (propertyKeys.length > 1) {
+			allProperties.retainAll(Arrays.asList(propertyKeys));
+		}
+		return properties.entrySet().stream()
+				.filter(e -> allProperties.contains(e.getKey()))
+				.map(e -> e.getValue())
+				.map(p -> (Property<V>)p)
+				.iterator();
 	}
 
 	
-
 	@SuppressWarnings("unchecked")
 	@Override
 	public <V> Property<V> property(String key) {
-		return (Property<V>) entrySet().stream().filter(e -> e.getKey().equals(key)).findFirst().get();
+		return (Property<V>) properties.get(key);
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
 	public <V> V value(String key) throws NoSuchElementException {
-		return (V) get(key);
+		return (V) properties.get(key).value();
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
 	public <V> Iterator<V> values(String... propertyKeys) {
 		// FIXME Is this a filtering operation too?
-		return (Iterator<V>) Arrays.stream(propertyKeys).map(this::get).iterator();
-	}
-
-	public String _from() {
-		return arango_db_from;
-	}
-
-	public void _from(String from) {
-		this.arango_db_from = from;
-	}
-
-	public String _to() {
-		return arango_db_to;
-	}
-
-	public void _to(String to) {
-		this.arango_db_to = to;
-	}
+		return (Iterator<V>) Arrays.stream(propertyKeys).map(this.properties::get).iterator();
+	}	
 	
-	public String from_key() {
-		return from_key;
+	@Override
+	public Set<String> keys() {
+		logger.debug("keys");
+		return Collections.unmodifiableSet(properties.keySet());
 	}
+   
 
-	public void from_key(String from_key) {
-		this.from_key = from_key;
-	}
-
-	public String to_key() {
-		return to_key;
-	}
-
-	public void to_key(String to_key) {
-		this.to_key = to_key;
+	public void removeProperty(String key) {
+		this.properties.remove(key);
+		save();
 	}
 	
 	
@@ -219,6 +215,53 @@ public class ArangoDBEdge<T> extends ArangoDBElement<T> implements Edge { //, Ar
     public String toString() {
     	return StringFactory.edgeString(this);
     }
+
+	@Override
+	public void removeProperty(ArangoDBElementProperty<?> property) {
+		ArangoDBElementProperty<?> oldValue = this.properties.remove(property.key());
+		if (oldValue != null) {
+			save();
+		}
+		
+	}
+
+	@Override
+	public Set<String> propertiesKeys() {
+		return this.properties.keySet();
+	}
+	
+	
+	public String _from() {
+		return _from;
+	}
+
+	public void _from(String from) {
+		this._from = from;
+	}
+
+	public String _to() {
+		return _to;
+	}
+
+	public void _to(String to) {
+		this._to = to;
+	}
+	
+	public String from_key() {
+		return from_key;
+	}
+
+	public void from_key(String from_key) {
+		this.from_key = from_key;
+	}
+
+	public String to_key() {
+		return to_key;
+	}
+
+	public void to_key(String to_key) {
+		this.to_key = to_key;
+	}
 	
 	
 	

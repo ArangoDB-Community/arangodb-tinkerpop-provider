@@ -15,12 +15,12 @@ import org.apache.tinkerpop.gremlin.structure.Graph;
 
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBSimpleGraphClient;
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBEdge;
-import com.arangodb.tinkerpop.gremlin.structure.ArangoDBElement;
-import com.arangodb.tinkerpop.gremlin.structure.ArangoDBElement.ArangoDBElementProperty;
+import com.arangodb.tinkerpop.gremlin.structure.AbstractArangoDBElement;
+import com.arangodb.tinkerpop.gremlin.structure.ArangoDBElementProperty;
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBGraph;
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBGraphVariables;
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBVertex;
-import com.arangodb.tinkerpop.gremlin.structure.ArangoDBVertex.ArangoDBVertexProperty;
+import com.arangodb.tinkerpop.gremlin.structure.ArangoDBVertexProperty;
 
 /**
  * The Class ArangoDBGraphProvider. This provider assumes that there is a local ArangoDB running (i.e.
@@ -33,7 +33,7 @@ public class ArangoDBGraphProvider extends AbstractGraphProvider {
 	/** The Constant IMPLEMENTATIONS. */
 	private static final Set<Class> IMPLEMENTATIONS = new HashSet<Class>() {{
         add(ArangoDBEdge.class);
-        add(ArangoDBElement.class);
+        add(AbstractArangoDBElement.class);
         add(ArangoDBGraph.class);
         add(ArangoDBGraphVariables.class);
         add(ArangoDBElementProperty.class);

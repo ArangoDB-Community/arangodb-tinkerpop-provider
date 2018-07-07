@@ -448,7 +448,7 @@ public class ArangoDBGraph implements Graph {
 		@SuppressWarnings("unchecked")
 		@Override
 		public IType next() {
-			ArangoDBElement<?> next = (ArangoDBElement<?>) delegate.next();
+			AbstractArangoDBElement next = (AbstractArangoDBElement) delegate.next();
 			next.graph(graph);
 			next.setPaired(true);
 			return (IType) next;
@@ -593,13 +593,13 @@ public class ArangoDBGraph implements Graph {
         if (!vertexCollections().contains(collection)) {
 			throw new IllegalArgumentException(String.format("Vertex label (%s) not in graph (%s) vertex collections.", collection, name));
 		}
-        ArangoDBVertex<Object> vertex = null;
+        ArangoDBVertex vertex = null;
         if (ElementHelper.getIdValue(keyValues).isPresent()) {
         	id = ElementHelper.getIdValue(keyValues).get();
         	if (this.features().vertex().willAllowId(id)) {
         		Matcher m = DOCUMENT_KEY.matcher((String)id);
         		if (m.matches()) {
-        			vertex = new ArangoDBVertex<Object>(this, collection, id.toString());
+        			vertex = new ArangoDBVertex(this, collection, id.toString());
         		}
         		else {
             		throw new ArangoDBTinkerpopException(String.format("Given id (%s) has unsupported characters.", id));
@@ -611,7 +611,7 @@ public class ArangoDBGraph implements Graph {
         	
         }
         else {
-        	vertex = new ArangoDBVertex<Object>(this, collection);
+        	vertex = new ArangoDBVertex(this, collection);
         }
         ElementHelper.attachProperties(vertex, keyValues);
         try {

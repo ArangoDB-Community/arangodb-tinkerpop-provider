@@ -115,7 +115,8 @@ public class ArangoDBSimpleGraphClient {
 			properties.store(os, null);
 			InputStream targetStream = new ByteArrayInputStream(os.toByteArray());
 			driver = new ArangoDB.Builder().loadProperties(targetStream)
-					.registerModule(new ArangoDBGraphModule()).build();
+					.registerModule(new ArangoDBGraphModule())
+					.build();
 		} catch (IOException e) {
 			throw new ArangoDBGraphException("Unable to read properties", e);
 		}
@@ -254,13 +255,13 @@ public class ArangoDBSimpleGraphClient {
 	 * @throws ArangoDBGraphException	if the retrieval failed
 	 */
 	
-	public ArangoDBVertex<?> getVertex(
+	public ArangoDBVertex getVertex(
 		ArangoDBGraph graph,
 		String id,
 		String collection)
 		throws ArangoDBGraphException {
 		logger.debug("Get vertex {} from {}:{}", id, graph.name(), collection);
-		ArangoDBVertex<?> result = null;
+		ArangoDBVertex result = null;
 		try {
 			result = db.graph(graph.name()).vertexCollection(collection).getVertex(id, ArangoDBVertex.class);
 		} catch (ArangoDBException e) {
@@ -283,7 +284,7 @@ public class ArangoDBSimpleGraphClient {
 	
 	public void insertVertex(
 		final ArangoDBGraph graph,
-		ArangoDBVertex<?> vertex)
+		ArangoDBVertex vertex)
 		throws ArangoDBGraphException {
 		logger.debug("Insert vertex {} in {}", vertex, graph.name());
 		VertexEntity vertexEntity;
@@ -322,7 +323,7 @@ public class ArangoDBSimpleGraphClient {
 	
 	public void deleteVertex(
 		ArangoDBGraph graph,
-		ArangoDBVertex<?> vertex)
+		ArangoDBVertex vertex)
 		throws ArangoDBGraphException {
 		logger.debug("Delete vertex {} in {}", vertex, graph.name());
 		try {
@@ -346,7 +347,7 @@ public class ArangoDBSimpleGraphClient {
 	
 	public void updateVertex(
 		ArangoDBGraph graph,
-		ArangoDBVertex<?> vertex)
+		ArangoDBVertex vertex)
 		throws ArangoDBGraphException {
 		logger.debug("Update vertex {} in {}", vertex, graph.name());
 		VertexUpdateEntity vertexEntity;
@@ -372,13 +373,13 @@ public class ArangoDBSimpleGraphClient {
 	 * @throws ArangoDBGraphException 	if the retrieval failed
 	 */
 	
-	public ArangoDBEdge<?> getEdge(
+	public ArangoDBEdge getEdge(
 		ArangoDBGraph graph,
 		String id,
 		String collection)
 		throws ArangoDBGraphException {
 		logger.debug("Get edge {} from {}:{}", id, graph.name(), collection);
-		ArangoDBEdge<?> result = null;
+		ArangoDBEdge result = null;
 		try {
 			result = db.graph(graph.name())
 					.edgeCollection(ArangoDBUtil.getCollectioName(graph.name(), collection))
@@ -403,7 +404,7 @@ public class ArangoDBSimpleGraphClient {
 
 	public void insertEdge(
 		ArangoDBGraph graph,
-		ArangoDBEdge<?> edge)
+		ArangoDBEdge edge)
 		throws ArangoDBGraphException {
 		logger.debug("Insert edge {} in {}", edge, graph.name());
 		EdgeEntity edgeEntity;
@@ -433,7 +434,7 @@ public class ArangoDBSimpleGraphClient {
 
 	public void deleteEdge(
 		ArangoDBGraph graph,
-		ArangoDBEdge<?> edge)
+		ArangoDBEdge edge)
 		throws ArangoDBGraphException {
 		logger.debug("Delete edge {} in {}", edge, graph.name());
 		try {
@@ -457,7 +458,7 @@ public class ArangoDBSimpleGraphClient {
 	
 	public void updateEdge(
 		ArangoDBGraph graph,
-		ArangoDBEdge<?> edge)
+		ArangoDBEdge edge)
 		throws ArangoDBGraphException {
 		logger.debug("Update edge {} in {}", edge, graph.name());
 		EdgeUpdateEntity edgeEntity;
@@ -488,7 +489,7 @@ public class ArangoDBSimpleGraphClient {
 
 	public ArangoDBQuery getVertexEdges(
 		ArangoDBGraph graph,
-		ArangoDBVertex<?> vertex,
+		ArangoDBVertex vertex,
 		List<String> edgeLabels,
 		Direction direction)
 		throws ArangoDBException {
@@ -522,7 +523,7 @@ public class ArangoDBSimpleGraphClient {
 
 	public ArangoDBQuery getVertexNeighbors(
 		ArangoDBGraph graph,
-		ArangoDBVertex<?> vertex,
+		ArangoDBVertex vertex,
 		List<String> labelsFilter,
 		Direction direction) {
 		logger.debug("Get Vertex's {}:{} Neighbors, in {}, from collections {}", vertex, direction, graph.name(), labelsFilter);
