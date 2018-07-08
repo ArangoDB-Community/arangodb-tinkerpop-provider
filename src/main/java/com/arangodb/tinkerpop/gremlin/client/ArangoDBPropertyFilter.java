@@ -66,8 +66,6 @@ public class ArangoDBPropertyFilter {
 		return this;
 	}
 
-	
-
 	public void addProperties(String prefix, List<String> filter, Map<String, Object> bindVars) {
 		logger.info("addProperties");
 		int count = 0;

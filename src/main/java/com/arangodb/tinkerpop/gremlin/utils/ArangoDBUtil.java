@@ -8,25 +8,24 @@
 
 package com.arangodb.tinkerpop.gremlin.utils;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
-import org.apache.commons.collections4.CollectionUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.arangodb.ArangoGraph;
 import com.arangodb.entity.EdgeDefinition;
 import com.arangodb.entity.GraphEntity;
 import com.arangodb.model.GraphCreateOptions;
-import com.arangodb.tinkerpop.gremlin.structure.ArangoDBGraphException;
+import com.arangodb.tinkerpop.gremlin.client.ArangoDBBaseDocument;
+import com.arangodb.tinkerpop.gremlin.client.ArangoDBClientException;
+import com.arangodb.tinkerpop.gremlin.client.ArangoDBGraphClient;
+import com.arangodb.tinkerpop.gremlin.structure.*;
+import org.apache.commons.collections4.CollectionUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.UnsupportedEncodingException;
+import java.math.BigInteger;
+import java.util.*;
+import java.util.stream.Collectors;
+
+import static org.apache.tinkerpop.gremlin.structure.Graph.Hidden.isHidden;
 
 /**
  * This class is used to rename attributes of the vertices and edges to support
@@ -36,11 +35,15 @@ import com.arangodb.tinkerpop.gremlin.structure.ArangoDBGraphException;
  * @author Johannes Gocke (http://www.triagens.de)
  * @author Horacio Hoyos Rodriguez (@horaciohoyosr)
  */
-
+//FIXME We should add more util methods to validate attribute names, e.g. scape ".".
 public class ArangoDBUtil {
 	
 	/** The Constant logger. */
 	private static final Logger logger = LoggerFactory.getLogger(ArangoDBUtil.class);
+
+    public static final String GRAPH_VARIABLES_COLLECTION = "GRAPH_VARIABLES";
+    public static final String ELEMENT_PROPERTIES_COLLECTION = "ELEMENT_PROPERTIES";
+    public static final String ELEMENT_PROPERTIES_EDGE = "ELEMENT_HAS_PROPERTIES";
 
 	/**
 	 * Instantiates a new ArangoDB Util.
@@ -50,7 +53,7 @@ public class ArangoDBUtil {
 	}
 
 	/**
-	 * Since attributes that start with underscore are considered to be system attributes (), 
+	 * Since attributes that start with underscore are considered to be system attributes (),
 	 * rename key "_XXXX" to "«a»XXXX" for storage.
 	 *
 	 * @param key            the key to convert
@@ -65,8 +68,8 @@ public class ArangoDBUtil {
 	}
 
 	/**
-	 * Since attributes that start with underscore are considered to be system attributes (), 
-	 * rename Attribute "«a»XXXX" to "_XXXX" for retreival.
+	 * Since attributes that start with underscore are considered to be system attributes (),
+	 * rename Attribute "«a»XXXX" to "_XXXX" for retrieval.
 	 *
 	 * @param key            the key to convert
 	 * @return String the converted String
@@ -78,6 +81,63 @@ public class ArangoDBUtil {
 		}
 		return key;
 	}
+
+	/**
+	 * The prefix to denote that a collection is a hidden collection.
+	 */
+	private final static String HIDDEN_PREFIX = "adbt_";
+	private static final int HIDDEN_PREFIX_LENGTH = HIDDEN_PREFIX.length();
+
+	/**
+	 * Hidden keys, labels, etc. are prefixed in Tinkerpop with  @link Graph.Hidden.HIDDEN_PREFIX). Since in ArangoDB
+	 * collection names must always start with a letter, this method normalizes Hidden collections name to valid
+	 * ArangoDB names by replacing the "~" with
+	 *
+	 * @param key the key to convert
+	 * @return String the converted String
+	 * @see <a href="https://docs.arangodb.com/3.3/Manual/DataModeling/NamingConventions/AttributeNames.html">Manual</a>
+	 */
+	public static String normalizeCollection(String key) {
+		String nname = isHidden(key) ? key : HIDDEN_PREFIX.concat(key);
+		if (!NamingConventions.COLLECTION.hasValidNameSize(nname)) {
+			throw ArangoDBGraphClient.ArangoDBExceptions.getNamingConventionError(ArangoDBGraphClient.ArangoDBExceptions.NAME_TO_LONG, key);
+		}
+		return nname;
+	}
+
+	/**
+	 * Since attributes that start with underscore are considered to be system attributes (), 
+	 * rename Attribute "«a»XXXX" to "_XXXX" for retreival.
+	 *
+	 * @param key            the key to convert
+	 * @return String the converted String
+	 * @see <a href="https://docs.arangodb.com/3.3/Manual/DataModeling/NamingConventions/AttributeNames.html">Manual</a>
+	 */
+	public static String denormalizeCollection(String key) {
+		return isHidden(key) ? key.substring(HIDDEN_PREFIX_LENGTH) : key;
+	}
+
+	public enum NamingConventions {
+		COLLECTION(64), KEY(256);
+
+		private int maxLength;
+
+		NamingConventions(int maxLength) {
+			this.maxLength = maxLength;
+		}
+
+		public boolean hasValidNameSize(String name) {
+			final byte[] utf8Bytes;
+			try {
+				utf8Bytes = name.getBytes("UTF-8");
+			} catch (UnsupportedEncodingException e) {
+				return false;
+			}
+			return utf8Bytes.length <= maxLength;
+		}
+	}
+
+
 	
 	/**
 	 * Create an EdgeDefinition from a relation in the Configuration. The format of a relation is:
@@ -88,21 +148,21 @@ public class ArangoDBUtil {
 	 * node collection names.
 	 *
 	 * @param relation the relation
-	 * @param value 
+	 * @param graphName the name of the graph
 	 * @return an EdgeDefinition that represents the relation.
-	 * @throws ArangoDBGraphException the arango DB graph exception
+	 * @throws ArangoDBClientException the arango DB graph exception
 	 */
-	public static EdgeDefinition relationPropertyToEdgeDefinition(String graphName, String relation) throws ArangoDBGraphException {
+	public static EdgeDefinition relationPropertyToEdgeDefinition(String graphName, String relation) throws ArangoDBClientException {
 		logger.info("Creating EdgeRelation from {}", relation);
 		EdgeDefinition result = new EdgeDefinition();
 		String[] info = relation.split(":");
 		if (info.length != 2) {
-			throw new ArangoDBGraphException("Error in configuration. Malformed relation> " + relation);
+			throw new ArangoDBClientException("Error in configuration. Malformed relation> " + relation);
 		}
 		result.collection(getCollectioName(graphName, info[0]));
 		info = info[1].split("->");
 		if (info.length != 2) {
-			throw new ArangoDBGraphException("Error in configuration. Malformed relation> " + relation);
+			throw new ArangoDBClientException("Error in configuration. Malformed relation> " + relation);
 		}
 		List<String> trimmed = Arrays.stream(info[0].split(","))
 				.map(String::trim)
@@ -165,12 +225,12 @@ public class ArangoDBUtil {
 	 * @param relations The description of edge definitions
 	 * @param graph the graph
 	 * @param options The options used to create the graph
-	 * @throws ArangoDBGraphException the ArangoDB graph exception
+	 * @throws ArangoDBClientException the ArangoDB graph exception
 	 */
 	public static void checkGraphForErrors(List<String> verticesCollectionNames,
 			List<String> edgesCollectionNames,
 			List<String> relations,
-			ArangoGraph graph, GraphCreateOptions options) throws ArangoDBGraphException {
+			ArangoGraph graph, GraphCreateOptions options) throws ArangoDBClientException {
 		
 		
 		List<String> allVertexCollections = verticesCollectionNames.stream()
@@ -178,31 +238,32 @@ public class ArangoDBUtil {
 				.collect(Collectors.toList());
 		allVertexCollections.addAll(options.getOrphanCollections());
 		if (!allVertexCollections.containsAll(graph.getVertexCollections())) {
-			throw new ArangoDBGraphException("Not all declared vertex names appear in the graph.");
+			throw new ArangoDBClientException("Not all declared vertex names appear in the graph.");
 		}
 		GraphEntity ge = graph.getInfo();
         Collection<EdgeDefinition> graphEdgeDefinitions = ge.getEdgeDefinitions();
         if (CollectionUtils.isEmpty(relations)) {
         	// If no relations are defined, vertices and edges can only have one value
         	if ((verticesCollectionNames.size() != 1) || (edgesCollectionNames.size() != 1)) {
-        		throw new ArangoDBGraphException("No relations where specified but more than one vertex/edge where defined.");
+        		throw new ArangoDBClientException("No relations where specified but more than one vertex/edge where defined.");
         	}
         	if (graphEdgeDefinitions.size() != 1) {
-        		throw new ArangoDBGraphException("No relations where specified but the graph has more than one EdgeDefinition.");
+        		throw new ArangoDBClientException("No relations where specified but the graph has more than one EdgeDefinition.");
     		}
         }
         Map<String, EdgeDefinition> requiredDefinitions;
-		if (relations.isEmpty()) {
-			List<EdgeDefinition> eds = ArangoDBUtil.createDefaultEdgeDefinitions(graph.name(), verticesCollectionNames, edgesCollectionNames);
-			requiredDefinitions = eds.stream().collect(Collectors.toMap(ed -> ed.getCollection(), ed -> ed));
+        final Collection<EdgeDefinition> eds = ArangoDBUtil.createPropertyEdgeDefinitions(graph.name(), verticesCollectionNames);
+        if (relations.isEmpty()) {
+			eds.addAll(ArangoDBUtil.createDefaultEdgeDefinitions(graph.name(), verticesCollectionNames, edgesCollectionNames));
+
 		} else {
-			requiredDefinitions = new HashMap<>(relations.size());
 			for (Object value : relations) {
 				EdgeDefinition ed = ArangoDBUtil.relationPropertyToEdgeDefinition(graph.name(), (String) value);
-				requiredDefinitions.put(ed.getCollection(), ed);
+				eds.add(ed);
 			}
 		}
-		Iterator<EdgeDefinition> it = graphEdgeDefinitions.iterator();
+        requiredDefinitions = eds.stream().collect(Collectors.toMap(EdgeDefinition::getCollection, ed -> ed));
+        Iterator<EdgeDefinition> it = graphEdgeDefinitions.iterator();
         while (it.hasNext()) {
         	EdgeDefinition existing = it.next();
         	if (requiredDefinitions.containsKey(existing.getCollection())) {
@@ -210,17 +271,17 @@ public class ArangoDBUtil {
         		HashSet<String> existingSet = new HashSet<String>(existing.getFrom());
         		HashSet<String> requiredSet = new HashSet<String>(requiredEdgeDefinition.getFrom());
         		if (!existingSet.equals(requiredSet)) {
-        			throw new ArangoDBGraphException(String.format("The from collections dont match for edge definition %s", existing.getCollection()));
+        			throw new ArangoDBClientException(String.format("The from collections dont match for edge definition %s", existing.getCollection()));
         		}
         		existingSet.clear();
         		existingSet.addAll(existing.getTo());
         		requiredSet.clear();
         		requiredSet.addAll(requiredEdgeDefinition.getTo());
         		if (!existingSet.equals(requiredSet)) {
-        			throw new ArangoDBGraphException(String.format("The to collections dont match for edge definition %s", existing.getCollection()));
+        			throw new ArangoDBClientException(String.format("The to collections dont match for edge definition %s", existing.getCollection()));
         		}
         	} else {
-        		throw new ArangoDBGraphException(String.format("The graph has a surplus edge definition %s", edgeDefinitionString(existing)));
+        		throw new ArangoDBClientException(String.format("The graph has a surplus edge definition %s", edgeDefinitionString(existing)));
         	}
         }
 	}
@@ -228,4 +289,98 @@ public class ArangoDBUtil {
 	public static String edgeDefinitionString(EdgeDefinition ed) {
 		return String.format("[%s]: %s->%s", ed.getCollection(), ed.getFrom(), ed.getTo());
 	}
+
+    /**
+     * Create the graph private collections. There is a collection for storing graph properties.
+     * @param graphName
+     * @param vertexCollections
+     * @return
+     */
+    public static Collection<EdgeDefinition> createPropertyEdgeDefinitions(String graphName, List<String> vertexCollections) {
+        List<EdgeDefinition> result = new ArrayList<>();
+        List<String> from = vertexCollections.stream().map(vc -> ArangoDBUtil.getCollectioName(graphName, vc)).collect(Collectors.toList());
+        String propCollection = ArangoDBUtil.getCollectioName(graphName, ELEMENT_PROPERTIES_COLLECTION);
+        from.add(propCollection);
+        String[] f = from.toArray(new String[from.size()]);
+        EdgeDefinition ed = new EdgeDefinition()
+                .collection(ArangoDBUtil.getCollectioName(graphName, ELEMENT_PROPERTIES_EDGE))
+                .from(f)
+                .to(propCollection);
+        result.add(ed);
+        return result;
+    }
+
+
+    public static <U> ArangoDBEdgeProperty<U> createArangoDBEdgeProperty(String key, U value, ArangoDBEdge doc) {
+        ArangoDBEdgeProperty<U> p;
+        p = new ArangoDBEdgeProperty<>(key, value, doc);
+        ArangoDBGraph g = doc.graph();
+        ArangoDBGraphClient c = g.getClient();
+        c.insertDocument(g, p);
+        ArangoDBElementProperty.ElementHasProperty e = p.assignToDocument(doc);
+        c.insertEdge(g, e);
+        return p;
+    }
+
+    public static <U> ArangoDBVertexProperty<U> createArangoDBVertexProperty(String key, U value, ArangoDBVertex doc) {
+        ArangoDBVertexProperty<U> p;
+        p = new ArangoDBVertexProperty<>(key, value, doc);
+        ArangoDBGraph g = doc.graph();
+        ArangoDBGraphClient c = g.getClient();
+        c.insertDocument(g, p);
+        ArangoDBElementProperty.ElementHasProperty e = p.assignToDocument(doc);
+        c.insertEdge(g, e);
+        return p;
+    }
+
+    public static <U> ArangoDBVertexProperty<U> createArangoDBVertexProperty(String id, String key, U value, ArangoDBVertex doc) {
+        ArangoDBVertexProperty<U> p;
+        p = new ArangoDBVertexProperty<>(id, key, value, doc);
+        ArangoDBGraph g = doc.graph();
+        ArangoDBGraphClient c = g.getClient();
+        c.insertDocument(g, p);
+        ArangoDBElementProperty.ElementHasProperty e = p.assignToDocument(doc);
+        c.insertEdge(g, e);
+        return p;
+    }
+
+    public static <U> ArangoDBPropertyProperty<U> createArangoDBPropertyProperty(String key, U value, ArangoDBVertexProperty doc) {
+        ArangoDBPropertyProperty<U> p;
+        p = new ArangoDBPropertyProperty<>(key, value, doc);
+        ArangoDBGraph g = doc.graph();
+        ArangoDBGraphClient c = g.getClient();
+        c.insertDocument(g, p);
+        ArangoDBElementProperty.ElementHasProperty e = p.assignToDocument(doc);
+        c.insertEdge(g, e);
+        return p;
+    }
+
+    public static <V> Object getCorretctPrimitive(V value) {
+        if (value instanceof Number) {
+            if (value instanceof Float) {
+                return value;
+            }
+            else if (value instanceof Double) {
+                return value;
+            }
+            else {
+                String numberStr = value.toString();
+                BigInteger number = new BigInteger(numberStr);
+                if(number.longValue() < Integer.MAX_VALUE && number.longValue() > Integer.MIN_VALUE) {
+                    return new Integer(numberStr);
+                }
+                else if(number.longValueExact() < Long.MAX_VALUE && number.longValue() > Long.MIN_VALUE) {
+                    return new Long(numberStr);
+                }
+                else {
+                    return number;
+                }
+            }
+        }
+        else {
+            return value;
+        }
+    }
+
+
 }

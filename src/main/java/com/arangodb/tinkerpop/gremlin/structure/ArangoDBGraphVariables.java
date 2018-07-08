@@ -1,27 +1,27 @@
 package com.arangodb.tinkerpop.gremlin.structure;
 
 
+import com.arangodb.tinkerpop.gremlin.client.ArangoDBBaseDocument;
+import com.arangodb.velocypack.annotations.Expose;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.tinkerpop.gremlin.structure.Graph;
 import org.apache.tinkerpop.gremlin.structure.Graph.Variables;
-import org.apache.tinkerpop.gremlin.structure.util.ElementHelper;
-
-import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import javax.swing.tree.VariableHeightLayoutCache;
 
-public class ArangoDBGraphVariables implements Graph.Variables {
+public class ArangoDBGraphVariables extends ArangoDBBaseDocument implements Graph.Variables {
 
-	public static final String GRAPH_VARIABLES_COLLECTION = "GRAPH_VARIABLES";
+    @Expose(serialize = false, deserialize = false)
     private final ArangoDBGraph graph;
+
     private final Map<String, Object> store = new HashMap<>(4);
 
     public ArangoDBGraphVariables(ArangoDBGraph graph) {
+        super();
         this.graph = graph;
     }
 
@@ -51,11 +51,11 @@ public class ArangoDBGraphVariables implements Graph.Variables {
     	Object oldValue = this.store.put(key, value);
     	if (oldValue != null) {
     		if (!oldValue.equals(value)) {
-    			graph.getClient().updateDocument(ArangoDBUtil.getCollectioName(graph.name(), GRAPH_VARIABLES_COLLECTION), key, value);
+    			graph.getClient().updateDocument(graph, this);
     		}
     	}
     	else {
-    		graph.getClient().createDocument(ArangoDBUtil.getCollectioName(graph.name(), GRAPH_VARIABLES_COLLECTION), key, value);
+            graph.getClient().updateDocument(graph, this);
     	}
     }
 
@@ -63,11 +63,13 @@ public class ArangoDBGraphVariables implements Graph.Variables {
     public void remove(String key) {
     	Object oldValue = this.store.remove(key);
     	if (oldValue != null) {
-    		graph.getClient().deleteDocument(ArangoDBUtil.getCollectioName(graph.name(), GRAPH_VARIABLES_COLLECTION), key);
+            graph.getClient().updateDocument(graph, this);
     	}
     }
+
 
     public static class ArangoDBGraphVariableFeatures implements Graph.Features.VariableFeatures {
 
     }
+
 }
