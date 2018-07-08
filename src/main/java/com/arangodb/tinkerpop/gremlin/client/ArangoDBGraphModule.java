@@ -16,7 +16,6 @@ import com.arangodb.tinkerpop.gremlin.structure.ArangoDBEdge;
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBElementProperty;
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBVertex;
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBVertexProperty;
-import com.arangodb.tinkerpop.gremlin.structure.ArangoDBVertexProperty.ArangoDBVertexPropertyOwner;
 import com.arangodb.velocypack.VPackBuilder;
 import com.arangodb.velocypack.VPackDeserializationContext;
 import com.arangodb.velocypack.VPackDeserializer;
@@ -33,8 +32,8 @@ import com.arangodb.velocypack.exception.VPackException;
  * @author Horacio Hoyos Rodriguez (@horaciohoyosr)
  *
  */
-public class ArangoDBGraphModule implements VPackModule {
-
+public class ArangoDBGraphModule { //implements VPackModule {
+/*
 	@Override
 	public <C extends VPackSetupContext<C>> void setup(C context) {
 		context.registerDeserializer(ArangoDBVertexPropertyOwner.class, VERTEX_DESERIALIZER);
@@ -83,33 +82,5 @@ public class ArangoDBGraphModule implements VPackModule {
 		}
 	};
 	*/
-	
-	public static Object getCorretctPrimitive(Object value) {
-		if (value instanceof Number) {
-			if (value instanceof Float) {
-				return value;
-			}
-			else if (value instanceof Double) {
-				return value;
-			}
-			else {
-				String numberStr = value.toString();
-				BigInteger number = new BigInteger(numberStr);
-	            if(number.longValue() < Integer.MAX_VALUE && number.longValue() > Integer.MIN_VALUE) {
-	            	return new Integer(numberStr);
-	            }
-	            else if(number.longValueExact() < Long.MAX_VALUE && number.longValue() > Long.MIN_VALUE) {
-	            	return new Long(numberStr);
-	            }
-	            else {
-	            	return number;
-	            }
-			} 
-		}
-		else {
-			return value;
-		}
-		
-	}
 
 }

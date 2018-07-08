@@ -5,15 +5,16 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
+import com.arangodb.tinkerpop.gremlin.client.ArangoDBGraphClient;
 import org.apache.commons.configuration.BaseConfiguration;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationConverter;
 import org.apache.tinkerpop.gremlin.AbstractGraphProvider;
 import org.apache.tinkerpop.gremlin.LoadGraphWith;
 import org.apache.tinkerpop.gremlin.LoadGraphWith.GraphData;
+import org.apache.tinkerpop.gremlin.structure.Element;
 import org.apache.tinkerpop.gremlin.structure.Graph;
 
-import com.arangodb.tinkerpop.gremlin.client.ArangoDBSimpleGraphClient;
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBEdge;
 import com.arangodb.tinkerpop.gremlin.structure.AbstractArangoDBElement;
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBElementProperty;
@@ -109,6 +110,7 @@ public class ArangoDBGraphProvider extends AbstractGraphProvider {
 		case "shouldReturnEmptyIteratorIfNoProperties":
 		case "shouldAutotypeIntegerProperties":
 		case "shouldAutotypeLongProperties":
+		case "shouldRespectWhatAreEdgesAndWhatArePropertiesInMultiProperties":
 			conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "knows");
 			break;
 		case "shouldValidateIdEquality":
@@ -356,11 +358,11 @@ public class ArangoDBGraphProvider extends AbstractGraphProvider {
 
 	@Override
 	public void clear(Graph graph, Configuration configuration) throws Exception {
-		ArangoDBSimpleGraphClient client;
+		ArangoDBGraphClient client;
 		if (graph ==null) {
 			Configuration arangoConfig = configuration.subset(ArangoDBGraph.ARANGODB_CONFIG_PREFIX);
 			Properties arangoProperties = ConfigurationConverter.getProperties(arangoConfig);
-			client = new ArangoDBSimpleGraphClient(arangoProperties, "tinkerpop", 0);
+			client = new ArangoDBGraphClient(arangoProperties, "tinkerpop", 0);
 			client.deleteGraph(arangoConfig.getString(ArangoDBGraph.CONFIG_GRAPH_NAME));
 		}
 		else {
@@ -384,4 +386,8 @@ public class ArangoDBGraphProvider extends AbstractGraphProvider {
 		return null;
 	}
 
+    @Override
+    public Object convertId(Object id, Class<? extends Element> c) {
+        return id.toString();
+    }
 }

@@ -20,7 +20,6 @@ import org.apache.commons.lang3.StringUtils;
 import com.arangodb.ArangoCursor;
 import com.arangodb.model.AqlQueryOptions;
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBGraph;
-import com.arangodb.tinkerpop.gremlin.structure.ArangoDBGraphException;
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBVertex;
 import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
 
@@ -45,20 +44,21 @@ public class ArangoDBQuery {
 	/**
 	 * the ArangoDB client
 	 */
-	protected ArangoDBSimpleGraphClient client;
+	protected ArangoDBGraphClient client;
 
 	/**
 	 * query type
 	 */
 	protected QueryType queryType;
 
-	protected ArangoDBVertex startVertex;
+	protected ArangoDBBaseDocument startVertex;
 	protected ArangoDBPropertyFilter propertyFilter;
 	protected List<String> labelsFilter = new ArrayList<>();
 	protected Direction direction;
 	protected Long limit;
 	protected boolean count;
 	private List<String> keysFilter = new ArrayList<>();
+	private boolean getProperties;
 
 	/**
 	 * Direction
@@ -90,7 +90,7 @@ public class ArangoDBQuery {
 	 * @param queryType
 	 *            a query type
 	 */
-	public ArangoDBQuery(ArangoDBGraph graph, ArangoDBSimpleGraphClient client, QueryType queryType) {
+	public ArangoDBQuery(ArangoDBGraph graph, ArangoDBGraphClient client, QueryType queryType) {
 		this.graph = graph;
 		this.client = client;
 		this.queryType = queryType;
@@ -102,22 +102,17 @@ public class ArangoDBQuery {
 	 * @param <T> 				the type returned by the cursor
 	 * @param type            	The type of the result (POJO class, VPackSlice, String for Json, or Collection/List/Map)
 	 * @return the cursor result
-	 * @throws ArangoDBGraphException             if the query could not be executed
 	 */
 	@SuppressWarnings("rawtypes")
-	public <T> ArangoCursor getCursorResult(final Class<T> type) throws ArangoDBGraphException {
+	public <T> ArangoCursor getCursorResult(final Class<T> type) {
 
-//		Map<String, Object> options = new HashMap<String, Object>();
-//		options.put("includeData", true);
-//		options.put("direction", getDirectionString());
-
-		Map<String, Object> bindVars = new HashMap<String, Object>();
-//		bindVars.put("graphName", graph.name());
-//		bindVars.put("options", options);
-//		bindVars.put("vertexExample", getVertexExample());
-
+		Map<String, Object> bindVars = new HashMap<>();
+		String prefix = "";
+		String returnExp;
+		boolean joinFilter = false;
 		StringBuilder sb = new StringBuilder();
-		
+
+		String same_collection = " FILTER IS_SAME_COLLECTION(";
 		switch (queryType) {
 		case GRAPH_VERTICES:
 			if (graph.vertexCollections().size() > 1) {
@@ -131,13 +126,15 @@ public class ArangoDBQuery {
 			else {
 				String collectionName = ArangoDBUtil.getCollectioName(graph.name(), graph.vertexCollections().get(0));
 				sb.append(String.format("FOR v IN %s \n", collectionName));
-			
 			}
 			if (!keysFilter.isEmpty()) {
 				sb.append("FILTER v._key IN @keys ");
 				bindVars.put("keys", keysFilter);
+				joinFilter = true;
 			}
-			sb.append("RETURN v");			
+			prefix = "v.";
+			returnExp = "RETURN v";
+			//sb.append(returnExp);
 			break;
 		case GRAPH_EDGES:
 			if (getStartVertex() == null) {
@@ -156,8 +153,11 @@ public class ArangoDBQuery {
 				if (!keysFilter.isEmpty()) {
 					sb.append("FILTER e._key IN @keys ");
 					bindVars.put("keys", keysFilter);
+					joinFilter = true;
 				}
-				sb.append("RETURN e");	
+				prefix = "e.";
+				returnExp = "RETURN e";
+				//sb.append("RETURN e");
 			}
 			else {
 				sb.append(String.format("FOR v, e IN %s @startId GRAPH @graphName \n", getDirectionString()));
@@ -165,12 +165,21 @@ public class ArangoDBQuery {
 				if (!keysFilter.isEmpty()) {
 					sb.append("FILTER e._id IN @keys ");
 					bindVars.put("keys", keysFilter);
+					joinFilter = true;
 				}
 				if (!labelsFilter.isEmpty()) {
-					String filter = labelsFilter.stream().collect(Collectors.joining(", e) OR IS_SAME_COLLECTION(", "FILTER IS_SAME_COLLECTION(", ", e) "));
+					if (joinFilter) {
+						same_collection = " AND " + same_collection;
+					}
+					String filter = labelsFilter.stream()
+                            .map(lbl -> ArangoDBUtil.getCollectioName(graph.name(), lbl))
+                            .collect(Collectors.joining(", e) OR IS_SAME_COLLECTION(", same_collection, ", e) "));
 					sb.append(filter);
+					joinFilter = true;
 				}
-				sb.append("RETURN DISTINCT e");
+				prefix = "e.";
+				returnExp = "RETURN DISTINCT e";
+				//sb.append("RETURN DISTINCT e");
 				bindVars.put("startId", startVertex._id());
 				bindVars.put("graphName", graph.name());
 			}
@@ -180,10 +189,15 @@ public class ArangoDBQuery {
 			sb.append(String.format("FOR v IN %s @startId GRAPH @graphName\n", getDirectionString()));
 			sb.append("  OPTIONS {bfs: true, uniqueVertices: 'global'}\n");
 			if (!labelsFilter.isEmpty()) {
-				String filter = labelsFilter.stream().collect(Collectors.joining(", v) OR IS_SAME_COLLECTION(", "FILTER IS_SAME_COLLECTION(", ", v) "));
+                String filter = labelsFilter.stream()
+                        .map(lbl -> ArangoDBUtil.getCollectioName(graph.name(), lbl))
+                        .collect(Collectors.joining(", v) OR IS_SAME_COLLECTION(", same_collection, ", v) "));
 				sb.append(filter);
+                joinFilter = true;
 			}
-			sb.append("  RETURN v");
+			prefix = "v.";
+			returnExp = "  RETURN v";
+			//sb.append("  RETURN v");
 			// FIXME Can we filter on vertex label?
 			bindVars.put("startId", startVertex._id());
 			bindVars.put("graphName", graph.name());
@@ -192,25 +206,17 @@ public class ArangoDBQuery {
 
 		List<String> andFilter = new ArrayList<String>();
 
-		//if (propertyFilter == null) {
-		//	propertyFilter = new ArangoDBPropertyFilter();
-		//}
-		//propertyFilter.addProperties(prefix, andFilter, bindVars);
-
-//		if (CollectionUtils.isNotEmpty(labelsFilter)) {
-//			List<String> orFilter = new ArrayList<String>();
-//			int tmpCount = 0;
-//			for (String label : labelsFilter) {
-//				orFilter.add(prefix + "label == @label" + tmpCount);
-//				bindVars.put("label" + tmpCount++, label);
-//			}
-//			if (CollectionUtils.isNotEmpty(orFilter)) {
-//				andFilter.add("(" + StringUtils.join(orFilter, " OR ") + ")");
-//			}
-//		}
+		if (propertyFilter == null) {
+			propertyFilter = new ArangoDBPropertyFilter();
+		}
+		propertyFilter.addProperties(prefix, andFilter, bindVars);
 
 		if (CollectionUtils.isNotEmpty(andFilter)) {
-			sb.append(" FILTER ");
+			if (joinFilter) {
+				sb.append(" AND ");
+			} else {
+                sb.append(" FILTER ");
+            }
 			sb.append(StringUtils.join(andFilter, " AND "));
 		}
 
@@ -218,7 +224,7 @@ public class ArangoDBQuery {
 			sb.append(" LIMIT " + limit.toString());
 		}
 
-//		sb.append(returnExp);
+		sb.append(returnExp);
 
 		String query = sb.toString();
 		AqlQueryOptions aqlQueryOptions = new AqlQueryOptions();
@@ -239,11 +245,11 @@ public class ArangoDBQuery {
 		return "ANY";
 	}
 
-	public ArangoDBVertex getStartVertex() {
+	public ArangoDBBaseDocument getStartVertex() {
 		return startVertex;
 	}
 
-	public ArangoDBQuery setStartVertex(ArangoDBVertex startVertex) {
+	public ArangoDBQuery setStartVertex(ArangoDBBaseDocument startVertex) {
 		this.startVertex = startVertex;
 		return this;
 	}
