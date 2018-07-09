@@ -1,17 +1,14 @@
 package com.arangodb.tinkerpop.gremlin.structure;
 
-import java.util.Collection;
-import java.util.Collections;
 import java.util.NoSuchElementException;
+
+import org.apache.tinkerpop.gremlin.structure.Property;
+import org.apache.tinkerpop.gremlin.structure.util.ElementHelper;
+import org.apache.tinkerpop.gremlin.structure.util.StringFactory;
 
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBBaseDocument;
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBBaseEdge;
-import com.arangodb.tinkerpop.gremlin.client.ArangoDBQuery;
 import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
-import com.arangodb.velocypack.annotations.Expose;
-import org.apache.tinkerpop.gremlin.structure.*;
-import org.apache.tinkerpop.gremlin.structure.util.ElementHelper;
-import org.apache.tinkerpop.gremlin.structure.util.StringFactory;
 
 /**
  * The Class ArangoDBProperty.
@@ -25,7 +22,7 @@ public abstract class ArangoDBElementProperty<V> extends ArangoDBBaseDocument im
      * An Edge to link an ArangoDBBaseDocument to one of its properties. The from paramter is an ArangoDBBaseDocument
      * since we allow ArangoDBElementProperty to have properties too.
      */
-    public class ElementHasProperty extends ArangoDBBaseEdge {
+    public static class ElementHasProperty extends ArangoDBBaseEdge {
 
         public ElementHasProperty(ArangoDBBaseDocument from, ArangoDBElementProperty<?> to, ArangoDBGraph graph) {
             super(from._id(), to._id(), graph, ArangoDBUtil.ELEMENT_PROPERTIES_EDGE);
@@ -67,9 +64,10 @@ public abstract class ArangoDBElementProperty<V> extends ArangoDBBaseDocument im
 
 	@Override
 	public void remove() {
-        graph.getClient().deleteDocument(graph, this);
+        graph.getClient().deleteDocument(graph.name(), this);
     }
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public V value() throws NoSuchElementException {
         return (V) ArangoDBUtil.getCorretctPrimitive(value);
@@ -110,7 +108,7 @@ public abstract class ArangoDBElementProperty<V> extends ArangoDBBaseDocument im
 
     public void save() {
         if (paired) {
-            graph.getClient().updateDocument(graph, this);
+            graph.getClient().updateDocument(graph.name(), this);
         }
     }
 }

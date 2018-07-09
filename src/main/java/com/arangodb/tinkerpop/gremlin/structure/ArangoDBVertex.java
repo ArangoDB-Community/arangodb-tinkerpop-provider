@@ -72,7 +72,7 @@ public class ArangoDBVertex extends ArangoDBBaseDocument implements Vertex {
 	@Override
 	public void remove() {
 		logger.info("remove {}", this._key());
-		graph.getClient().deleteDocument(graph, this);
+		graph.getClient().deleteDocument(graph.name(), this);
 	}
 
 	@Override
@@ -101,7 +101,7 @@ public class ArangoDBVertex extends ArangoDBBaseDocument implements Vertex {
 			edge = new ArangoDBEdge(graph, label, this, ((ArangoDBVertex) inVertex));
 		}
         // The vertex needs to exist before we can attach properties
-		graph.getClient().insertEdge(graph, edge);
+		graph.getClient().insertEdge(graph.name(), edge);
         ElementHelper.attachProperties(edge, keyValues);
 		return edge;
 	}
@@ -205,7 +205,7 @@ public class ArangoDBVertex extends ArangoDBBaseDocument implements Vertex {
 
 	public void save() {
 		if (paired) {
-			graph.getClient().updateDocument(graph, this);
+			graph.getClient().updateDocument(graph.name(), this);
 		}
 	}
 

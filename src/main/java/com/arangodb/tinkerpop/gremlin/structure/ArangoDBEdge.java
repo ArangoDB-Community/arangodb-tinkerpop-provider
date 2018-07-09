@@ -8,20 +8,25 @@
 
 package com.arangodb.tinkerpop.gremlin.structure;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Optional;
 
-import com.arangodb.tinkerpop.gremlin.client.ArangoDBBaseEdge;
-import com.arangodb.tinkerpop.gremlin.client.ArangoDBPropertyFilter;
-import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
-import org.apache.tinkerpop.gremlin.structure.*;
+import org.apache.tinkerpop.gremlin.structure.Direction;
+import org.apache.tinkerpop.gremlin.structure.Edge;
+import org.apache.tinkerpop.gremlin.structure.Property;
+import org.apache.tinkerpop.gremlin.structure.Vertex;
 import org.apache.tinkerpop.gremlin.structure.util.ElementHelper;
 import org.apache.tinkerpop.gremlin.structure.util.StringFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.arangodb.tinkerpop.gremlin.client.ArangoDBBaseEdge;
+import com.arangodb.tinkerpop.gremlin.client.ArangoDBPropertyFilter;
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBQuery;
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBGraph.ArangoDBIterator;
-import com.arangodb.velocypack.annotations.Expose;
+import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
 
 /**
  * The ArangoDB Edge class
@@ -45,11 +50,6 @@ public class ArangoDBEdge extends ArangoDBBaseEdge implements Edge {
 	
 	private String to_key;
 	
-	/**  Map to store the element properties */
-	
-	@Expose(serialize = false, deserialize = false)
-	protected Map<String, ArangoDBElementProperty<?>> properties = new HashMap<>(4, 0.75f);
-
     /**
      * Constructor used for ArabgoDB JavaBeans serialisation.
      */
@@ -108,20 +108,16 @@ public class ArangoDBEdge extends ArangoDBBaseEdge implements Edge {
     }
 
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public <V> Property<V> property(String key, V value) {
 		logger.info("property {} = {}", key, value);
 		ElementHelper.validateProperty(key, value);
-
-        ArangoDBEdgeProperty<V> p;       // = (ArangoDBElementProperty<V>) property(key);
-        Optional<Property<V>> op = Optional.of(property(key));
-		if (!op.isPresent()) {
+		Property<V> p = property(key);
+		if (!p.isPresent()) {
             p = ArangoDBUtil.createArangoDBEdgeProperty(key, value, this);
         }
 		else {
-		    p = (ArangoDBEdgeProperty<V>) op.get();
-			p.value(value);
+			((ArangoDBEdgeProperty<V>) p).value(value);
 		}
 		return p;
 	}
@@ -129,7 +125,7 @@ public class ArangoDBEdge extends ArangoDBBaseEdge implements Edge {
 	@Override
 	public void remove() {
 		logger.info("removing {} from graph {}.", this._key(), graph.name());
-		graph.getClient().deleteEdge(graph, this);
+		graph.getClient().deleteEdge(graph.name(), this);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -159,35 +155,14 @@ public class ArangoDBEdge extends ArangoDBBaseEdge implements Edge {
 	@Override
 	public <V> Iterator<Property<V>> properties(String... propertyKeys) {
         List<String> labels = new ArrayList<>();
-        labels.add(ArangoDBUtil.getCollectioName(graph.name(), ArangoDBUtil.ELEMENT_PROPERTIES_COLLECTION));
+        labels.add(ArangoDBUtil.ELEMENT_PROPERTIES_COLLECTION);
         ArangoDBPropertyFilter filter = new ArangoDBPropertyFilter();
         for (String pk : propertyKeys) {
             filter.has("key", pk, ArangoDBPropertyFilter.Compare.EQUAL);
         }
         ArangoDBQuery query = graph.getClient().getDocumentNeighbors(graph, this, labels, Direction.OUT, filter);
-        return new ArangoDBIterator<Property<V>>(graph, query.getCursorResult(ArangoDBElementProperty.class));
+        return new ArangoDBIterator<Property<V>>(graph, query.getCursorResult(ArangoDBEdgeProperty.class));
 	}
-
-
-	@SuppressWarnings("unchecked")
-	@Override
-	public <V> V value(String key) throws NoSuchElementException {
-		return (V) properties.get(key).value();
-	}
-
-	@SuppressWarnings("unchecked")
-	@Override
-	public <V> Iterator<V> values(String... propertyKeys) {
-		// FIXME Is this a filtering operation too?
-		return (Iterator<V>) Arrays.stream(propertyKeys).map(this.properties::get).iterator();
-	}	
-	
-	@Override
-	public Set<String> keys() {
-		logger.debug("keys");
-		return Collections.unmodifiableSet(properties.keySet());
-	}
-
 
 	@Override
     public String toString() {

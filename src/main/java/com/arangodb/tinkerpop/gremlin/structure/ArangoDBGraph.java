@@ -18,8 +18,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import com.arangodb.tinkerpop.gremlin.client.ArangoDBBaseDocument;
-import com.arangodb.tinkerpop.gremlin.client.ArangoDBClientException;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationConverter;
@@ -32,16 +30,16 @@ import org.apache.tinkerpop.gremlin.structure.Transaction;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
 import org.apache.tinkerpop.gremlin.structure.util.ElementHelper;
 import org.apache.tinkerpop.gremlin.structure.util.StringFactory;
-import org.apache.tinkerpop.gremlin.util.Gremlin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.arangodb.ArangoCursor;
-import com.arangodb.ArangoDBException;
 import com.arangodb.ArangoGraph;
 import com.arangodb.model.GraphCreateOptions;
-import com.arangodb.tinkerpop.gremlin.client.ArangoDBQuery;
+import com.arangodb.tinkerpop.gremlin.client.ArangoDBBaseDocument;
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBGraphClient;
+import com.arangodb.tinkerpop.gremlin.client.ArangoDBGraphException;
+import com.arangodb.tinkerpop.gremlin.client.ArangoDBQuery;
 import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
 import com.google.gson.JsonObject;
 
@@ -192,7 +190,15 @@ import com.google.gson.JsonObject;
 		test = "org.apache.tinkerpop.gremlin.structure.GraphTest",
 		method = "shouldRemoveEdges",
 		reason = "Test creates edges with random labels, which does not work with our schema-based approach.")
-/* How to pot out inner classes?
+/* How to opt-out inner test classes?
+@Graph.OptOut(
+		test = "org.apache.tinkerpop.gremlin.structure.EdgeTest",
+		method = "shouldAutotypeFloatProperties",
+		reason = "Arango does not keep strict Number types when serializing/deserializing")
+@Graph.OptOut(
+		test = "org.apache.tinkerpop.gremlin.structure.EdgeTest",
+		method = "shouldAutotypeLongProperties",
+		reason = "Arango does not keep strict Number types when serializing/deserializing")
 Graph.OptOut(
 		test = "org.apache.tinkerpop.gremlin.structure.io.IoTest.GraphSONTest",
 		method = "shouldReadWriteModernWrappedInJsonObject",
@@ -521,9 +527,9 @@ public class ArangoDBGraph implements Graph {
 	/** Flat to indicate that the graph has no schema */
 	private boolean schemaless = false;
 
-	private ArangoDBGraphVariables variables;
-
 	private Configuration configuration;
+
+	private String variables_id;
 	
 
 	/**
@@ -563,17 +569,23 @@ public class ArangoDBGraph implements Graph {
         options.orphanCollections(ArangoDBUtil.getCollectioName(graphName, ArangoDBUtil.GRAPH_VARIABLES_COLLECTION));
         if (graph.exists()) {
             ArangoDBUtil.checkGraphForErrors(vertexCollections, edgeCollections, relations, graph, options);
-            variables = new ArangoDBGraphVariables(this);
+            //variables = new ArangoDBGraphVariables(this);
             String query = String.format("FOR v IN %s RETURN v", ArangoDBUtil.getCollectioName(graph.name(), ArangoDBUtil.GRAPH_VARIABLES_COLLECTION));
             ArangoCursor<JsonObject> iter = client.executeAqlQuery(query, null, null, JsonObject.class);
-            iter.forEach(jo -> this.variables.set(jo.get("_key").getAsString(), jo.get("value")));
+            if (iter.hasNext()) {
+            	this.variables_id = iter.next().get("_id").getAsString();
+            }
+            else {
+            	throw new ArangoDBGraphException("Existing graph does not have a Variables collection");
+            }
         }
         else {
 			client.createGraph(graphName, vertexCollections,
             		edgeCollections, relations, options);
-			variables = new ArangoDBGraphVariables(this);
-            //graph = client.getGraph(graphName);
-			//client.insertDocument(this, variables);
+			ArangoDBGraphVariables variables = new ArangoDBGraphVariables(this, ArangoDBUtil.GRAPH_VARIABLES_COLLECTION);
+			graph = client.getGraph(graphName);
+			client.insertDocument(graphName, variables);
+			this.variables_id = variables._key();
 		}
 		this.name = graph.name();
 		this.configuration = configuration;
@@ -603,7 +615,7 @@ public class ArangoDBGraph implements Graph {
         			vertex = new ArangoDBVertex(this, collection, id.toString());
         		}
         		else {
-            		throw new ArangoDBClientException(String.format("Given id (%s) has unsupported characters.", id));
+            		throw new ArangoDBGraphException(String.format("Given id (%s) has unsupported characters.", id));
             	}
         	}
         	else {
@@ -615,7 +627,7 @@ public class ArangoDBGraph implements Graph {
         	vertex = new ArangoDBVertex(this, collection);
         }
         // The vertex needs to exist before we can attach properties
-        client.insertDocument(this, vertex);
+        client.insertDocument(this.name, vertex);
         ElementHelper.attachProperties(vertex, keyValues);
         return vertex;
 	}
@@ -637,16 +649,16 @@ public class ArangoDBGraph implements Graph {
         List<String> relations) {
 		
 		if (StringUtils.isBlank(db)) {
-            throw new ArangoDBClientException(String.format("The provided argument can not be empty/null: %s", db));
+            throw new ArangoDBGraphException(String.format("The provided argument can not be empty/null: %s", db));
 		}
 		if (StringUtils.isBlank(name)) {
-            throw new ArangoDBClientException(String.format("The provided argument can not be empty/null: %s", name));
+            throw new ArangoDBGraphException(String.format("The provided argument can not be empty/null: %s", name));
 		}
 		if (CollectionUtils.isEmpty(edges)) {
 			logger.warn("Empty edges collection(s), the default 'edge' collection will be used.");
 		}
 		if ((vertices.size() > 1) && (edges.size() > 1) && CollectionUtils.isEmpty(relations)) {
-			throw new ArangoDBClientException("If more than one vertex/edge collection is provided, relations must be defined");
+			throw new ArangoDBGraphException("If more than one vertex/edge collection is provided, relations must be defined");
 		}
 	}
 
@@ -763,7 +775,17 @@ public class ArangoDBGraph implements Graph {
 
 	@Override
 	public Variables variables() {
-		return variables;
+		String query = String.format("FOR v IN %s FILTER v._key == \"%s\" RETURN v", ArangoDBUtil.getCollectioName(name, ArangoDBUtil.GRAPH_VARIABLES_COLLECTION), variables_id);
+		ArangoCursor<ArangoDBGraphVariables> iter = client.executeAqlQuery(query, null, null, ArangoDBGraphVariables.class);
+		if (iter.hasNext()) {
+			ArangoDBGraphVariables v = iter.next();
+			v.graph(this);
+			return v;
+        }
+        else {
+        	throw new ArangoDBGraphException("Existing graph does not have a Variables collection");
+        }
+
 	}
 
 	/**

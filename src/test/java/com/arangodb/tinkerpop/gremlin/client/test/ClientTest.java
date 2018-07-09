@@ -10,7 +10,7 @@ import java.util.stream.Collectors;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
 
-import com.arangodb.tinkerpop.gremlin.client.ArangoDBClientException;
+import com.arangodb.tinkerpop.gremlin.client.ArangoDBGraphException;
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBGraphClient;
 import org.apache.commons.configuration.ConfigurationConverter;
 import org.apache.commons.configuration.PropertiesConfiguration;
@@ -84,7 +84,7 @@ public class ClientTest {
 	public void test_RestritedUserNewDatabase() throws Exception {
 		Properties arangoProperties = ConfigurationConverter.getProperties(configuration);
 		
-		exception.expect(ArangoDBClientException.class);
+		exception.expect(ArangoDBGraphException.class);
 		exception.expectMessage(startsWith("Unable to crate the database"));
 		new ArangoDBGraphClient(arangoProperties, "demo", 30000);
 	}
@@ -107,7 +107,7 @@ public class ClientTest {
 		configuration.setProperty("arangodb.user", "limited");
 		configuration.setProperty("arangodb.password", "limited");
 		Properties arangoProperties = ConfigurationConverter.getProperties(configuration);
-		exception.expect(ArangoDBClientException.class);
+		exception.expect(ArangoDBGraphException.class);
 		exception.expectMessage(startsWith("DB not found or user has no access:"));
 		new ArangoDBGraphClient(arangoProperties, "tinkerpop", 30000, false);
 	}
@@ -124,7 +124,7 @@ public class ClientTest {
 		verticesCollectionNames.add("person");
 		edgesCollectionNames.add("knows");
 		
-		exception.expect(ArangoDBClientException.class);
+		exception.expect(ArangoDBGraphException.class);
 		exception.expectMessage(startsWith("Error creating graph"));
 		localClient.createGraph("knows_graph", verticesCollectionNames, edgesCollectionNames, Collections.emptyList());
 		localClient.shutdown();
