@@ -46,7 +46,7 @@ import com.google.gson.JsonObject;
 /**
  * The ArangoDB graph class.
  * 
- * NOTE: USE OF THIS API REQUIRES A USER WITH administrate ACCESS IF THE db USED FOR THE GRAPH DO NOT EXIST.
+ * NOTE: USE OF THIS API REQUIRES A USER WITH administrate ACCESS IF THE db USED FOR THE GRAPH DOES NOT EXIST.
  * As per ArangoDB, creating DB is only allowed for the root user.
  * <p>
  * An ArangoDBGraph is instantiated from an Apache Commons Configuration instance. The configuration must 
@@ -555,6 +555,7 @@ public class ArangoDBGraph implements Graph {
 		checkValues(arangoConfig.getString(CONFIG_DB_NAME), graphName,	vertexCollections,
 				edgeCollections, relations);
 		if (CollectionUtils.isEmpty(vertexCollections)) {
+			// FIXME Need to check relations to know if it is schemaless or not
 			schemaless = true;
 			vertexCollections.add(DEFAULT_VERTEX_COLLECTION);
 		}
