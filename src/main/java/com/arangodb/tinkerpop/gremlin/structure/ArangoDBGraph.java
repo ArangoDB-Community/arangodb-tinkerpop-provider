@@ -697,10 +697,9 @@ public class ArangoDBGraph implements Graph {
 	@SuppressWarnings("unchecked")
 	@Override
 	public Iterator<Edge> edges(Object... edgeIds) {
-		List<String> ids = Arrays.stream(edgeIds)
+    	List<String> ids = Arrays.stream(edgeIds)
         		.map(id -> id instanceof Element ? ((Element)id).id() : id)
-        		.filter(id -> id != null)
-        		.map(Object::toString)
+        		.map(id -> id == null ? (String)id : id.toString())
         		.collect(Collectors.toList());
 		ArangoDBQuery query = getClient().getGraphEdges(this, ids);
 		return new ArangoDBIterator<Edge>(this, query.getCursorResult(ArangoDBEdge.class));
@@ -805,8 +804,7 @@ public class ArangoDBGraph implements Graph {
 	public Iterator<Vertex> vertices(Object... vertexIds) {
     	List<String> ids = Arrays.stream(vertexIds)
         		.map(id -> id instanceof Element ? ((Element)id).id() : id)
-        		.filter(id -> id != null)
-        		.map(Object::toString)
+        		.map(id -> id == null ? (String)id : id.toString())
         		.collect(Collectors.toList());
 		ArangoDBQuery query = getClient().getGraphVertices(this, ids);
 		return new ArangoDBIterator<Vertex>(this, query.getCursorResult(ArangoDBVertex.class));
