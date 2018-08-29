@@ -699,6 +699,7 @@ public class ArangoDBGraph implements Graph {
 	public Iterator<Edge> edges(Object... edgeIds) {
 		List<String> ids = Arrays.stream(edgeIds)
         		.map(id -> id instanceof Element ? ((Element)id).id() : id)
+        		.filter(id -> id != null)
         		.map(Object::toString)
         		.collect(Collectors.toList());
 		ArangoDBQuery query = getClient().getGraphEdges(this, ids);
@@ -804,12 +805,11 @@ public class ArangoDBGraph implements Graph {
 	public Iterator<Vertex> vertices(Object... vertexIds) {
     	List<String> ids = Arrays.stream(vertexIds)
         		.map(id -> id instanceof Element ? ((Element)id).id() : id)
+        		.filter(id -> id != null)
         		.map(Object::toString)
         		.collect(Collectors.toList());
 		ArangoDBQuery query = getClient().getGraphVertices(this, ids);
 		return new ArangoDBIterator<Vertex>(this, query.getCursorResult(ArangoDBVertex.class));
-		// TODO Auto-generated catch block
-		//	return null;
 	}
 
     //
