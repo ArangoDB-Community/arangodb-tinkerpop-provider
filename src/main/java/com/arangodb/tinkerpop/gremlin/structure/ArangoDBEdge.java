@@ -155,7 +155,7 @@ public class ArangoDBEdge extends ArangoDBBaseEdge implements Edge {
 	@Override
 	public <V> Iterator<Property<V>> properties(String... propertyKeys) {
         List<String> labels = new ArrayList<>();
-        labels.add(ArangoDBUtil.ELEMENT_PROPERTIES_COLLECTION);
+        labels.add(ArangoDBUtil.ELEMENT_PROPERTIES_EDGE);
         ArangoDBPropertyFilter filter = new ArangoDBPropertyFilter();
         for (String pk : propertyKeys) {
             filter.has("key", pk, ArangoDBPropertyFilter.Compare.EQUAL);

@@ -32,7 +32,6 @@ import com.arangodb.ArangoDB;
 import com.arangodb.ArangoDBException;
 import com.arangodb.ArangoDatabase;
 import com.arangodb.ArangoGraph;
-import com.arangodb.ArangoVertexCollection;
 import com.arangodb.entity.EdgeDefinition;
 import com.arangodb.entity.EdgeEntity;
 import com.arangodb.entity.EdgeUpdateEntity;
@@ -498,20 +497,20 @@ public class ArangoDBGraphClient {
 	/**
 	 * Create a query to get all neighbours of a document.
 	 *
-	 * @param graph                    the simple graph
-	 * @param document                the document
-	 * @param labelsFilter          a list of document types to retrieve
-	 * @param direction                a direction
-	 * @param propertyFilter
+	 * @param graph					the simple graph
+	 * @param document              the document
+	 * @param edgeLabelsFilter      a list of edge types to follow
+	 * @param direction             a direction
+	 * @param propertyFilter		
      * @return ArangoDBBaseQuery	the query object
 	 */
 
 	public ArangoDBQuery getDocumentNeighbors(
             ArangoDBGraph graph,
             ArangoDBBaseDocument document,
-            List<String> labelsFilter,
+            List<String> edgeLabelsFilter,
             Direction direction, ArangoDBPropertyFilter propertyFilter) {
-		logger.debug("Get Vertex's {}:{} Neighbors, in {}, from collections {}", document, direction, graph.name(), labelsFilter);
+		logger.debug("Get Vertex's {}:{} Neighbors, in {}, from collections {}", document, direction, graph.name(), edgeLabelsFilter);
 		ArangoDBQuery.Direction arangoDirection = null;
 		switch(direction) {
 		case BOTH:
@@ -525,7 +524,7 @@ public class ArangoDBGraphClient {
 			break;
 		}
 		return new ArangoDBQuery(graph, this, QueryType.GRAPH_NEIGHBORS)
-				.setDirection(arangoDirection).setStartVertex(document).setLabelsFilter(labelsFilter)
+				.setDirection(arangoDirection).setStartVertex(document).setLabelsFilter(edgeLabelsFilter)
 				.setPropertyFilter(propertyFilter);
 	}
 	

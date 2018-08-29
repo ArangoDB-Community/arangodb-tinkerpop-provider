@@ -19,6 +19,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
@@ -249,8 +250,10 @@ public class ArangoDBUtil {
 				.map(vc -> ArangoDBUtil.getCollectioName(graph.name(), vc))
 				.collect(Collectors.toList());
 		allVertexCollections.addAll(options.getOrphanCollections());
-		if (!allVertexCollections.containsAll(graph.getVertexCollections())) {
-			throw new ArangoDBGraphException("Not all declared vertex names appear in the graph.");
+		if (!graph.getVertexCollections().containsAll(allVertexCollections)) {
+			Set<String> avc = new HashSet<>(allVertexCollections);
+			avc.removeAll(graph.getVertexCollections());
+			throw new ArangoDBGraphException("Not all declared vertex names appear in the graph. Missing " + avc);
 		}
 		GraphEntity ge = graph.getInfo();
         Collection<EdgeDefinition> graphEdgeDefinitions = ge.getEdgeDefinitions();
@@ -259,7 +262,7 @@ public class ArangoDBUtil {
         	if ((verticesCollectionNames.size() != 1) || (edgesCollectionNames.size() != 1)) {
         		throw new ArangoDBGraphException("No relations where specified but more than one vertex/edge where defined.");
         	}
-        	if (graphEdgeDefinitions.size() != 1) {
+        	if (graphEdgeDefinitions.size() != 2) {		// There is always a edgeDefinition for ELEMENT_HAS_PROPERTIES
         		throw new ArangoDBGraphException("No relations where specified but the graph has more than one EdgeDefinition.");
     		}
         }
@@ -329,46 +332,46 @@ public class ArangoDBUtil {
     }
 
 
-    public static <U> ArangoDBEdgeProperty<U> createArangoDBEdgeProperty(String key, U value, ArangoDBEdge doc) {
+    public static <U> ArangoDBEdgeProperty<U> createArangoDBEdgeProperty(String key, U value, ArangoDBEdge edge) {
         ArangoDBEdgeProperty<U> p;
-        p = new ArangoDBEdgeProperty<>(key, value, doc);
-        ArangoDBGraph g = doc.graph();
+        p = new ArangoDBEdgeProperty<>(key, value, edge);
+        ArangoDBGraph g = edge.graph();
         ArangoDBGraphClient c = g.getClient();
         c.insertDocument(g.name(), p);
-        ElementHasProperty e = p.assignToDocument(doc);
+        ElementHasProperty e = p.assignToElement(edge);
         c.insertEdge(g.name(), e);
         return p;
     }
 
-    public static <U> ArangoDBVertexProperty<U> createArangoDBVertexProperty(String key, U value, ArangoDBVertex doc) {
+    public static <U> ArangoDBVertexProperty<U> createArangoDBVertexProperty(String key, U value, ArangoDBVertex vertex) {
         ArangoDBVertexProperty<U> p;
-        p = new ArangoDBVertexProperty<>(key, value, doc);
-        ArangoDBGraph g = doc.graph();
+        p = new ArangoDBVertexProperty<>(key, value, vertex);
+        ArangoDBGraph g = vertex.graph();
         ArangoDBGraphClient c = g.getClient();
         c.insertDocument(g.name(), p);
-        ElementHasProperty e = p.assignToDocument(doc);
+        ElementHasProperty e = p.assignToElement(vertex);
         c.insertEdge(g.name(), e);
         return p;
     }
 
-    public static <U> ArangoDBVertexProperty<U> createArangoDBVertexProperty(String id, String key, U value, ArangoDBVertex doc) {
+    public static <U> ArangoDBVertexProperty<U> createArangoDBVertexProperty(String id, String key, U value, ArangoDBVertex vertex) {
         ArangoDBVertexProperty<U> p;
-        p = new ArangoDBVertexProperty<>(id, key, value, doc);
-        ArangoDBGraph g = doc.graph();
+        p = new ArangoDBVertexProperty<>(id, key, value, vertex);
+        ArangoDBGraph g = vertex.graph();
         ArangoDBGraphClient c = g.getClient();
         c.insertDocument(g.name(), p);
-        ElementHasProperty e = p.assignToDocument(doc);
+        ElementHasProperty e = p.assignToElement(vertex);
         c.insertEdge(g.name(), e);
         return p;
     }
 
-    public static <U> ArangoDBPropertyProperty<U> createArangoDBPropertyProperty(String key, U value, ArangoDBVertexProperty<?> doc) {
+    public static <U> ArangoDBPropertyProperty<U> createArangoDBPropertyProperty(String key, U value, ArangoDBVertexProperty<?> vertexProperty) {
         ArangoDBPropertyProperty<U> p;
-        p = new ArangoDBPropertyProperty<>(key, value, doc);
-        ArangoDBGraph g = doc.graph();
+        p = new ArangoDBPropertyProperty<>(key, value, vertexProperty);
+        ArangoDBGraph g = vertexProperty.graph();
         ArangoDBGraphClient c = g.getClient();
         c.insertDocument(g.name(), p);
-        ElementHasProperty e = p.assignToDocument(doc);
+        ElementHasProperty e = p.assignToElement(vertexProperty);
         c.insertEdge(g.name(), e);
         return p;
     }

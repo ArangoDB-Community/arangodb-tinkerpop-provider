@@ -97,6 +97,12 @@ public class ArangoDBGraphProvider extends AbstractGraphProvider {
 				break;
 			case MODERN:
 				System.out.println("MODERN");
+				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.vertex", "person");
+				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.vertex", "software");
+				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "knows");
+				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "created");
+				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.relation", "knows:person->person");
+				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.relation", "created:person->software");
 				break;
 			default:
 				System.out.println("default");
@@ -104,294 +110,98 @@ public class ArangoDBGraphProvider extends AbstractGraphProvider {
 			}
 		}
 		else {
-			// Perhaps change for startsWith, but then it would be more verbose. Perhaps a set?
-			switch (testMethodName) {
-//			case "shouldNotHaveAConcurrentModificationExceptionWhenIteratingAndRemovingAddingEdges":
-//				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "pets");
-//				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "walks");
-//				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "livesWith");
-//			case "shouldProcessVerticesEdges":
-//			case "shouldGenerateSameGraph[test(NormalDistribution{stdDeviation=2.0, mean=0.0},PowerLawDistribution{gamma=2.4, multiplier=0.0},0.1)]":
-//			case "shouldGenerateDifferentGraph[test(NormalDistribution{stdDeviation=2.0, mean=0.0},PowerLawDistribution{gamma=2.4, multiplier=0.0},0.1)]":
-//			case "shouldGenerateSameGraph[test(NormalDistribution{stdDeviation=2.0, mean=0.0},PowerLawDistribution{gamma=2.4, multiplier=0.0},0.5)]":
-//			case "shouldGenerateDifferentGraph[test(NormalDistribution{stdDeviation=2.0, mean=0.0},PowerLawDistribution{gamma=2.4, multiplier=0.0},0.5)]":
-//			case "shouldGenerateSameGraph[test(NormalDistribution{stdDeviation=2.0, mean=0.0},NormalDistribution{stdDeviation=4.0, mean=0.0},0.5)]":
-//			case "shouldGenerateDifferentGraph[test(NormalDistribution{stdDeviation=2.0, mean=0.0},NormalDistribution{stdDeviation=4.0, mean=0.0},0.5)]":
-//			case "shouldGenerateSameGraph[test(NormalDistribution{stdDeviation=2.0, mean=0.0},NormalDistribution{stdDeviation=4.0, mean=0.0},0.1)]":
-//			case "shouldGenerateDifferentGraph[test(NormalDistribution{stdDeviation=2.0, mean=0.0},NormalDistribution{stdDeviation=4.0, mean=0.0},0.1)]":
-//			case "shouldGenerateSameGraph[test(PowerLawDistribution{gamma=2.3, multiplier=0.0},PowerLawDistribution{gamma=2.4, multiplier=0.0},0.25)]":
-//			case "shouldGenerateDifferentGraph[test(PowerLawDistribution{gamma=2.3, multiplier=0.0},PowerLawDistribution{gamma=2.4, multiplier=0.0},0.25)]":
-//			case "shouldGenerateSameGraph[test(PowerLawDistribution{gamma=2.3, multiplier=0.0},NormalDistribution{stdDeviation=4.0, mean=0.0},0.25)]":
-//			case "shouldGenerateDifferentGraph[test(PowerLawDistribution{gamma=2.3, multiplier=0.0},NormalDistribution{stdDeviation=4.0, mean=0.0},0.25)]":
-//			case "shouldProcessEdges":
-//			case "shouldGenerateSameGraph[test(NormalDistribution{stdDeviation=2.0, mean=0.0},NormalDistribution{stdDeviation=2.0, mean=0.0})]":
-//			case "shouldGenerateDifferentGraph[test(NormalDistribution{stdDeviation=2.0, mean=0.0},NormalDistribution{stdDeviation=2.0, mean=0.0})]":
-//			case "shouldGenerateSameGraph[test(NormalDistribution{stdDeviation=2.0, mean=0.0},NormalDistribution{stdDeviation=5.0, mean=0.0})]":
-//			case "shouldGenerateDifferentGraph[test(NormalDistribution{stdDeviation=2.0, mean=0.0},NormalDistribution{stdDeviation=5.0, mean=0.0})]":
-//			case "shouldGenerateSameGraph[test(PowerLawDistribution{gamma=2.1, multiplier=0.0},PowerLawDistribution{gamma=2.1, multiplier=0.0})]":
-//			case "shouldGenerateDifferentGraph[test(PowerLawDistribution{gamma=2.1, multiplier=0.0},PowerLawDistribution{gamma=2.1, multiplier=0.0})]":
-//			case "shouldGenerateSameGraph[test(PowerLawDistribution{gamma=2.9, multiplier=0.0},PowerLawDistribution{gamma=2.9, multiplier=0.0})]":
-//			case "shouldGenerateDifferentGraph[test(PowerLawDistribution{gamma=2.9, multiplier=0.0},PowerLawDistribution{gamma=2.9, multiplier=0.0})]":
-//			case "shouldGenerateSameGraph[test(PowerLawDistribution{gamma=3.9, multiplier=0.0},PowerLawDistribution{gamma=3.9, multiplier=0.0})]":
-//			case "shouldGenerateDifferentGraph[test(PowerLawDistribution{gamma=3.9, multiplier=0.0},PowerLawDistribution{gamma=3.9, multiplier=0.0})]":
-//			case "shouldGenerateSameGraph[test(PowerLawDistribution{gamma=2.3, multiplier=0.0},PowerLawDistribution{gamma=2.8, multiplier=0.0})]":
-//			case "shouldGenerateDifferentGraph[test(PowerLawDistribution{gamma=2.3, multiplier=0.0},PowerLawDistribution{gamma=2.8, multiplier=0.0})]":
-//			case "shouldReturnOutThenInOnVertexIterator":
-//			case "shouldAutotypeBooleanProperties":
-//			case "shouldAutotypeFloatProperties":
-//			case "shouldAutotypeDoubleProperties":
-//			case "shouldAutotypeStringProperties":
-//			case "shouldReturnEmptyIteratorIfNoProperties":
-//			case "shouldAutotypeIntegerProperties":
-//			case "shouldAutotypeLongProperties":
-//			case "shouldRespectWhatAreEdgesAndWhatArePropertiesInMultiProperties":
-//				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "knows");
-//				break;
-//			case "shouldValidateIdEquality":
-//			case "shouldValidateEquality":
-//			case "shouldIterateEdgesWithStringIdSupportUsingEdge":
-//			case "shouldIterateEdgesWithStringIdSupportUsingEdgeId":
-//			case "shouldIterateEdgesWithStringIdSupportUsingStringRepresentation":
-//			case "shouldIterateEdgesWithStringIdSupportUsingEdges":
-//			case "shouldIterateEdgesWithStringIdSupportUsingEdgeIds":
-//			case "shouldIterateEdgesWithStringIdSupportUsingStringRepresentations":
-//				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "self");
-//				break;
-//				
-//			case "shouldTraverseInOutFromVertexWithMultipleEdgeLabelFilter":
-//			case "shouldTraverseInOutFromVertexWithSingleEdgeLabelFilter":
-//				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "hate");
-//			case "shouldGetPropertyKeysOnEdge":
-//			case "shouldNotGetConcurrentModificationException":
-//			case "shouldSupportUUID[graphson-v1-embedded]":
-//			case "shouldSupportUUID[graphson-v2-embedded]":
-//			case "shouldSupportUUID[graphson-v3]":
-//			case "shouldSupportUUID[gryo-v1]":
-//			case "shouldSupportUUID[gryo-v3]":
-//			case "shouldReadWriteDetachedEdgeAsReference[graphson-v1]":
-//			case "shouldReadWriteEdge[graphson-v1]":
-//			case "shouldReadWriteDetachedEdge[graphson-v1]":
-//			case "shouldReadWriteDetachedEdgeAsReference[graphson-v1-embedded]":
-//			case "shouldReadWriteEdge[graphson-v1-embedded]":
-//			case "shouldReadWriteDetachedEdge[graphson-v1-embedded]":
-//			case "shouldReadWriteDetachedEdgeAsReference[graphson-v2]":
-//			case "shouldReadWriteEdge[graphson-v2]":
-//			case "shouldReadWriteDetachedEdge[graphson-v2]":
-//			case "shouldReadWriteDetachedEdgeAsReference[graphson-v2-embedded]":
-//			case "shouldReadWriteEdge[graphson-v2-embedded]":
-//			case "shouldReadWriteDetachedEdge[graphson-v2-embedded]":
-//			case "shouldReadWriteDetachedEdgeAsReference[graphson-v3]":
-//			case "shouldReadWriteEdge[graphson-v3]":
-//			case "shouldReadWriteDetachedEdge[graphson-v3]":
-//			case "shouldReadWriteDetachedEdgeAsReference[gryo]":
-//			case "shouldReadWriteEdge[gryo]":
-//			case "shouldReadWriteDetachedEdge[gryo]":
-//				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "friend");
-//				break;
-//			case "shouldHaveStandardStringRepresentation":
-//			case "shouldReadWriteVertexWithBOTHEdges[graphson-v1]":
-//			case "shouldReadWriteVertexWithINEdges[graphson-v1]":
-//			case "shouldReadWriteVertexMultiPropsNoEdges[graphson-v1]":
-//			case "shouldReadWriteDetachedVertexAsReferenceNoEdges[graphson-v1]":
-//			case "shouldReadWriteVertexNoEdges[graphson-v1]":
-//			case "shouldReadWriteVertexWithOUTEdges[graphson-v1]":
-//			case "shouldReadWriteDetachedVertexNoEdges[graphson-v1]":
-//			case "shouldReadWriteVertexWithBOTHEdges[graphson-v1-embedded]":
-//			case "shouldReadWriteVertexWithINEdges[graphson-v1-embedded]":
-//			case "shouldReadWriteVertexMultiPropsNoEdges[graphson-v1-embedded]":
-//			case "shouldReadWriteDetachedVertexAsReferenceNoEdges[graphson-v1-embedded]":
-//			case "shouldReadWriteVertexNoEdges[graphson-v1-embedded]":
-//			case "shouldReadWriteVertexWithOUTEdges[graphson-v1-embedded]":
-//			case "shouldReadWriteDetachedVertexNoEdges[graphson-v1-embedded]":
-//			case "shouldReadWriteVertexWithBOTHEdges[graphson-v2]":
-//			case "shouldReadWriteVertexWithINEdges[graphson-v2]":
-//			case "shouldReadWriteVertexMultiPropsNoEdges[graphson-v2]":
-//			case "shouldReadWriteDetachedVertexAsReferenceNoEdges[graphson-v2]":
-//			case "shouldReadWriteVertexNoEdges[graphson-v2]":
-//			case "shouldReadWriteVertexWithOUTEdges[graphson-v2]":
-//			case "shouldReadWriteDetachedVertexNoEdges[graphson-v2]":
-//			case "shouldReadWriteVertexWithBOTHEdges[graphson-v2-embedded]":
-//			case "shouldReadWriteVertexWithINEdges[graphson-v2-embedded]":
-//			case "shouldReadWriteVertexMultiPropsNoEdges[graphson-v2-embedded]":
-//			case "shouldReadWriteDetachedVertexAsReferenceNoEdges[graphson-v2-embedded]":
-//			case "shouldReadWriteVertexNoEdges[graphson-v2-embedded]":
-//			case "shouldReadWriteVertexWithOUTEdges[graphson-v2-embedded]":
-//			case "shouldReadWriteDetachedVertexNoEdges[graphson-v2-embedded]":
-//			case "shouldReadWriteVertexWithBOTHEdges[graphson-v3]":
-//			case "shouldReadWriteVertexWithINEdges[graphson-v3]":
-//			case "shouldReadWriteVertexMultiPropsNoEdges[graphson-v3]":
-//			case "shouldReadWriteDetachedVertexAsReferenceNoEdges[graphson-v3]":
-//			case "shouldReadWriteVertexNoEdges[graphson-v3]":
-//			case "shouldReadWriteVertexWithOUTEdges[graphson-v3]":
-//			case "shouldReadWriteDetachedVertexNoEdges[graphson-v3]":
-//			case "shouldReadWriteVertexWithBOTHEdges[gryo]":
-//			case "shouldReadWriteVertexWithINEdges[gryo]":
-//			case "shouldReadWriteVertexMultiPropsNoEdges[gryo]":
-//			case "shouldReadWriteDetachedVertexAsReferenceNoEdges[gryo]":
-//			case "shouldReadWriteVertexNoEdges[gryo]":
-//			case "shouldReadWriteVertexWithOUTEdges[gryo]":
-//			case "shouldReadWriteDetachedVertexNoEdges[gryo]":
-//				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "friends");
-//				break;
-//			case "shouldReadWriteCrew[graphml]":
-//			case "shouldReadWriteCrew[graphsonv1d0]":
-//			case "shouldReadWriteCrew[graphsonv2d0]":
-//			case "shouldReadWriteCrew[graphsonv3d0]":
-//			case "shouldReadWriteCrew[gryo]":
-//			case "shouldReadWriteVertexPropertyWithMetaProperties[graphson-v1]":
-//			case "shouldReadWriteVertexPropertyWithMetaProperties[graphson-v1-embedded]":
-//			case "shouldReadWriteVertexPropertyWithMetaProperties[graphson-v2]":
-//			case "shouldReadWriteVertexPropertyWithMetaProperties[graphson-v2-embedded]":
-//			case "shouldReadWriteVertexPropertyWithMetaProperties[graphson-v3]":
-//			case "shouldReadWriteVertexPropertyWithMetaProperties[gryo]":
-//				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.vertex", "software");
-//				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.vertex", "person");
-//				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "uses");
-//				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "develops");
-//				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "traverses");
-//				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.relation", "uses:person->software");
-//				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.relation", "develops:person->software");
-//				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.relation", "traverses:software->software");
-//				break;
-//				
-//			case "shouldReadWriteModernWrappedInJsonObject":
-//				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.vertex", "software");
-//				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.vertex", "person");
-//				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "knows");
-//				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "created");
-//				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.relation", "knows:person->person");
-//				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.relation", "created:person->software");
-//				break;
-//			case "shouldReadWriteModernToFileWithHelpers[graphml]":
-//			case "shouldReadWriteModern[graphml]":
-//			case "shouldMigrateModernGraph[graphml]":
-//			case "shouldReadWriteClassic[graphml]":
-//			case "shouldReadWriteClassicToFileWithHelpers[graphml]":
-//			case "shouldMigrateClassicGraph[graphml]":
-//			case "shouldReadWriteModernToFileWithHelpers[graphsonv1d0]":
-//			case "shouldReadWriteClassic[graphsonv1d0]":
-//			case "shouldReadWriteModern[graphsonv1d0]":
-//			case "shouldReadWriteClassicToFileWithHelpers[graphsonv1d0]":
-//			case "shouldMigrateModernGraph[graphsonv1d0]":
-//			case "shouldMigrateClassicGraph[graphsonv1d0]":
-//			case "shouldReadWriteModernToFileWithHelpers[graphsonv2d0]":
-//			case "shouldReadWriteClassic[graphsonv2d0]":
-//			case "shouldReadWriteModern[graphsonv2d0]":
-//			case "shouldReadWriteClassicToFileWithHelpers[graphsonv2d0]":
-//			case "shouldMigrateModernGraph[graphsonv2d0]":
-//			case "shouldMigrateClassicGraph[graphsonv2d0]":
-//			case "shouldReadWriteModernToFileWithHelpers[graphsonv3d0]":
-//			case "shouldReadWriteClassic[graphsonv3d0]":
-//			case "shouldReadWriteModern[graphsonv3d0]":
-//			case "shouldReadWriteClassicToFileWithHelpers[graphsonv3d0]":
-//			case "shouldMigrateModernGraph[graphsonv3d0]":
-//			case "shouldMigrateClassicGraph[graphsonv3d0]":
-//			case "shouldReadWriteModernToFileWithHelpers[gryo]":
-//			case "shouldReadWriteClassic[gryo]":
-//			case "shouldReadWriteModern[gryo]":
-//			case "shouldReadWriteClassicToFileWithHelpers[gryo]":
-//			case "shouldMigrateModernGraph[gryo]":
-//			case "shouldMigrateClassicGraph[gryo]":
-//				//conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.vertex", "vertex");
-//				//if (graphName == "standard") {
-//					//conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.vertex", "vertex");
-//					conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.vertex", "person");
-//					conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.vertex", "software");
-//					conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "knows");
-//					//conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "edge");
-//					conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "created");
-//					conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.relation", "knows:person->person");
-//					//conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.relation", "edge:vertex->vertex");
-//					conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.relation", "created:person->software");
-//				//}
-////				else {
-////					conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.vertex", "vertex");
-////					conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.vertex", "person");
-////					conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.vertex", "software");
-////					conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "created");
-////					conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "knows");
-////					conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.relation", "created:person->software");
-////					conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.relation", "knows:person,vertex->person,vertex");
-////				}
-//				break;
-//			case "shouldReadWriteVerticesNoEdgesToGryoManual[graphson-v1]":
-//			case "shouldReadWriteVerticesNoEdgesToGraphSONManual[graphson-v1]":
-//			case "shouldReadWriteVerticesNoEdges[graphson-v1]":
-//			case "shouldReadWriteVerticesNoEdgesToGryoManual[graphson-v1-embedded]":
-//			case "shouldReadWriteVerticesNoEdgesToGraphSONManual[graphson-v1-embedded]":
-//			case "shouldReadWriteVerticesNoEdges[graphson-v1-embedded]":
-//			case "shouldReadWriteVerticesNoEdgesToGryoManual[graphson-v2]":
-//			case "shouldReadWriteVerticesNoEdgesToGraphSONManual[graphson-v2]":
-//			case "shouldReadWriteVerticesNoEdges[graphson-v2]":
-//			case "shouldReadWriteVerticesNoEdgesToGryoManual[graphson-v2-embedded]":
-//			case "shouldReadWriteVerticesNoEdgesToGraphSONManual[graphson-v2-embedded]":
-//			case "shouldReadWriteVerticesNoEdges[graphson-v2-embedded]":
-//			case "shouldReadWriteVerticesNoEdgesToGryoManual[graphson-v3]":
-//			case "shouldReadWriteVerticesNoEdgesToGraphSONManual[graphson-v3]":
-//			case "shouldReadWriteVerticesNoEdges[graphson-v3]":
-//			case "shouldReadWriteVerticesNoEdgesToGryoManual[gryo]":
-//			case "shouldReadWriteVerticesNoEdgesToGraphSONManual[gryo]":
-//			case "shouldReadWriteVerticesNoEdges[gryo]":
-//			case "shouldReadWritePropertyGraphSON[graphson-v1]":
-//			case "shouldReadWriteVertexPropertyNoMetaProperties[graphson-v1]":
-//			case "shouldReadWritePropertyGraphSON[graphson-v1-embedded]":
-//			case "shouldReadWriteVertexPropertyNoMetaProperties[graphson-v1-embedded]":
-//			case "shouldReadWritePropertyGraphSON[graphson-v2]":
-//			case "shouldReadWriteVertexPropertyNoMetaProperties[graphson-v2]":
-//			case "shouldReadWritePropertyGraphSON[graphson-v2-embedded]":
-//			case "shouldReadWriteVertexPropertyNoMetaProperties[graphson-v2-embedded]":
-//			case "shouldReadWritePropertyGraphSON[graphson-v3]":
-//			case "shouldReadWriteVertexPropertyNoMetaProperties[graphson-v3]":
-//			case "shouldReadWritePropertyGraphSON[gryo]":
-//			case "shouldReadWriteVertexPropertyNoMetaProperties[gryo]":
-//			
-//			case "shouldReadGraphML":
-//			case "shouldTransformGraphMLV2ToV3ViaXSLT":
-//				
-//				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "knows");
-//				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "created");
-//				break;
-//			case "shouldSupportUserSuppliedIdsOfTypeUuid":
-//			case "shouldSupportUserSuppliedIdsOfTypeAny":
-//			case "shouldSupportUserSuppliedIdsOfTypeNumericLong":
-//			case "shouldSupportUserSuppliedIdsOfTypeNumericInt":
-//				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "test");
-//				break;
-//			case "shouldPersistDataOnClose":
-//				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "collaborator");
-//				break;
-//			case "shouldTestTreeConnectivity":
-//				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "test1");
-//				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "test2");
-//				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "test3");
-//				break;
-//			case "shouldRemoveEdgesWithoutConcurrentModificationException":
-//				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "link");
-//				break;
-//			case "shouldEvaluateConnectivityPatterns":
-//				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "knows");
-//				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "hates");
-//				break;
-//				
-//			case "shouldReadWriteSelfLoopingEdges":
-//				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "CONTROL");
-//				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "SELFLOOP");
-//				break;
-//				
-//
-//				
-//			case "shouldReadLegacyGraphSON":
-//			case "shouldReadGraphMLUnorderedElements":
-//				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "created");
-//				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "knows");
-//				break;
-			default:
-				System.out.println("case \"" + testMethodName + "\":");
+			if (testMethodName.startsWith("shouldProcessVerticesEdges") ||
+					testMethodName.startsWith("shouldGenerate") ||
+					testMethodName.startsWith("shouldSetValueOnEdge")) {
+				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "knows");
+			}
+			else if(testMethodName.startsWith("shouldIterateEdgesWithStringIdSupport")) {
+				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "self");
+			}
+			else if(testMethodName.startsWith("shouldAutotype")) {
+				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "knows");
+			}
+			else if(testMethodName.startsWith("shouldSupportUserSuppliedIds")) {
+				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "test");
+			}
+			else if(testMethodName.startsWith("shouldSupportUUID")) {
+				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "friend");
+			}
+			else if(testMethodName.startsWith("shouldSupportUUID")) {
+				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "friend");
+			}
+			else if(testMethodName.startsWith("shouldReadWrite")) {
+				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "friends");
+			}
+			else {
+				// Perhaps change for startsWith, but then it would be more verbose. Perhaps a set?
+				switch (testMethodName) {
+				case "shouldGetPropertyKeysOnEdge":
+				case "shouldNotGetConcurrentModificationException":
+					conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "friend");
+					break;
+				case "shouldTraverseInOutFromVertexWithMultipleEdgeLabelFilter":
+				case "shouldTraverseInOutFromVertexWithSingleEdgeLabelFilter":
+					conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "hate");
+					conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "friend");
+					break;
+				case "shouldPersistDataOnClose":
+					conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "collaborator");
+					break;
+				case "shouldTestTreeConnectivity":
+					conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "test1");
+					conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "test2");
+					conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "test3");
+					break;
+				case "shouldEvaluateConnectivityPatterns":
+					conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "knows");
+					conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "hates");
+					break;
+				case "shouldRemoveEdgesWithoutConcurrentModificationException":
+					conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "link");
+					break;
+				case "shouldGetValueThatIsNotPresentOnEdge":
+				case "shouldHaveStandardStringRepresentationForEdgeProperty":
+				case "shouldHaveTruncatedStringRepresentationForEdgeProperty":
+				case "shouldValidateIdEquality":
+				case "shouldValidateEquality":
+					conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "self");
+					break;
+				case "shouldAllowRemovalFromEdgeWhenAlreadyRemoved":
+				case "shouldRespectWhatAreEdgesAndWhatArePropertiesInMultiProperties":
+				case "shouldProcessEdges":	
+				case "shouldReturnOutThenInOnVertexIterator":
+				case "shouldReturnEmptyIteratorIfNoProperties":
+					conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "knows");
+					break;
+				case "shouldNotHaveAConcurrentModificationExceptionWhenIteratingAndRemovingAddingEdges":
+					conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "knows");
+					conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "pets");
+					conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "walks");
+					conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "livesWith");
+					break;
+				case "shouldHaveStandardStringRepresentation":		
+					conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "friends");
+					break;
+				case "shouldReadWriteSelfLoopingEdges":
+					conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "CONTROL");
+					conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "SELFLOOP");
+					break;
+				case "shouldReadGraphML":
+					conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "knows");
+					conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "created");
+					break;
+				case "shouldReadGraphMLUnorderedElements":
+				case "shouldTransformGraphMLV2ToV3ViaXSLT":
+				case "shouldReadLegacyGraphSON":
+					conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "created");
+					conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "knows");
+					break;
+				default:
+					System.out.println("case \"" + testMethodName + "\":");
+				}
 			}
 		}
-		
-		
-
 	}
 
 	@Override

@@ -74,7 +74,7 @@ public class ArangoDBVertexProperty<V> extends ArangoDBElementProperty<V> implem
 	@Override
 	public <U> Iterator<Property<U>> properties(String... propertyKeys) {
         List<String> labels = new ArrayList<>();
-        labels.add(ArangoDBUtil.ELEMENT_PROPERTIES_COLLECTION);
+        labels.add(ArangoDBUtil.ELEMENT_PROPERTIES_EDGE);
         ArangoDBPropertyFilter filter = new ArangoDBPropertyFilter();
         for (String pk : propertyKeys) {
             filter.has("key", pk, ArangoDBPropertyFilter.Compare.EQUAL);

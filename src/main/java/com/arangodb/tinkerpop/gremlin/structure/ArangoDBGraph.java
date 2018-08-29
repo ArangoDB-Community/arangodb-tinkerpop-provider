@@ -41,12 +41,11 @@ import com.arangodb.tinkerpop.gremlin.client.ArangoDBGraphClient;
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBGraphException;
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBQuery;
 import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
-import com.google.gson.JsonObject;
 
 /**
  * The ArangoDB graph class.
  * 
- * NOTE: USE OF THIS API REQUIRES A USER WITH administrate ACCESS IF THE db USED FOR THE GRAPH DOES NOT EXIST.
+ * NOTE: USE OF THIS API REQUIRES A USER WITH administrate ACCESS IF THE db USED FOR THE GRAPH DO NOT EXIST.
  * As per ArangoDB, creating DB is only allowed for the root user.
  * <p>
  * An ArangoDBGraph is instantiated from an Apache Commons Configuration instance. The configuration must 
@@ -75,7 +74,10 @@ import com.google.gson.JsonObject;
  *  gremlin.arangodb.conf.graph.edge = Transition
  * </pre>
  * would allow the user to create Vertices that represent Places, and Edges that represent Transitions. A
- * transition can be created between any two Places.
+ * transition can be created between any two Places. If additional vertices and edges were added,
+ * the resulting graph schema would be fully connected, that is, edges would be allowed between
+ * any two pair of vertices.
+ * 
  * <p>
  * For more complex graph structures, the graph.relation property is used to tell the ArangoDB what relations
  * are allowed, e.g.:
@@ -100,7 +102,7 @@ import com.google.gson.JsonObject;
  *  gremlin.arangodb.conf.graph.edge = relation
  *  gremlin.arangodb.conf.graph.relation = relation:male,female-&gt;male,female
  *  </pre>
- * </ul> 
+ * </ul>
  * The list of allowed settings is:
  * <ul>
  *   <li>  graph.db: 		The name of the database
@@ -555,7 +557,6 @@ public class ArangoDBGraph implements Graph {
 		checkValues(arangoConfig.getString(CONFIG_DB_NAME), graphName,	vertexCollections,
 				edgeCollections, relations);
 		if (CollectionUtils.isEmpty(vertexCollections)) {
-			// FIXME Need to check relations to know if it is schemaless or not
 			schemaless = true;
 			vertexCollections.add(DEFAULT_VERTEX_COLLECTION);
 		}
@@ -571,10 +572,10 @@ public class ArangoDBGraph implements Graph {
         if (graph.exists()) {
             ArangoDBUtil.checkGraphForErrors(vertexCollections, edgeCollections, relations, graph, options);
             //variables = new ArangoDBGraphVariables(this);
-            String query = String.format("FOR v IN %s RETURN v", ArangoDBUtil.getCollectioName(graph.name(), ArangoDBUtil.GRAPH_VARIABLES_COLLECTION));
-            ArangoCursor<JsonObject> iter = client.executeAqlQuery(query, null, null, JsonObject.class);
+            String query = String.format("FOR v IN %s RETURN v._id", ArangoDBUtil.getCollectioName(graph.name(), ArangoDBUtil.GRAPH_VARIABLES_COLLECTION));
+            ArangoCursor<String> iter = client.executeAqlQuery(query, null, null, String.class);
             if (iter.hasNext()) {
-            	this.variables_id = iter.next().get("_id").getAsString();
+            	this.variables_id = iter.next();
             }
             else {
             	throw new ArangoDBGraphException("Existing graph does not have a Variables collection");

@@ -8,6 +8,7 @@ import org.apache.tinkerpop.gremlin.structure.util.StringFactory;
 
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBBaseDocument;
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBBaseEdge;
+import com.arangodb.tinkerpop.gremlin.client.ArangoDBGraphException;
 import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
 
 /**
@@ -64,7 +65,11 @@ public abstract class ArangoDBElementProperty<V> extends ArangoDBBaseDocument im
 
 	@Override
 	public void remove() {
-        graph.getClient().deleteDocument(graph.name(), this);
+		try {
+			graph.getClient().deleteDocument(graph.name(), this);
+		} catch (ArangoDBGraphException ex) {
+			// Pass Removing a property that does not exists should not throw an exception.
+		}
     }
 
 	@SuppressWarnings("unchecked")
@@ -102,7 +107,7 @@ public abstract class ArangoDBElementProperty<V> extends ArangoDBBaseDocument im
      * @param doc The document
      * @return an ElementHasProperty (edge) that connects the element to this property
      */
-    public ElementHasProperty assignToDocument(ArangoDBBaseDocument doc) {
+    public ElementHasProperty assignToElement(ArangoDBBaseDocument doc) {
         return new ElementHasProperty(doc, this, doc.graph());
     }
 

@@ -16,11 +16,12 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.arangodb.ArangoCursor;
 import com.arangodb.model.AqlQueryOptions;
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBGraph;
-import com.arangodb.tinkerpop.gremlin.structure.ArangoDBVertex;
 import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
 
 
@@ -35,6 +36,8 @@ import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
  */
 
 public class ArangoDBQuery {
+	
+	private static final Logger logger = LoggerFactory.getLogger(ArangoDBQuery.class);
 
 	/**
 	 * the ArangoDB graph
@@ -58,7 +61,6 @@ public class ArangoDBQuery {
 	protected Long limit;
 	protected boolean count;
 	private List<String> keysFilter = new ArrayList<>();
-	private boolean getProperties;
 
 	/**
 	 * Direction
@@ -186,19 +188,18 @@ public class ArangoDBQuery {
 			break;
 		case GRAPH_NEIGHBORS:
 		default:
-			sb.append(String.format("FOR v IN %s @startId GRAPH @graphName\n", getDirectionString()));
+			// The labelsFilter is used to filter the collection of the edges
+			sb.append(String.format("FOR v, e IN 1 %s @startId GRAPH @graphName\n", getDirectionString()));
 			sb.append("  OPTIONS {bfs: true, uniqueVertices: 'global'}\n");
 			if (!labelsFilter.isEmpty()) {
                 String filter = labelsFilter.stream()
                         .map(lbl -> ArangoDBUtil.getCollectioName(graph.name(), lbl))
-                        .collect(Collectors.joining(", v) OR IS_SAME_COLLECTION(", same_collection, ", v) "));
+                        .collect(Collectors.joining(", e) OR IS_SAME_COLLECTION(", same_collection, ", e) "));
 				sb.append(filter);
                 joinFilter = true;
 			}
 			prefix = "v.";
 			returnExp = "  RETURN v";
-			//sb.append("  RETURN v");
-			// FIXME Can we filter on vertex label?
 			bindVars.put("startId", startVertex._id());
 			bindVars.put("graphName", graph.name());
 			break;
@@ -227,6 +228,8 @@ public class ArangoDBQuery {
 		sb.append(returnExp);
 
 		String query = sb.toString();
+		logger.debug("ArangoDB query: {}", query);
+		logger.debug("Binded Vars: {}", bindVars);
 		AqlQueryOptions aqlQueryOptions = new AqlQueryOptions();
 		aqlQueryOptions.count(count);
 

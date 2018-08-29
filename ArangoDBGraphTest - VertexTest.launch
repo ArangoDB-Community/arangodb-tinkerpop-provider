@@ -7,7 +7,7 @@
 <listEntry value="1"/>
 </listAttribute>
 <mapAttribute key="org.eclipse.debug.core.environmentVariables">
-<mapEntry key="GREMLIN_TESTS" value="org.apache.tinkerpop.gremlin.process.traversal.step.map.VertexTest"/>
+<mapEntry key="GREMLIN_TESTS" value="org.apache.tinkerpop.gremlin.process.traversal.step.map.VertexTest.Traversals"/>
 </mapAttribute>
 <stringAttribute key="org.eclipse.jdt.junit.CONTAINER" value=""/>
 <booleanAttribute key="org.eclipse.jdt.junit.KEEPRUNNING_ATTR" value="false"/>

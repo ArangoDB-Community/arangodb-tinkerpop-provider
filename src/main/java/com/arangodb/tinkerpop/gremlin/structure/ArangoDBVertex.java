@@ -8,21 +8,29 @@
 
 package com.arangodb.tinkerpop.gremlin.structure;
 
-import java.util.*;
-import java.util.Map.Entry;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
-import com.arangodb.tinkerpop.gremlin.client.ArangoDBBaseDocument;
-import com.arangodb.tinkerpop.gremlin.client.ArangoDBGraphClient;
-import com.arangodb.tinkerpop.gremlin.client.ArangoDBPropertyFilter;
 import org.apache.commons.lang.ArrayUtils;
-import org.apache.tinkerpop.gremlin.structure.*;
+import org.apache.tinkerpop.gremlin.structure.Direction;
+import org.apache.tinkerpop.gremlin.structure.Edge;
+import org.apache.tinkerpop.gremlin.structure.Graph;
+import org.apache.tinkerpop.gremlin.structure.T;
+import org.apache.tinkerpop.gremlin.structure.Vertex;
+import org.apache.tinkerpop.gremlin.structure.VertexProperty;
 import org.apache.tinkerpop.gremlin.structure.VertexProperty.Cardinality;
 import org.apache.tinkerpop.gremlin.structure.util.ElementHelper;
 import org.apache.tinkerpop.gremlin.structure.util.StringFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.arangodb.tinkerpop.gremlin.client.ArangoDBBaseDocument;
+import com.arangodb.tinkerpop.gremlin.client.ArangoDBPropertyFilter;
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBQuery;
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBGraph.ArangoDBIterator;
 import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
@@ -107,7 +115,6 @@ public class ArangoDBVertex extends ArangoDBBaseDocument implements Vertex {
 	}
 
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public <V> VertexProperty<V> property(
 		Cardinality cardinality,
@@ -170,14 +177,20 @@ public class ArangoDBVertex extends ArangoDBBaseDocument implements Vertex {
 	public Iterator<Vertex> vertices(Direction direction,
 		String... edgeLabels) {
 		// Query will raise an exception if the edge_collection name is not in the graph, so we need
-		// to filter out edgeLabels not in the graph. 
-		List<String> edgeCollections = Arrays.stream(edgeLabels)
+		// to filter out edgeLabels not in the graph.
+		List<String> edgeCollections;
+		if (edgeLabels.length == 0) {
+			edgeCollections = graph.edgeCollections();
+		}
+		else {
+			edgeCollections = Arrays.stream(edgeLabels)
 				.filter(el -> graph.edgeCollections().contains(el))
-				.map(el -> ArangoDBUtil.getCollectioName(graph.name(), el)).collect(Collectors.toList());
-		// However, if edgeLabels was not empty but all were discarded, this means that we should
-		// return an empty iterator, i.e. no edges for that edgeLabels exist.
-		if ((edgeLabels.length > 0) && edgeCollections.isEmpty()) {
-			return Collections.emptyIterator();
+				.collect(Collectors.toList());
+			// If edgeLabels was not empty but all were discarded, this means that we should
+			// return an empty iterator, i.e. no edges for that edgeLabels exist.
+			if (edgeCollections.isEmpty()) {
+				return Collections.emptyIterator();
+			}
 		}
 		ArangoDBQuery query = graph.getClient().getDocumentNeighbors(graph, this, edgeCollections, direction, null);
 		return new ArangoDBIterator<Vertex>(graph, query.getCursorResult(ArangoDBVertex.class));
@@ -187,12 +200,14 @@ public class ArangoDBVertex extends ArangoDBBaseDocument implements Vertex {
 	@SuppressWarnings("unchecked")
 	@Override
 	public <V> Iterator<VertexProperty<V>> properties(String... propertyKeys) {
+		logger.info("Get properties {}", (Object[])propertyKeys);
         List<String> labels = new ArrayList<>();
-        labels.add(ArangoDBUtil.ELEMENT_PROPERTIES_COLLECTION);
+        labels.add(ArangoDBUtil.ELEMENT_PROPERTIES_EDGE);
         ArangoDBPropertyFilter filter = new ArangoDBPropertyFilter();
         for (String pk : propertyKeys) {
             filter.has("key", pk, ArangoDBPropertyFilter.Compare.EQUAL);
         }
+        logger.debug("Creating ArangoDB query");
         ArangoDBQuery query = graph.getClient().getDocumentNeighbors(graph, this, labels, Direction.OUT, filter);
         return new ArangoDBIterator<VertexProperty<V>>(graph, query.getCursorResult(ArangoDBVertexProperty.class));
     }
