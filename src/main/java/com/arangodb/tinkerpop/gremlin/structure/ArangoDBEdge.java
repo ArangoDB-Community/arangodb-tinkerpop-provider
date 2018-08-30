@@ -138,10 +138,10 @@ public class ArangoDBEdge extends ArangoDBBaseEdge implements Edge {
 			ids.add(to_key);
 			break;
 		case IN:
-			ids.add(to_key);
+			ids.add(from_key);
 			break;
 		case OUT:
-			ids.add(from_key);
+			ids.add(to_key);
 			break;
 		}
 		ArangoDBQuery query = graph.getClient().getGraphVertices(graph, ids);
