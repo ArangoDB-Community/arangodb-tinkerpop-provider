@@ -20,7 +20,7 @@ boost as a bonus.
 ## Installation & Testing
 
 Please check the
-[ArangoDB Installation Manual](http://www.arangodb.org/manuals/current/InstallManual.html)
+[ArangoDB Installation Manual](https://docs.arangodb.com/latest/Manual/Deployment/)
 for installation and compilation instructions.
 
 Start ArangoDB on localhost port 8529.
