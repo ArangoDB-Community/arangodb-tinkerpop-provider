@@ -1,8 +1,8 @@
 //////////////////////////////////////////////////////////////////////////////////////////
 //
-// Implementation of the Blueprints Interface for ArangoDB by triAGENS GmbH Cologne.
+// Implementation of the TinkerPop-Enabled Providers OLTP for ArangoDB
 //
-// Copyright triAGENS GmbH Cologne.
+// Copyright triAGENS GmbH Cologne and The University of York
 //
 //////////////////////////////////////////////////////////////////////////////////////////
 
@@ -11,8 +11,10 @@ package com.arangodb.tinkerpop.gremlin.structure;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -29,16 +31,16 @@ import org.apache.tinkerpop.gremlin.structure.util.StringFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.arangodb.ArangoCursor;
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBBaseDocument;
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBPropertyFilter;
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBQuery;
-import com.arangodb.tinkerpop.gremlin.structure.ArangoDBGraph.ArangoDBIterator;
 import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
 
 
 /**
- * The ArangoDB vertex class
- * 
+ * The ArangoDB vertex class.
+ *
  * @author Achim Brandt (http://www.triagens.de)
  * @author Johannes Gocke (http://www.triagens.de)
  * @author Guido Schwab (http://www.triagens.de)
@@ -46,6 +48,8 @@ import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
  */
 
 public class ArangoDBVertex extends ArangoDBBaseDocument implements Vertex {
+	
+	/** The Logger. */
 	
 	private static final Logger logger = LoggerFactory.getLogger(ArangoDBVertex.class);
 
@@ -57,12 +61,25 @@ public class ArangoDBVertex extends ArangoDBBaseDocument implements Vertex {
 		super();
 	}
 
+	/**
+	 * Instantiates a new arango DB vertex.
+	 *
+	 * @param graph the graph
+	 * @param collection the collection
+	 * @param key the key
+	 */
 	public ArangoDBVertex(ArangoDBGraph graph, String collection, String key) {
 		super(key);
         this.graph = graph;
         this.collection = collection;
 	}
 
+	/**
+	 * Instantiates a new arango DB vertex.
+	 *
+	 * @param graph the graph
+	 * @param collection the collection
+	 */
 	public ArangoDBVertex(ArangoDBGraph graph, String collection) {
 		this(graph, collection, null);
 	}
@@ -80,7 +97,20 @@ public class ArangoDBVertex extends ArangoDBBaseDocument implements Vertex {
 	@Override
 	public void remove() {
 		logger.info("remove {}", this._key());
-		graph.getClient().deleteDocument(graph.name(), this);
+		String query = 
+				  "  FOR v, e IN 1 OUTBOUND @startid IncrementalEvl_ELEMENT_HAS_PROPERTIES"
+				+ "	   FOR sv IN @@startCollection"
+				+ "	   FILTER v._id == @startid"
+				+ "	   REMOVE v IN @@startCollection"
+				+ "      REMOVE v IN IncrementalEvl_ELEMENT_PROPERTIES"
+				+ "    	 REMOVE e IN IncrementalEvl_ELEMENT_HAS_PROPERTIES"
+				+ "      LET removed = OLD"
+				+ "      RETURN removed";
+		Map<String, Object> bindVars = new HashMap<>();
+		bindVars.put("@startCollection", this.collection);
+		bindVars.put("@startid", this._id());
+		ArangoCursor<? extends ArangoDBVertex> result = graph.getClient().executeAqlQuery(query, bindVars, null, this.getClass());
+		logger.debug("Deleted ", result.next());
 	}
 
 	@Override
@@ -109,7 +139,7 @@ public class ArangoDBVertex extends ArangoDBBaseDocument implements Vertex {
 			edge = new ArangoDBEdge(graph, label, this, ((ArangoDBVertex) inVertex));
 		}
         // The vertex needs to exist before we can attach properties
-		graph.getClient().insertEdge(graph.name(), edge);
+		graph.getClient().insertEdge(edge);
         ElementHelper.attachProperties(edge, keyValues);
 		return edge;
 	}
@@ -121,7 +151,7 @@ public class ArangoDBVertex extends ArangoDBBaseDocument implements Vertex {
 		String key,
 		V value,
 		Object... keyValues) {
-		logger.debug("property {} = {} ({})", key, value, keyValues);
+		logger.debug("setting vertex property {} = {} ({})", key, value, keyValues);
 		ElementHelper.validateProperty(key, value);
 		ElementHelper.legalPropertyKeyValueArray(keyValues);
 		Optional<Object> idValue = ElementHelper.getIdValue(keyValues);
@@ -200,7 +230,7 @@ public class ArangoDBVertex extends ArangoDBBaseDocument implements Vertex {
 	@SuppressWarnings("unchecked")
 	@Override
 	public <V> Iterator<VertexProperty<V>> properties(String... propertyKeys) {
-		logger.info("Get properties {}", (Object[])propertyKeys);
+		logger.debug("Get properties {}", (Object[])propertyKeys);
         List<String> labels = new ArrayList<>();
         labels.add(ArangoDBUtil.ELEMENT_PROPERTIES_EDGE);
         ArangoDBPropertyFilter filter = new ArangoDBPropertyFilter();
@@ -218,9 +248,12 @@ public class ArangoDBVertex extends ArangoDBBaseDocument implements Vertex {
     	return StringFactory.vertexString(this);
     }
 
+	/**
+	 * Save.
+	 */
 	public void save() {
 		if (paired) {
-			graph.getClient().updateDocument(graph.name(), this);
+			graph.getClient().updateDocument(this);
 		}
 	}
 

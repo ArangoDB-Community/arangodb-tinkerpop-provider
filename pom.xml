@@ -2,14 +2,14 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<groupId>com.arangodb</groupId>
+	<groupId>com.arangodb.community</groupId>
 	<artifactId>arangodb-tinkerpop-provider</artifactId>
-	<version>1.0.4</version>
+	<version>1.0.6</version>
 	<packaging>jar</packaging>
 	
 	<name>ArangoDB-Tinkerpop-Provider</name>
-	<description>An implementation of the Tinkerpop Provider API for ArangoDB</description>
-	<url>https://arangodb.com</url>
+	<description>An implementation of the Tinkerpop Provider OLTP for ArangoDB</description>
+	<url>https://github.com/ArangoDB-Community</url>
 
 	<licenses>
 		<license>
@@ -18,14 +18,6 @@
 			<distribution>repo</distribution>
 		</license>
 	</licenses>
-
-	<distributionManagement>
-		<repository>
-			<id>bintray-epsilonlabs</id>
-			<name>bintray</name>
-			<url>https://dl.bintray.com/epsilonlabs/epsilon-standalone</url>
-		</repository>
-	</distributionManagement>
 
 	<developers>
 		<developer>
@@ -246,11 +238,16 @@
             <scope>test</scope>
         </dependency>
 	</dependencies>
-
+	
+	<scm>
+		<url>https://github.com/ArangoDB-Community/tinkerpop-arangodb-provider</url>
+		<connection>scm:git:https://github.com/ArangoDB-Community/tinkerpop-arangodb-provider.git</connection>
+		<developerConnection>scm:git:git@github.com:ArangoDB-Community/tinkerpop-arangodb-provider.git</developerConnection>
+	</scm>
 
 	<organization>
-		<name>ArangoDB GmbH</name>
-		<url>https://www.arangodb.com</url>
+		<name>The University of York - Department of Computer Science</name>
+		<url>https://www.cs.york.ac.uk</url>
 	</organization>
 
 </project>

@@ -2,7 +2,7 @@
 //
 // Implementation of a simple graph client for the ArangoDB.
 //
-// Copyright triAGENS GmbH Cologne.
+// Copyright triAGENS GmbH Cologne and The University of York
 //
 //////////////////////////////////////////////////////////////////////////////////////////
 
@@ -22,7 +22,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.tinkerpop.gremlin.structure.Direction;
-import org.apache.tinkerpop.gremlin.structure.Graph;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,8 +32,8 @@ import com.arangodb.ArangoDBException;
 import com.arangodb.ArangoDatabase;
 import com.arangodb.ArangoGraph;
 import com.arangodb.entity.EdgeDefinition;
-import com.arangodb.entity.EdgeEntity;
 import com.arangodb.entity.EdgeUpdateEntity;
+import com.arangodb.entity.GraphEntity;
 import com.arangodb.entity.VertexEntity;
 import com.arangodb.entity.VertexUpdateEntity;
 import com.arangodb.model.AqlQueryOptions;
@@ -58,21 +57,25 @@ import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
 
 public class ArangoDBGraphClient {
 	
-	/** The Constant logger. */
+	/** The Logger. */
+	
 	private static final Logger logger = LoggerFactory.getLogger(ArangoDBGraphClient.class);
 
-	/** the ArangoDB driver. */
+	/** The ArangoDB driver. */
+	
 	private ArangoDB driver;
 	
-	/** the ArangoDB database. */
+	/** The ArangoDB database. */
+	
 	private ArangoDatabase db;
 
 	/** The batch size. */
+	
 	private int batchSize;
 	
 	/**
-	 * Create a simple graph client and connect to the provided db. If the DB does not exist, the driver
-	 * will try to create one
+	 * Create a simple graph client and connect to the provided db. If the DB does not exist,
+	 * the driver will try to create one
 	 *
 	 * @param properties 				the ArangoDB configuration properties
 	 * @param dbname 					the ArangoDB name to connect to or create
@@ -105,7 +108,7 @@ public class ArangoDBGraphClient {
 		int batchSize,
 		boolean create) 
 		throws ArangoDBGraphException {	
-		logger.debug("Initiating the ArangoDb Client");
+		logger.info("Initiating the ArangoDb Client");
 		ByteArrayOutputStream os = new ByteArrayOutputStream();
 		try {
 			properties.store(os, null);
@@ -242,13 +245,16 @@ public class ArangoDBGraphClient {
 	}
 	
 	/**
-	 * Get a document from the database. The method is generic so we it can be used to retrieve vertices, properties
-     * or variables.
+	 * Get a document from the database. The method is generic so we it can be used to retrieve
+	 * vertices, properties or variables.
 	 *
-	 * @param graph            			the graph
-	 * @param id            			the id (key) of the vertex
+	 * @param <V> the value type
+	 * @param graph         			the graph
+	 * @param id            			the id (key) of the document
 	 * @param collection 				the collection from which the document is retrieved
+	 * @param docClass the doc class
 	 * @return the document
+	 * @throws ArangoDBGraphException 	If there was an error retrieving the document
 	 */
 	
 	public <V extends ArangoDBBaseDocument> V getDocument(
@@ -256,10 +262,11 @@ public class ArangoDBGraphClient {
 		String id,
 		String collection,
 		Class<V> docClass) {
-		logger.debug("Get vertex {} from {}:{}", id, graph.name(), collection);
+		logger.debug("Get document with id {} from {}:{}", id, graph.name(), collection);
 		V result;
 		try {
-			result = db.graph(graph.name()).vertexCollection(ArangoDBUtil.getCollectioName(graph.name(), collection)).getVertex(id, docClass);
+			result = db.graph(graph.name())
+					.vertexCollection(ArangoDBUtil.getCollectioName(graph.name(), collection)).getVertex(id, docClass);
 		} catch (ArangoDBException e) {
 			logger.error("Failed to retrieve vertex: {}", e.getErrorMessage());
 			throw new ArangoDBGraphException("Failed to retrieve vertex.", e);
@@ -270,16 +277,23 @@ public class ArangoDBGraphClient {
 	}
 	
 	/**
-	 * Insert a ArangoDBBaseDocument in the graph. The document is updated with the id, rev and key (if not
-	 * present) 
-	 *
-	 * @param graphName            			the graph
+	 * Insert a ArangoDBBaseDocument in the graph. The document is updated with the id, rev and key
+	 * (if not * present) 
 	 * @param document 					the document
+	 *
+	 * @throws ArangoDBGraphException 	If there was an error inserting the document
 	 */
 	
 	public void insertDocument(
-		final String graphName,
 		ArangoDBBaseDocument document) {
+		String graphName;
+		try {
+			graphName = document.graph().name();
+		} catch (NullPointerException ex) {
+			logger.error("Document not paired: {}", document);
+			throw new ArangoDBGraphException("Document does not have a graph. Can only delete paired documents.");
+		}
+		
 		logger.debug("Insert document {} in {}", document, graphName);
 		VertexEntity vertexEntity;
 		try {
@@ -287,16 +301,7 @@ public class ArangoDBGraphClient {
 					.vertexCollection(ArangoDBUtil.getCollectioName(graphName, document.collection()))
 					.insertVertex(document);
 		} catch (ArangoDBException e) {
-			// Think is better to let this bubble to the graph.
-			String message = e.getMessage();
-			Matcher m = ArangoDBExceptions.ERROR_CODE.matcher(message);
-			if (m.matches()) {
-				String errorCode = m.group(1);
-				if (errorCode.equals("1210")) {		// 1210 - ERROR_ARANGO_UNIQUE_CONSTRAINT_VIOLATED
-					throw Graph.Exceptions.vertexWithIdAlreadyExists(document._key());
-				}
-			}
-			logger.error("Failed to insert document: {}", message);
+			logger.error("Failed to insert document: {}", e.getMessage());
             throw ArangoDBExceptions.getArangoDBException(e);
 		}
 		document._id(vertexEntity.getId());
@@ -309,14 +314,20 @@ public class ArangoDBGraphClient {
 
 	/**
 	 * Delete a document from the graph.
-	 *
-	 * @param graphName             		the graph
 	 * @param document            		the document to delete
+	 *
+	 * @throws ArangoDBGraphException 	If there was an error deleting the document
 	 */
 	
 	public void deleteDocument(
-		String graphName,
-        ArangoDBBaseDocument document) {
+		ArangoDBBaseDocument document) {
+		String graphName;
+		try {
+			graphName = document.graph().name();
+		} catch (NullPointerException ex) {
+			logger.error("Document not paired: {}", document);
+			throw new ArangoDBGraphException("Document does not have a graph. Can only delete paired documents.");
+		}
 		logger.debug("Delete document {} in {}", document, graphName);
 		try {
 			db.graph(graphName)
@@ -331,14 +342,20 @@ public class ArangoDBGraphClient {
 	
 	/**
 	 * Update the document in the graph.
-	 *
-	 * @param graphName 					the graph
 	 * @param document 					the document
+	 *
+	 * @throws ArangoDBGraphException 	If there was an error updating the document
 	 */
 	
 	public void updateDocument(
-		String graphName,
-        ArangoDBBaseDocument document) {
+		ArangoDBBaseDocument document) {
+		String graphName;
+		try {
+			graphName = document.graph().name();
+		} catch (NullPointerException ex) {
+			logger.error("Document not paired: {}", document);
+			throw new ArangoDBGraphException("Document does not have a graph. Can only delete paired documents.");
+		}
 		logger.debug("Update document {} in {}", document, graphName);
 		VertexUpdateEntity vertexEntity;
 		try {
@@ -356,10 +373,13 @@ public class ArangoDBGraphClient {
 	/**
 	 * Get an edge from the graph.
 	 *
+	 * @param <V> the value type
 	 * @param graph            			the graph
 	 * @param id            			the id (key) of the edge
 	 * @param collection 				the collection from which the edge is retrieved
+	 * @param claszz the claszz
 	 * @return the edge
+	 * @throws ArangoDBGraphException 	If there was an error retrieving the edge
 	 */
 	
 	public <V extends ArangoDBBaseEdge> V getEdge(
@@ -383,44 +403,48 @@ public class ArangoDBGraphClient {
 	}
 
 	/**
-	 * Insert an edge in the graph .The edge is updated with the id, rev and key (if not
+	 * Insert an edge in the graph. The edge is updated with the id, rev and key (if not
 	 * present) 
-	 *
-	 * @param graphName            			the graph
 	 * @param edge            			the edge
+	 * @throws ArangoDBGraphException 	If there was an error inserting the edge
 	 */
 
 	public void insertEdge(
-		String graphName,
-        ArangoDBBaseEdge edge) {
-		logger.debug("Insert edge {} in {}", edge, graphName);
-		EdgeEntity edgeEntity;
+		ArangoDBBaseEdge edge) {
+		String graphName;
 		try {
-			edgeEntity = db.graph(graphName)
+			graphName = edge.graph().name();
+		} catch (NullPointerException ex) {
+			logger.error("Edge not paired: {}", edge);
+			throw new ArangoDBGraphException("Edge does not have a graph. Can only delete paired edges.");
+		}
+		logger.debug("Insert edge {} in {}", edge, graphName);
+		try {
+			db.graph(graphName)
 					.edgeCollection(ArangoDBUtil.getCollectioName(graphName, edge.collection()))
 					.insertEdge(edge);
 		} catch (ArangoDBException e) {
 			logger.error("Failed to insert edge: {}", e.getErrorMessage());
             throw ArangoDBExceptions.getArangoDBException(e);
 		}
-		edge._id(edgeEntity.getId());
-		edge._rev(edgeEntity.getRev());
-		if (edge._key() == null) {
-			edge._key(edgeEntity.getKey());
-		}
 		edge.setPaired(true);
 	}
 
 	/**
 	 * Delete an edge from the graph.
-	 *
-	 * @param graphName           			the graph
 	 * @param edge            			the edge
+	 * @throws ArangoDBGraphException 	If there was an error deleting the edge
 	 */
 
 	public void deleteEdge(
-		String graphName,
-        ArangoDBBaseEdge edge) {
+		ArangoDBBaseEdge edge) {
+		String graphName;
+		try {
+			graphName = edge.graph().name();
+		} catch (NullPointerException ex) {
+			logger.error("Edge not paired: {}", edge);
+			throw new ArangoDBGraphException("Edge does not have a graph. Can only delete paired edges.");
+		}
 		logger.debug("Delete edge {} in {}", edge, graphName);
 		try {
 			db.graph(graphName)
@@ -435,14 +459,19 @@ public class ArangoDBGraphClient {
 	
 	/**
 	 * Update the edge in the graph.
-	 *
-	 * @param graphName 					the graph
 	 * @param edge 						the edge
+	 * @throws ArangoDBGraphException 	If there was an error updating the edge
 	 */
 	
 	public void updateEdge(
-		String graphName,
-        ArangoDBBaseEdge edge) {
+		ArangoDBBaseEdge edge) {
+		String graphName;
+		try {
+			graphName = edge.graph().name();
+		} catch (NullPointerException ex) {
+			logger.error("Edge not paired: {}", edge);
+			throw new ArangoDBGraphException("Edge does not have a graph. Can only delete paired edges.");
+		}
 		logger.debug("Update edge {} in {}", edge, graphName);
 		EdgeUpdateEntity edgeEntity;
 		try {
@@ -458,16 +487,14 @@ public class ArangoDBGraphClient {
 	}
 	
 	/**
-	 * Create a query to get edges of a vertex. 
-	 * 
-	 * Retrieve all Edges from the edgeLabels collections and keep those that match the vertex
-	 * as source, target or both, depending on the direction 
+	 * Create a query to get all the edges of a vertex. 
 	 *
 	 * @param graph          			the graph
 	 * @param vertex            		the vertex
 	 * @param edgeLabels        		a list of edge labels to follow, empty if all type of edges
 	 * @param direction         		the direction of the edges
 	 * @return ArangoDBBaseQuery		the query object
+	 * @throws ArangoDBException the arango DB exception
 	 */
 
 	public ArangoDBQuery getVertexEdges(
@@ -501,7 +528,7 @@ public class ArangoDBGraphClient {
 	 * @param document              the document
 	 * @param edgeLabelsFilter      a list of edge types to follow
 	 * @param direction             a direction
-	 * @param propertyFilter		
+	 * @param propertyFilter		Filter the neighbours on the given property:value values
      * @return ArangoDBBaseQuery	the query object
 	 */
 
@@ -509,7 +536,8 @@ public class ArangoDBGraphClient {
             ArangoDBGraph graph,
             ArangoDBBaseDocument document,
             List<String> edgeLabelsFilter,
-            Direction direction, ArangoDBPropertyFilter propertyFilter) {
+            Direction direction,
+            ArangoDBPropertyFilter propertyFilter) {
 		logger.debug("Get Vertex's {}:{} Neighbors, in {}, from collections {}", document, direction, graph.name(), edgeLabelsFilter);
 		ArangoDBQuery.Direction arangoDirection = null;
 		switch(direction) {
@@ -532,7 +560,7 @@ public class ArangoDBGraphClient {
 	/**
 	 * Create a query to get all vertices of a graph.
 	 *
-	 * @param graph            		the simple graph
+	 * @param graph            		the graph
 	 * @param keys 					the keys (Tinkerpop ids) to filter the results
 	 * @return ArangoDBBaseQuery 	the query object
 	 */
@@ -545,19 +573,28 @@ public class ArangoDBGraphClient {
 				.setKeysFilter(keys);
 	}
 	
+	/**
+	 * Create a query to get all edges of a graph.
+	 *
+	 * @param graph 				the graph
+	 * @param keys 					the keys (Tinkerpop ids) to filter the results
+	 * @return ArangoDBBaseQuery	the query object
+	 */
+	
 	public ArangoDBQuery getGraphEdges(
 		ArangoDBGraph graph,
-		List<String> ids) {
-		logger.debug("Get all {} graph edges, filterd by ids: {}", graph.name(), ids);
+		List<String> keys) {
+		logger.debug("Get all {} graph edges, filterd by ids: {}", graph.name(), keys);
 		return new ArangoDBQuery(graph, this, QueryType.GRAPH_EDGES)
-				.setKeysFilter(ids);
+				.setKeysFilter(keys);
 	}
 
     /**
      * Get the properties of the document, filtering by key name.
-     * @param document
-     * @param keys
-     * @return
+     *
+     * @param document the document
+     * @param keys the keys
+     * @return the document properties
      */
 	
     public ArangoDBQuery getDocumentProperties(
@@ -570,9 +607,9 @@ public class ArangoDBGraphClient {
 	/**
 	 * Execute AQL query.
 	 *
-	 * @param <T> 						the generic type
-	 * @param query 					the query
-	 * @param bindVars 					the bind vars
+	 * @param <T> 						the generic type of the returned values
+	 * @param query 					the query string
+	 * @param bindVars 					the value of the bind parameters
 	 * @param aqlQueryOptions 			the aql query options
 	 * @param type            			The type of the result (POJO class, VPackSlice, String for Json, or Collection/List/Map)
 	 * @return the cursor result
@@ -595,10 +632,12 @@ public class ArangoDBGraphClient {
 	}
 	
 	/**
-	 * Delete a graph from the db, and all its collections
+	 * Delete a graph from the db, and all its collections.
+	 *
 	 * @param name the name of the graph to delete
 	 * @return true, if the graph was deleted
 	 */
+	
 	public boolean deleteGraph(String name) {
 		return deleteGraph(name, true);
 	}
@@ -666,8 +705,8 @@ public class ArangoDBGraphClient {
 	 * Create a new graph.
 	 *
 	 * @param name            			the name of the new graph
-	 * @param verticesCollectionNames the vertices collection names
-	 * @param edgesCollectionNames the edges collection names
+	 * @param verticesCollectionNames 	the list of vertex collection names
+	 * @param edgesCollectionNames 		the list of edge collection names
 	 * @param relations 				the relations, if any
 	 * @throws ArangoDBGraphException 	If the graph can not be created
 	 */
@@ -680,7 +719,19 @@ public class ArangoDBGraphClient {
 		this.createGraph(name, verticesCollectionNames, edgesCollectionNames, relations, null);
 	}
 	
-	public void createGraph(String name,
+	/**
+	 * Create a new graph.
+	 *
+	 * @param name 						the name of the new graph
+	 * @param verticesCollectionNames 	the list of vertex collection names
+	 * @param edgesCollectionNames 		the list of edge collection names
+	 * @param relations the relations	the relations, if any
+	 * @param options 					additional graph options
+	 * @return 
+	 * @throws ArangoDBGraphException 	If the graph can not be created
+	 */
+	
+	public ArangoGraph createGraph(String name,
 		List<String> verticesCollectionNames,
 		List<String> edgesCollectionNames,
 		List<String> relations,
@@ -708,6 +759,7 @@ public class ArangoDBGraphClient {
 		ArangoGraph g = db.graph(name);
 		EdgeDefinition ed = ArangoDBUtil.createPropertyEdgeDefinitions(name, verticesCollectionNames, edgesCollectionNames);
 		g.addEdgeDefinition(ed);
+		return g;
 	}
 
 
@@ -721,43 +773,28 @@ public class ArangoDBGraphClient {
 	public ArangoGraph getGraph(String name) {
 		return db.graph(name);
 	}
-/*
-	@SuppressWarnings("unchecked")
-	public void updateDocument(String collectionName, String key, Object value) {
-		JSONObject obj = new JSONObject();
-		obj.put("_key", key);
-		obj.put("value", value);
-		db.collection(collectionName).updateDocument(key, obj);
-	}
 
-	public void deleteDocument(String collectionName, String key) {
-		db.collection(collectionName).deleteDocument(key);
-		
-	}
-
-	@SuppressWarnings("unchecked")
-	public void createDocument(String collectionName, String key, Object value) {
-		JSONObject obj = new JSONObject();
-		obj.put("_key", key);
-		obj.put("value", value);
-		db.collection(collectionName).insertDocument(value);
-	}
-*/
     /**
      * Common exceptions to use with an ArangoDB. This class is intended to translate ArangoDB
      * error codes into meaningful exceptions with standard messages. ArangoDBException exception
      * is a RuntimeException intended to stop execution.
      */
+	
     public static class ArangoDBExceptions {
     	
-    	public static Pattern ERROR_CODE = Pattern.compile("^Response:\\s\\d+,\\sError:\\s(\\d+)\\s-\\s([a-z\\s]+).+");
+    	/** The error code. */
+	    public static Pattern ERROR_CODE = Pattern.compile("^Response:\\s\\d+,\\sError:\\s(\\d+)\\s-\\s([a-z\\s]+).+");
     	
+        /**
+         * Instantiates a new arango DB exceptions.
+         */
         private ArangoDBExceptions() {
         }
         
         /**
          * Translate ArangoDB Error code into exception (@see <a href="https://docs.arangodb.com/latest/Manual/Appendix/ErrorCodes.html">Error codes</a>)
-         * @param ex
+         *
+         * @param ex the ex
          * @return The ArangoDBClientException
          */
         public static ArangoDBGraphException getArangoDBException(ArangoDBException ex) {
@@ -786,80 +823,33 @@ public class ArangoDBGraphClient {
         	return new ArangoDBGraphException("General ArangoDB error (unkown error)");
         }
 
+        /** The name to long. */
         public static String NAME_TO_LONG = "Name is too long: {} bytes (max 64 bytes for labels, 256 for keys)";
 
+        /**
+         * Gets the naming convention error.
+         *
+         * @param cause the cause
+         * @param details the details
+         * @return the naming convention error
+         */
         public static ArangoDBGraphException getNamingConventionError(String cause, String details) {
             return new ArangoDBGraphException("The provided label or key name does not satisfy the naming conventions." +
                     String.format(cause, details));
         }
 
+        /**
+         * Error persisting elmenent property.
+         *
+         * @param ex the ex
+         * @return the arango DB graph exception
+         */
         public static ArangoDBGraphException errorPersistingElmenentProperty(ArangoDBGraphException ex) {
             return new ArangoDBGraphException("Error persisting property in element. ", ex);
         }
     }
 
-    /**
-	 * ********   DIRTY *************.
-	 *
-	 */
-
-	
-//
-//	/**
-//	 * Create a new edge.
-//	 *
-//	 * @param graph            the simple graph
-//	 * @param id            the id (key) of the new edge
-//	 * @param label            the label of the new edge
-//	 * @param from            the start vertex
-//	 * @param to            the end vertex
-//	 * @param properties            the predefined properties of the edge
-//	 * @return the edge
-//	 * @throws ArangoDBException             if creation failed
-//	 */
-//	public ArangoDBSimpleEdge createEdge(
-//		ArangoDBSimpleGraph graph,
-//		String id,
-//		String label,
-//		ArangoDBSimpleVertex from,
-//		ArangoDBSimpleVertex to,
-//		Map<String, Object> properties) throws ArangoDBException {
-//
-//		Map<String, Object> tmpProperties = properties;
-//		if (tmpProperties == null) {
-//			tmpProperties = new HashMap<String, Object>();
-//		}
-//
-//		if (id != null) {
-//			tmpProperties.put(ArangoDBSimpleEdge._KEY, id);
-//		} else if (tmpProperties.containsKey(ArangoDBSimpleEdge._KEY)) {
-//			tmpProperties.remove(ArangoDBSimpleEdge._KEY);
-//		}
-//		if (label != null) {
-//			tmpProperties.put(StringFactory.LABEL, label);
-//		} else if (tmpProperties.containsKey(StringFactory.LABEL)) {
-//			tmpProperties.remove(StringFactory.LABEL);
-//		}
-//
-//		tmpProperties.put(ArangoDBSimpleEdge._FROM, from.getDocumentId());
-//		tmpProperties.put(ArangoDBSimpleEdge._TO, to.getDocumentId());
-//
-//		EdgeEntity<Map<String, Object>> edgeEntity;
-//		try {
-//			edgeEntity = driver.graphCreateEdge(graph.getName(), graph.getEdgeCollection(), id, from.getDocumentId(),
-//				to.getDocumentId(), tmpProperties, false);
-//		} catch (ArangoException e) {
-//			throw new ArangoDBException(e);
-//		}
-//
-//		tmpProperties.put(ArangoDBSimpleEdge._ID, edgeEntity.getDocumentHandle());
-//		tmpProperties.put(ArangoDBSimpleEdge._KEY, edgeEntity._key());
-//		Long l = edgeEntity.getDocumentRevision();
-//		tmpProperties.put(ArangoDBSimpleVertex._REV, l.toString());
-//
-//		return new ArangoDBSimpleEdge(tmpProperties);
-//	}
-//
+    // TODO Decide what of these methods should be restored.
 //	
 //	/**
 //	 * Creates vertices (bulk import).
@@ -912,36 +902,7 @@ public class ArangoDBGraphClient {
 //			throw new ArangoDBException(e);
 //		}
 //	}
-//
-//	
-//
-//	/**
-//	 * Create a query to get all edges of a graph.
-//	 *
-//	 * @param graph            the simple graph
-//	 * @param propertyFilter            a property filter
-//	 * @param labelsFilter            a labels filter
-//	 * @param limit            maximum number of results
-//	 * @param count            query total number of results
-//	 * @return ArangoDBBaseQuery the query object
-//	 * @throws ArangoDBException             if creation failed
-//	 */
-//
-//	public ArangoDBQuery getGraphEdges(
-//		ArangoDBSimpleGraph graph,
-//		ArangoDBPropertyFilter propertyFilter,
-//		List<String> labelsFilter,
-//		Long limit,
-//		boolean count) throws ArangoDBException {
-//
-//		return new ArangoDBQuery(graph, this, QueryType.GRAPH_EDGES).setCount(count).setLimit(limit)
-//				.setLabelsFilter(labelsFilter).setPropertyFilter(propertyFilter);
-//	}
-//
-//	
-//
-//	
-//	
+
 //	/**
 //	 * Create an index on collection keys.
 //	 *

@@ -1,3 +1,11 @@
+//////////////////////////////////////////////////////////////////////////////////////////
+//
+// Implementation of the TinkerPop-Enabled Providers OLTP for ArangoDB
+//
+// Copyright triAGENS GmbH Cologne and The University of York
+//
+//////////////////////////////////////////////////////////////////////////////////////////
+
 package com.arangodb.tinkerpop.gremlin.structure;
 
 import java.util.*;
@@ -13,8 +21,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
+/**
+ * The Class ArangoDBVertexProperty.
+ *
+ * @param <V> the type of the property value
+ * 
+ * @author Horacio Hoyos Rodriguez (@horaciohoyosr)
+ */
+
 public class ArangoDBVertexProperty<V> extends ArangoDBElementProperty<V> implements VertexProperty<V> {
 
+	/** The Logger. */
+	
 	private static final Logger logger = LoggerFactory.getLogger(ArangoDBVertexProperty.class);
 
     /**
@@ -25,11 +43,27 @@ public class ArangoDBVertexProperty<V> extends ArangoDBElementProperty<V> implem
 		super();
 	}
 
-
+	/**
+	 * Instantiates a new arango DB vertex property.
+	 *
+	 * @param key the key
+	 * @param value the value
+	 * @param owner the owner
+	 */
+	
 	public ArangoDBVertexProperty(String key, V value, ArangoDBBaseDocument owner) {
 		super(key, value, owner, ArangoDBUtil.ELEMENT_PROPERTIES_COLLECTION);
 	}
 
+    /**
+     * Instantiates a new Arango DB vertex property.
+     *
+     * @param id the id
+     * @param key the key
+     * @param value the value
+     * @param owner the owner
+     */
+	
     public ArangoDBVertexProperty(String id, String key, V value, ArangoDBBaseDocument owner) {
         super(id, key, value, owner, ArangoDBUtil.ELEMENT_PROPERTIES_COLLECTION);
     }
@@ -52,7 +86,7 @@ public class ArangoDBVertexProperty<V> extends ArangoDBElementProperty<V> implem
     @Override
     public Vertex element() {
         ArangoDBQuery q = graph.getClient().getDocumentNeighbors(graph, this, Collections.emptyList(), Direction.IN, null);
-        ArangoDBGraph.ArangoDBIterator<ArangoDBVertex> iterator = new ArangoDBGraph.ArangoDBIterator<ArangoDBVertex>(graph, q.getCursorResult(ArangoDBVertex.class));
+        ArangoDBIterator<ArangoDBVertex> iterator = new ArangoDBIterator<ArangoDBVertex>(graph, q.getCursorResult(ArangoDBVertex.class));
         return iterator.hasNext() ? iterator.next() : null;
     }
 
@@ -80,7 +114,7 @@ public class ArangoDBVertexProperty<V> extends ArangoDBElementProperty<V> implem
             filter.has("key", pk, ArangoDBPropertyFilter.Compare.EQUAL);
         }
         ArangoDBQuery query = graph.getClient().getDocumentNeighbors(graph, this, labels, Direction.OUT, filter);
-        return new ArangoDBGraph.ArangoDBIterator<Property<U>>(graph, query.getCursorResult(ArangoDBPropertyProperty.class));
+        return new ArangoDBIterator<Property<U>>(graph, query.getCursorResult(ArangoDBPropertyProperty.class));
 	}
 
 }

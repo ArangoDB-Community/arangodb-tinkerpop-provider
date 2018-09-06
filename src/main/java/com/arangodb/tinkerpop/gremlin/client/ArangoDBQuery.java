@@ -2,7 +2,7 @@
 //
 // Implementation of a simple graph client for the ArangoDB.
 //
-// Copyright triAGENS GmbH Cologne.
+// Copyright triAGENS GmbH Cologne and The University of York
 //
 //////////////////////////////////////////////////////////////////////////////////////////
 
@@ -24,10 +24,9 @@ import com.arangodb.model.AqlQueryOptions;
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBGraph;
 import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
 
-
 /**
- * The ArangoDB base query class
- * 
+ * The ArangoDB base query class.
+ *
  * @author Achim Brandt (http://www.triagens.de)
  * @author Johannes Gocke (http://www.triagens.de)
  * @author Guido Schwab (http://www.triagens.de)
@@ -37,61 +36,90 @@ import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
 
 public class ArangoDBQuery {
 	
+	/** The Logger. */
+	
 	private static final Logger logger = LoggerFactory.getLogger(ArangoDBQuery.class);
 
-	/**
-	 * the ArangoDB graph
-	 */
+	/** the ArangoDB graph. */
+	
 	protected ArangoDBGraph graph;
 
-	/**
-	 * the ArangoDB client
-	 */
+	/** the ArangoDB client. */
+	
 	protected ArangoDBGraphClient client;
 
-	/**
-	 * query type
-	 */
+	/** query type. */
+	
 	protected QueryType queryType;
 
+	/** The start vertex. */
+	
 	protected ArangoDBBaseDocument startVertex;
+	
+	/** The property filter. */
+	
 	protected ArangoDBPropertyFilter propertyFilter;
+	
+	/** The labels filter. */
+	
 	protected List<String> labelsFilter = new ArrayList<>();
+	
+	/** The direction. */
+	
 	protected Direction direction;
+	
+	/** The limit. */
+	
 	protected Long limit;
+	
+	/** The count. */
+	
 	protected boolean count;
+	
+	/** The keys filter. */
+	
 	private List<String> keysFilter = new ArrayList<>();
 
 	/**
-	 * Direction
-	 * 
+	 * Direction.
 	 */
 
 	public enum Direction {
-		// direction into a element
+		
+		/** direction into a element */
 		IN,
-		// direction out of a element
+		
+		/** direction out of a element */
 		OUT,
-		// direction in and out of a element
+		
+		/** direction out and in of a element */
 		ALL
 	};
 
+	/**
+	 * The Enum QueryType.
+	 */
+	
 	public enum QueryType {
+		
+		/** The graph vertices. */
 		GRAPH_VERTICES,
+		
+		/** The graph edges. */
 		GRAPH_EDGES,
+		
+		/** The graph neighbors. */
 		GRAPH_NEIGHBORS
 	}
 
 	/**
-	 * Constructor
-	 * 
-	 * @param graph
-	 *            the graph of the query
-	 * @param client
-	 *            the request client of the query
-	 * @param queryType
-	 *            a query type
+	 * Constructor.
+	 *
+	 * @param graph            the graph of the query
+	 * @param client            the request client of the query
+	 * @param queryType            a query type
 	 */
+	
 	public ArangoDBQuery(ArangoDBGraph graph, ArangoDBGraphClient client, QueryType queryType) {
 		this.graph = graph;
 		this.client = client;
@@ -105,6 +133,7 @@ public class ArangoDBQuery {
 	 * @param type            	The type of the result (POJO class, VPackSlice, String for Json, or Collection/List/Map)
 	 * @return the cursor result
 	 */
+	
 	@SuppressWarnings("rawtypes")
 	public <T> ArangoCursor getCursorResult(final Class<T> type) {
 
@@ -136,7 +165,6 @@ public class ArangoDBQuery {
 			}
 			prefix = "v.";
 			returnExp = "RETURN v";
-			//sb.append(returnExp);
 			break;
 		case GRAPH_EDGES:
 			if (getStartVertex() == null) {
@@ -159,7 +187,6 @@ public class ArangoDBQuery {
 				}
 				prefix = "e.";
 				returnExp = "RETURN e";
-				//sb.append("RETURN e");
 			}
 			else {
 				sb.append(String.format("FOR v, e IN %s @startId GRAPH @graphName \n", getDirectionString()));
@@ -181,7 +208,6 @@ public class ArangoDBQuery {
 				}
 				prefix = "e.";
 				returnExp = "RETURN DISTINCT e";
-				//sb.append("RETURN DISTINCT e");
 				bindVars.put("startId", startVertex._id());
 				bindVars.put("graphName", graph.name());
 			}
@@ -210,7 +236,7 @@ public class ArangoDBQuery {
 		if (propertyFilter == null) {
 			propertyFilter = new ArangoDBPropertyFilter();
 		}
-		propertyFilter.addProperties(prefix, andFilter, bindVars);
+		propertyFilter.addAqlSegments(prefix, andFilter, bindVars);
 
 		if (CollectionUtils.isNotEmpty(andFilter)) {
 			if (joinFilter) {
@@ -237,6 +263,12 @@ public class ArangoDBQuery {
 	}
 
 
+	/**
+	 * Gets the direction string.
+	 *
+	 * @return the direction string
+	 */
+	
 	private String getDirectionString() {
 		if (direction != null) {
 			if (direction == Direction.IN) {
@@ -248,60 +280,144 @@ public class ArangoDBQuery {
 		return "ANY";
 	}
 
+	/**
+	 * Gets the start vertex.
+	 *
+	 * @return the start vertex
+	 */
+	
 	public ArangoDBBaseDocument getStartVertex() {
 		return startVertex;
 	}
 
+	/**
+	 * Sets the start vertex.
+	 *
+	 * @param startVertex the start vertex
+	 * @return the arango DB query
+	 */
+	
 	public ArangoDBQuery setStartVertex(ArangoDBBaseDocument startVertex) {
 		this.startVertex = startVertex;
 		return this;
 	}
 
+	/**
+	 * Gets the property filter.
+	 *
+	 * @return the property filter
+	 */
+	
 	public ArangoDBPropertyFilter getPropertyFilter() {
 		return propertyFilter;
 	}
 
+	/**
+	 * Sets the property filter.
+	 *
+	 * @param propertyFilter the property filter
+	 * @return the arango DB query
+	 */
+	
 	public ArangoDBQuery setPropertyFilter(ArangoDBPropertyFilter propertyFilter) {
 		this.propertyFilter = propertyFilter;
 		return this;
 	}
 
+	/**
+	 * Gets the labels filter.
+	 *
+	 * @return the labels filter
+	 */
+	
 	public List<String> getLabelsFilter() {
 		return labelsFilter;
 	}
 
+	/**
+	 * Sets the labels filter.
+	 *
+	 * @param labelsFilter the labels filter
+	 * @return the arango DB query
+	 */
+	
 	public ArangoDBQuery setLabelsFilter(List<String> labelsFilter) {
 		this.labelsFilter = labelsFilter;
 		return this;
 	}
 
+	/**
+	 * Gets the direction.
+	 *
+	 * @return the direction
+	 */
+	
 	public Direction getDirection() {
 		return direction;
 	}
 
+	/**
+	 * Sets the direction.
+	 *
+	 * @param direction the direction
+	 * @return the arango DB query
+	 */
+	
 	public ArangoDBQuery setDirection(Direction direction) {
 		this.direction = direction;
 		return this;
 	}
 
+	/**
+	 * Gets the limit.
+	 *
+	 * @return the limit
+	 */
+	
 	public Long getLimit() {
 		return limit;
 	}
 
+	/**
+	 * Sets the limit.
+	 *
+	 * @param limit the limit
+	 * @return the arango DB query
+	 */
+	
 	public ArangoDBQuery setLimit(Long limit) {
 		this.limit = limit;
 		return this;
 	}
 
+	/**
+	 * Checks if is count.
+	 *
+	 * @return true, if is count
+	 */
 	public boolean isCount() {
 		return count;
 	}
 
+	/**
+	 * Sets the count.
+	 *
+	 * @param count the count
+	 * @return the arango DB query
+	 */
+	
 	public ArangoDBQuery setCount(boolean count) {
 		this.count = count;
 		return this;
 	}
 
+	/**
+	 * Sets the keys filter.
+	 *
+	 * @param ids the ids
+	 * @return the arango DB query
+	 */
+	
 	public ArangoDBQuery setKeysFilter(List<String> ids) {
 		this.keysFilter = ids;
 		return this;

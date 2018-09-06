@@ -1,5 +1,12 @@
-package com.arangodb.tinkerpop.gremlin.structure;
+//////////////////////////////////////////////////////////////////////////////////////////
+//
+// Implementation of the TinkerPop-Enabled Providers OLTP for ArangoDB
+//
+// Copyright triAGENS GmbH Cologne and The University of York
+//
+//////////////////////////////////////////////////////////////////////////////////////////
 
+package com.arangodb.tinkerpop.gremlin.structure;
 
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBBaseDocument;
 import org.apache.tinkerpop.gremlin.structure.util.ElementHelper;
@@ -28,6 +35,7 @@ public abstract class AbstractArangoDBElement extends ArangoDBBaseDocument imple
 	 * @param graph the graph that owns the collection
 	 * @param collection the name collection to which the element belongs
 	 */
+	
 	public AbstractArangoDBElement(ArangoDBGraph graph, String collection) {
 		this.graph = graph;
 		this.collection = collection;
@@ -40,6 +48,7 @@ public abstract class AbstractArangoDBElement extends ArangoDBBaseDocument imple
 	 * @param collection the collection
 	 * @param key the key
 	 */
+	
 	public AbstractArangoDBElement(ArangoDBGraph graph, String collection, String key) {
 		this(graph, collection);
 		this._key = key;

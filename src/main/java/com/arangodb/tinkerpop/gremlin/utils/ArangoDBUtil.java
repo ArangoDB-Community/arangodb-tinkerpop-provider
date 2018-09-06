@@ -1,8 +1,8 @@
 //////////////////////////////////////////////////////////////////////////////////////////
 //
-// Implementation of the Blueprints Interface for ArangoDB by triAGENS GmbH Cologne.
+// Implementation of the TinkerPop-Enabled Providers OLTP for ArangoDB
 //
-// Copyright triAGENS GmbH Cologne.
+// Copyright triAGENS GmbH Cologne and The University of York
 //
 //////////////////////////////////////////////////////////////////////////////////////////
 
@@ -41,8 +41,8 @@ import com.arangodb.tinkerpop.gremlin.structure.ArangoDBVertex;
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBVertexProperty;
 
 /**
- * This class is used to rename attributes of the vertices and edges to support
- * names starting with a '_' character.
+ * This class provides utility methods for creating properties and for normalising property and
+ * collections names (to satisfy Arango DB naming conventions.
  * 
  * @author Achim Brandt (http://www.triagens.de)
  * @author Johannes Gocke (http://www.triagens.de)
@@ -51,12 +51,31 @@ import com.arangodb.tinkerpop.gremlin.structure.ArangoDBVertexProperty;
 //FIXME We should add more util methods to validate attribute names, e.g. scape ".".
 public class ArangoDBUtil {
 	
-	/** The Constant logger. */
+	/** The Logger. */
+	
 	private static final Logger logger = LoggerFactory.getLogger(ArangoDBUtil.class);
 
+    /** The Constant GRAPH_VARIABLES_COLLECTION. */
+	
     public static final String GRAPH_VARIABLES_COLLECTION = "GRAPH_VARIABLES";
+    
+    /** The Constant ELEMENT_PROPERTIES_COLLECTION. */
+    
     public static final String ELEMENT_PROPERTIES_COLLECTION = "ELEMENT_PROPERTIES";
+    
+    /** The Constant ELEMENT_PROPERTIES_EDGE. */
+    
     public static final String ELEMENT_PROPERTIES_EDGE = "ELEMENT_HAS_PROPERTIES";
+    
+	/**
+	 * The prefix to denote that a collection is a hidden collection.
+	 */
+	
+	private final static String HIDDEN_PREFIX = "adbt_";
+	
+	/** The Constant HIDDEN_PREFIX_LENGTH. */
+	
+	private static final int HIDDEN_PREFIX_LENGTH = HIDDEN_PREFIX.length();
 
 	/**
 	 * Instantiates a new ArangoDB Util.
@@ -69,10 +88,11 @@ public class ArangoDBUtil {
 	 * Since attributes that start with underscore are considered to be system attributes (),
 	 * rename key "_XXXX" to "«a»XXXX" for storage.
 	 *
-	 * @param key            the key to convert
-	 * @return String the converted String
-	 * @see <a href="https://docs.arangodb.com/3.3/Manual/DataModeling/NamingConventions/AttributeNames.html">Manual</a>
+	 * @param key       	the key to convert
+	 * @return String 		the converted String
+	 * @see <a href="https://docs.arangodb.com/latest/Manual/DataModeling/NamingConventions/AttributeNames.html">Manual</a>
 	 */
+	
 	public static String normalizeKey(String key) {
 		if (key.charAt(0) == '_') {
 			return "«a»" + key.substring(1);
@@ -84,10 +104,11 @@ public class ArangoDBUtil {
 	 * Since attributes that start with underscore are considered to be system attributes (),
 	 * rename Attribute "«a»XXXX" to "_XXXX" for retrieval.
 	 *
-	 * @param key            the key to convert
-	 * @return String the converted String
-	 * @see <a href="https://docs.arangodb.com/3.3/Manual/DataModeling/NamingConventions/AttributeNames.html">Manual</a>
+	 * @param key           the key to convert
+	 * @return String 		the converted String
+	 * @see <a href="https://docs.arangodb.com/latest/Manual/DataModeling/NamingConventions/AttributeNames.html">Manual</a>
 	 */
+	
 	public static String denormalizeKey(String key) {
 		if (key.startsWith("«a»")) {
 			return "_" + key.substring(3);
@@ -96,20 +117,15 @@ public class ArangoDBUtil {
 	}
 
 	/**
-	 * The prefix to denote that a collection is a hidden collection.
-	 */
-	private final static String HIDDEN_PREFIX = "adbt_";
-	private static final int HIDDEN_PREFIX_LENGTH = HIDDEN_PREFIX.length();
-
-	/**
 	 * Hidden keys, labels, etc. are prefixed in Tinkerpop with  @link Graph.Hidden.HIDDEN_PREFIX). Since in ArangoDB
-	 * collection names must always start with a letter, this method normalizes Hidden collections name to valid
+	 * collection names must always start with a letter, this method normalises Hidden collections name to valid
 	 * ArangoDB names by replacing the "~" with
 	 *
-	 * @param key the key to convert
-	 * @return String the converted String
-	 * @see <a href="https://docs.arangodb.com/3.3/Manual/DataModeling/NamingConventions/AttributeNames.html">Manual</a>
+	 * @param key 			the key to convert
+	 * @return String 		the converted String
+	 * @see <a href="https://docs.arangodb.com/latest/Manual/DataModeling/NamingConventions/AttributeNames.html">Manual</a>
 	 */
+	
 	public static String normalizeCollection(String key) {
 		String nname = isHidden(key) ? key : HIDDEN_PREFIX.concat(key);
 		if (!NamingConventions.COLLECTION.hasValidNameSize(nname)) {
@@ -120,25 +136,48 @@ public class ArangoDBUtil {
 
 	/**
 	 * Since attributes that start with underscore are considered to be system attributes (), 
-	 * rename Attribute "«a»XXXX" to "_XXXX" for retreival.
+	 * rename Attribute "«a»XXXX" to "_XXXX" for retrieval.
 	 *
-	 * @param key            the key to convert
-	 * @return String the converted String
-	 * @see <a href="https://docs.arangodb.com/3.3/Manual/DataModeling/NamingConventions/AttributeNames.html">Manual</a>
+	 * @param key           the key to convert
+	 * @return String 		the converted String
+	 * @see <a href="https://docs.arangodb.com/latest/Manual/DataModeling/NamingConventions/AttributeNames.html">Manual</a>
 	 */
+	
 	public static String denormalizeCollection(String key) {
 		return isHidden(key) ? key.substring(HIDDEN_PREFIX_LENGTH) : key;
 	}
 
+	/**
+	 * The Enum NamingConventions.
+	 */
+	
 	public enum NamingConventions {
-		COLLECTION(64), KEY(256);
+		
+		/** The collection. */
+		COLLECTION(64), 
+		
+		/** The key. */
+		KEY(256);
 
+		/** The max length. */
+		
 		private int maxLength;
 
+		/**
+		 * Instantiates a new naming conventions.
+		 *
+		 * @param maxLength the max length
+		 */
 		NamingConventions(int maxLength) {
 			this.maxLength = maxLength;
 		}
 
+		/**
+		 * Checks for valid name size.
+		 *
+		 * @param name the name
+		 * @return true, if successful
+		 */
 		public boolean hasValidNameSize(String name) {
 			final byte[] utf8Bytes;
 			try {
@@ -150,8 +189,6 @@ public class ArangoDBUtil {
 		}
 	}
 
-
-	
 	/**
 	 * Create an EdgeDefinition from a relation in the Configuration. The format of a relation is:
 	 * <pre>
@@ -160,12 +197,15 @@ public class ArangoDBUtil {
 	 * Where collection is the name of the Edge collection, and to and from are comma separated list of
 	 * node collection names.
 	 *
-	 * @param relation the relation
-	 * @param graphName the name of the graph
+	 * @param graphName 			the name of the graph
+	 * @param relation 				the relation
 	 * @return an EdgeDefinition that represents the relation.
-	 * @throws ArangoDBGraphException the arango DB graph exception
+	 * @throws ArangoDBGraphException if the relation is malformed
 	 */
-	public static EdgeDefinition relationPropertyToEdgeDefinition(String graphName, String relation) throws ArangoDBGraphException {
+	
+	public static EdgeDefinition relationPropertyToEdgeDefinition(
+		String graphName,
+		String relation) throws ArangoDBGraphException {
 		logger.info("Creating EdgeRelation from {}", relation);
 		EdgeDefinition result = new EdgeDefinition();
 		String[] info = relation.split(":");
@@ -200,15 +240,16 @@ public class ArangoDBUtil {
 	 * assumed to be fully connected, i.e. there is an EdgeDefintion for each possible combination
 	 * of Vertex-Edge-Vertex triplets.
 	 *
-	 * @param graphName the graph name
-	 * @param verticesCollectionNames the vertices collection names
-	 * @param edgesCollectionNames the edges collection names
-	 * @return the list
+	 * @param graphName 				the graph name
+	 * @param verticesCollectionNames 	the vertex collection names
+	 * @param edgesCollectionNames 		the edge collection names
+	 * @return the list of edge definitions
 	 */
+	
 	public static List<EdgeDefinition> createDefaultEdgeDefinitions (
-			String graphName,
-			List<String> verticesCollectionNames,
-			List<String> edgesCollectionNames) {
+		String graphName,
+		List<String> verticesCollectionNames,
+		List<String> edgesCollectionNames) {
 		List<EdgeDefinition> result = new ArrayList<>();
 		for (String e : edgesCollectionNames) {
 			for (String from : verticesCollectionNames) {
@@ -225,6 +266,14 @@ public class ArangoDBUtil {
 	}
 	
 
+	/**
+	 * Gets a collection that is unique for the given graph.
+	 *
+	 * @param graphName 		the graph name
+	 * @param collectionName 	the collection name
+	 * @return 					the unique collection name
+	 */
+	
 	public static String getCollectioName(String graphName, String collectionName) {
 		return String.format("%s_%s", graphName, collectionName);
 	}
@@ -233,13 +282,14 @@ public class ArangoDBUtil {
 	 * Validate if an existing graph is correctly configured to handle the desired vertex, edges 
 	 * and relations.
 	 *
-	 * @param verticesCollectionNames The names of collections for nodes
-	 * @param edgesCollectionNames The names of collections for edges
-	 * @param relations The description of edge definitions
-	 * @param graph the graph
-	 * @param options The options used to create the graph
-	 * @throws ArangoDBGraphException the ArangoDB graph exception
+	 * @param verticesCollectionNames 	The names of collections for nodes
+	 * @param edgesCollectionNames 		The names of collections for edges
+	 * @param relations 				The description of edge definitions
+	 * @param graph 					the graph
+	 * @param options 					The options used to create the graph
+	 * @throws ArangoDBGraphException 	If the graph settings do not match the configuration information 
 	 */
+	
 	public static void checkGraphForErrors(List<String> verticesCollectionNames,
 			List<String> edgesCollectionNames,
 			List<String> relations,
@@ -302,6 +352,13 @@ public class ArangoDBUtil {
         }
 	}
 	
+	/**
+	 * Get a string representation of the Edge definition that complies with the configuration options.
+	 *
+	 * @param ed			the Edge definition
+	 * @return the string that represents the edge definition	
+	 */
+	
 	public static String edgeDefinitionString(EdgeDefinition ed) {
 		return String.format("[%s]: %s->%s", ed.getCollection(), ed.getFrom(), ed.getTo());
 	}
@@ -309,10 +366,13 @@ public class ArangoDBUtil {
     /**
      * Create the graph private collections. There is a collection for storing graph properties.
      * Both vertices and edges can have properties
-     * @param graphName
-     * @param vertexCollections
-     * @return
+     *
+     * @param graphName the graph name
+     * @param vertexCollections the vertex collections
+     * @param edgeCollections the edge collections
+     * @return the edge definition
      */
+	
     public static EdgeDefinition createPropertyEdgeDefinitions(
     	String graphName,
     	List<String> vertexCollections,
@@ -332,50 +392,102 @@ public class ArangoDBUtil {
     }
 
 
-    public static <U> ArangoDBEdgeProperty<U> createArangoDBEdgeProperty(String key, U value, ArangoDBEdge edge) {
+    /**
+     * Creates an Arango DB edge property.
+     *
+     * @param <U> 			the generic type
+     * @param key 			the key
+     * @param value 		the value
+     * @param edge 			the edge
+     * @return the created Arango DB edge property
+     */
+    
+    public static <U> ArangoDBEdgeProperty<U> createArangoDBEdgeProperty(
+    	String key,
+    	U value,
+    	ArangoDBEdge edge) {
         ArangoDBEdgeProperty<U> p;
         p = new ArangoDBEdgeProperty<>(key, value, edge);
         ArangoDBGraph g = edge.graph();
         ArangoDBGraphClient c = g.getClient();
-        c.insertDocument(g.name(), p);
+        c.insertDocument(p);
         ElementHasProperty e = p.assignToElement(edge);
-        c.insertEdge(g.name(), e);
+        c.insertEdge(e);
         return p;
     }
 
+    /**
+     * Creates an Arango DB vertex property.
+     *
+     * @param <U> 			the generic type
+     * @param key 			the key
+     * @param value 		the value
+     * @param vertex 		the vertex
+     * @return the created Arango DB vertex property
+     */
+    
     public static <U> ArangoDBVertexProperty<U> createArangoDBVertexProperty(String key, U value, ArangoDBVertex vertex) {
         ArangoDBVertexProperty<U> p;
         p = new ArangoDBVertexProperty<>(key, value, vertex);
         ArangoDBGraph g = vertex.graph();
         ArangoDBGraphClient c = g.getClient();
-        c.insertDocument(g.name(), p);
+        c.insertDocument(p);
         ElementHasProperty e = p.assignToElement(vertex);
-        c.insertEdge(g.name(), e);
+        c.insertEdge(e);
         return p;
     }
 
+    /**
+     * Creates an Arango DB vertex property.
+     *
+     * @param <U> 			the generic type
+     * @param id 			the id
+     * @param key 			the key
+     * @param value 		the value
+     * @param vertex 		the vertex
+     * @return the created Arango DB vertex property
+     */
+    
     public static <U> ArangoDBVertexProperty<U> createArangoDBVertexProperty(String id, String key, U value, ArangoDBVertex vertex) {
         ArangoDBVertexProperty<U> p;
         p = new ArangoDBVertexProperty<>(id, key, value, vertex);
         ArangoDBGraph g = vertex.graph();
         ArangoDBGraphClient c = g.getClient();
-        c.insertDocument(g.name(), p);
+        c.insertDocument(p);
         ElementHasProperty e = p.assignToElement(vertex);
-        c.insertEdge(g.name(), e);
+        c.insertEdge(e);
         return p;
     }
 
+    /**
+     * Creates an Arango DB property property.
+     *
+     * @param <U> 				the generic type
+     * @param key 				the key
+     * @param value 			the value
+     * @param vertexProperty	the vertex property
+     * @return the created Arango DB property property
+     */
+    
     public static <U> ArangoDBPropertyProperty<U> createArangoDBPropertyProperty(String key, U value, ArangoDBVertexProperty<?> vertexProperty) {
         ArangoDBPropertyProperty<U> p;
         p = new ArangoDBPropertyProperty<>(key, value, vertexProperty);
         ArangoDBGraph g = vertexProperty.graph();
         ArangoDBGraphClient c = g.getClient();
-        c.insertDocument(g.name(), p);
+        c.insertDocument(p);
         ElementHasProperty e = p.assignToElement(vertexProperty);
-        c.insertEdge(g.name(), e);
+        c.insertEdge(e);
         return p;
     }
 
+    /**
+     * Gets the correct primitive.
+     *
+     * @param <V> 		the value type
+     * @param value		the value
+     * @return the 		correct Java primitive
+     */
+    
     public static <V> Object getCorretctPrimitive(V value) {
         if (value instanceof Number) {
             if (value instanceof Float) {
@@ -402,6 +514,4 @@ public class ArangoDBUtil {
             return value;
         }
     }
-
-
 }

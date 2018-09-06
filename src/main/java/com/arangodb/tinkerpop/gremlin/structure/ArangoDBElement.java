@@ -1,9 +1,20 @@
-package com.arangodb.tinkerpop.gremlin.structure;
+//////////////////////////////////////////////////////////////////////////////////////////
+//
+// Implementation of the TinkerPop-Enabled Providers OLTP for ArangoDB
+//
+// Copyright triAGENS GmbH Cologne and The University of York
+//
+//////////////////////////////////////////////////////////////////////////////////////////
 
-import java.util.Set;
+package com.arangodb.tinkerpop.gremlin.structure;
 
 import org.apache.tinkerpop.gremlin.structure.Element;
 
+/**
+ * The Interface ArangoDBElement.
+ * 
+ * @author Horacio Hoyos Rodriguez (@horaciohoyosr)
+ */
 public interface ArangoDBElement extends Element {
 	
 	/**
@@ -24,7 +35,17 @@ public interface ArangoDBElement extends Element {
 	 */
 	void attachProperties();
 
+    /**
+     * Graph.
+     *
+     * @param graph the graph
+     */
     void graph(ArangoDBGraph graph);
 
+    /**
+     * Sets the paired.
+     *
+     * @param paired the new paired
+     */
     void setPaired(boolean paired);
 }

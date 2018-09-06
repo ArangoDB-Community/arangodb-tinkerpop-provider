@@ -1,8 +1,8 @@
 //////////////////////////////////////////////////////////////////////////////////////////
 //
-// Implementation of the Blueprints Interface for ArangoDB by triAGENS GmbH Cologne.
+// Implementation of the TinkerPop-Enabled Providers OLTP for ArangoDB
 //
-// Copyright triAGENS GmbH Cologne.
+// Copyright triAGENS GmbH Cologne and The University of York
 //
 //////////////////////////////////////////////////////////////////////////////////////////
 
@@ -11,7 +11,6 @@ package com.arangodb.tinkerpop.gremlin.structure;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Optional;
 
 import org.apache.tinkerpop.gremlin.structure.Direction;
 import org.apache.tinkerpop.gremlin.structure.Edge;
@@ -25,12 +24,12 @@ import org.slf4j.LoggerFactory;
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBBaseEdge;
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBPropertyFilter;
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBQuery;
-import com.arangodb.tinkerpop.gremlin.structure.ArangoDBGraph.ArangoDBIterator;
 import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
 
+
 /**
- * The ArangoDB Edge class
- * 
+ * The ArangoDB Edge class.
+ *
  * @author Achim Brandt (http://www.triagens.de)
  * @author Johannes Gocke (http://www.triagens.de)
  * @author Guido Schwab (http://www.triagens.de)
@@ -40,13 +39,14 @@ import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
 public class ArangoDBEdge extends ArangoDBBaseEdge implements Edge {
 
 
+	/** The Logger. */
 	private static final Logger logger = LoggerFactory.getLogger(ArangoDBEdge.class);
 	
-	/** Tinkerpop ids are managed through keys, so we need to keep that information */
+	/**  Tinkerpop ids are managed through keys, so we need to keep that information. */
 	
 	private String from_key;
 
-	/** Tinkerpop ids are managed through keys, so we need to keep that information */
+	/**  Tinkerpop ids are managed through keys, so we need to keep that information. */
 	
 	private String to_key;
 	
@@ -60,7 +60,8 @@ public class ArangoDBEdge extends ArangoDBBaseEdge implements Edge {
     }
 
     /**
-     * Create a new ArangoDBEdge that connects the given vertices
+     * Create a new ArangoDBEdge that connects the given vertices.
+     *
      * @param graph         the graph in which the edge is created
      * @param collection    the collection into with the edge is created
      * @param from          the source vertex
@@ -82,7 +83,8 @@ public class ArangoDBEdge extends ArangoDBBaseEdge implements Edge {
 	}
 
     /**
-     * Create a new ArangoDBEdge that connects the given vertices
+     * Create a new ArangoDBEdge that connects the given vertices.
+     *
      * @param graph         the graph in which the edge is created
      * @param collection    the collection into with the edge is created
      * @param from          the source vertex
@@ -109,8 +111,10 @@ public class ArangoDBEdge extends ArangoDBBaseEdge implements Edge {
 
 
 	@Override
-	public <V> Property<V> property(String key, V value) {
-		logger.info("property {} = {}", key, value);
+	public <V> Property<V> property(
+		String key,
+		V value) {
+		logger.info("set property {} = {}", key, value);
 		ElementHelper.validateProperty(key, value);
 		Property<V> p = property(key);
 		if (!p.isPresent()) {
@@ -125,7 +129,7 @@ public class ArangoDBEdge extends ArangoDBBaseEdge implements Edge {
 	@Override
 	public void remove() {
 		logger.info("removing {} from graph {}.", this._key(), graph.name());
-		graph.getClient().deleteEdge(graph.name(), this);
+		graph.getClient().deleteEdge(this);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -179,7 +183,5 @@ public class ArangoDBEdge extends ArangoDBBaseEdge implements Edge {
     public int hashCode() {
         return ElementHelper.hashCode(this);
     }
-	
-	
 	
 }

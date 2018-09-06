@@ -1,36 +1,60 @@
+//////////////////////////////////////////////////////////////////////////////////////////
+//
+// Implementation of the TinkerPop-Enabled Providers OLTP for ArangoDB
+//
+// Copyright triAGENS GmbH Cologne and The University of York
+//
+//////////////////////////////////////////////////////////////////////////////////////////
+
 package com.arangodb.tinkerpop.gremlin.structure;
 
-
-import com.arangodb.tinkerpop.gremlin.client.ArangoDBBaseDocument;
-import com.arangodb.velocypack.annotations.Expose;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.tinkerpop.gremlin.structure.Graph;
-import org.apache.tinkerpop.gremlin.structure.Graph.Variables;
-import org.apache.tinkerpop.gremlin.structure.util.ElementHelper;
-import org.apache.tinkerpop.gremlin.structure.util.GraphVariableHelper;
-import org.apache.tinkerpop.gremlin.structure.util.StringFactory;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import org.apache.tinkerpop.gremlin.structure.Graph;
+import org.apache.tinkerpop.gremlin.structure.util.GraphVariableHelper;
+import org.apache.tinkerpop.gremlin.structure.util.StringFactory;
+
+import com.arangodb.tinkerpop.gremlin.client.ArangoDBBaseDocument;
+
+/**
+ * The Class ArangoDBGraphVariables.
+ * 
+ * @author Horacio Hoyos Rodriguez (@horaciohoyosr)
+ */
 
 public class ArangoDBGraphVariables extends ArangoDBBaseDocument implements Graph.Variables {
+	
+    /**
+     * The Class ArangoDBGraphVariableFeatures.
+     */
 	
     public static class ArangoDBGraphVariableFeatures implements Graph.Features.VariableFeatures {
 
     }
 
+    /** The store. */
+    
     private final Map<String, Object> store = new HashMap<>(4);
     
     /**
      * Constructor used for ArabgoDB JavaBeans serialisation.
      */
+    
     public ArangoDBGraphVariables() {
         super();
     }
 
+    /**
+     * Instantiates a new Arango DB graph variables.
+     *
+     * @param graph the graph
+     * @param collection the collection
+     */
+    
     public ArangoDBGraphVariables(ArangoDBGraph graph, String collection) {
         super();
         this.graph = graph;
@@ -55,11 +79,11 @@ public class ArangoDBGraphVariables extends ArangoDBBaseDocument implements Grap
     	Object oldValue = this.store.put(key, value);
     	if (oldValue != null) {
     		if (!oldValue.equals(value)) {
-    			graph.getClient().updateDocument(graph.name(), this);
+    			graph.getClient().updateDocument(this);
     		}
     	}
     	else {
-            graph.getClient().updateDocument(graph.name(), this);
+            graph.getClient().updateDocument(this);
     	}
     }
 
@@ -67,7 +91,7 @@ public class ArangoDBGraphVariables extends ArangoDBBaseDocument implements Grap
     public void remove(String key) {
     	Object oldValue = this.store.remove(key);
     	if (oldValue != null) {
-            graph.getClient().updateDocument(graph.name(), this);
+            graph.getClient().updateDocument(this);
     	}
     }
 
@@ -100,9 +124,4 @@ public class ArangoDBGraphVariables extends ArangoDBBaseDocument implements Grap
 	public String toString() {
 		return StringFactory.graphVariablesString(this);
 	}
-    
-    
-
-
-
 }

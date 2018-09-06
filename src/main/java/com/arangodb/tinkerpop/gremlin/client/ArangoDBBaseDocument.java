@@ -1,3 +1,11 @@
+//////////////////////////////////////////////////////////////////////////////////////////
+//
+// Implementation of a simple graph client for the ArangoDB.
+//
+// Copyright triAGENS GmbH Cologne and The University of York
+//
+//////////////////////////////////////////////////////////////////////////////////////////
+
 package com.arangodb.tinkerpop.gremlin.client;
 
 import com.arangodb.entity.DocumentField;
@@ -6,8 +14,17 @@ import com.arangodb.velocypack.annotations.Expose;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * The ArangoDB BaseBaseDocument provides the internal fields required for the driver to correctly 
+ * serialize and deserialize edges.
+ * 
+ * @author Horacio Hoyos Rodriguez (@horaciohoyosr)
+ */
+
 public abstract class ArangoDBBaseDocument {
 
+    /** The Logger. */
+	
     private static final Logger logger = LoggerFactory.getLogger(ArangoDBBaseDocument.class);
 
     /** ArangoDB internal id. */
@@ -41,18 +58,24 @@ public abstract class ArangoDBBaseDocument {
     protected boolean paired = false;
 
     /**
-     * Constructor used for ArabgoDB JavaBeans serialisation.
+     * Constructor used for Arango DB JavaBeans serialisation.
      */
     public ArangoDBBaseDocument() {
         super();
     }
 
-    public ArangoDBBaseDocument(String _key) {
-        this._key = _key;
+    /**
+     * Instantiates a new Arango DB base document.
+     *
+     * @param key 			the key to assign to the docuement
+     */
+    
+    public ArangoDBBaseDocument(String key) {
+        this._key = key;
     }
 
     /**
-     * Get the Element's ArangoDB Id.
+     * Get the Document's ArangoDB Id.
      *
      * @return the id
      */
@@ -62,7 +85,9 @@ public abstract class ArangoDBBaseDocument {
     }
 
     /**
-     * Set the Element's ArangoDB Id.
+     * Set the Document's ArangoDB Id.
+     * This method is not for public use as ids must be final. It is only provided to allow the
+     * deserialization to assign the value.
      *
      * @param id the id
      */
@@ -72,7 +97,7 @@ public abstract class ArangoDBBaseDocument {
     }
 
     /**
-     * Get the Element's ArangoDB Key.
+     * Get the Document's ArangoDB Key.
      *
      * @return the key
      */
@@ -82,7 +107,7 @@ public abstract class ArangoDBBaseDocument {
     }
 
     /**
-     * Set the Element's ArangoDB Key.
+     * Set the Document's ArangoDB Key.
      *
      * @param key the key
      */
@@ -92,7 +117,7 @@ public abstract class ArangoDBBaseDocument {
     }
 
     /**
-     * Get the Element's ArangoDB Revision.
+     * Get the Document's ArangoDB Revision.
      *
      * @return the revision
      */
@@ -102,7 +127,7 @@ public abstract class ArangoDBBaseDocument {
     }
 
     /**
-     * Set the Element's ArangoDB Revision.
+     * Set the Document's ArangoDB Revision.
      *
      * @param rev the revision
      */
@@ -141,12 +166,17 @@ public abstract class ArangoDBBaseDocument {
     }
 
 
+    /**
+     * The graph in which the document is contained.
+     *
+     * @return the Arango DB graph
+     */
     public ArangoDBGraph graph() {
-    return graph;
-}
+	    return graph;
+	}
 
     /**
-     * Graph.
+     * Set the document's graph
      *
      * @param graph the graph
      */
@@ -157,7 +187,7 @@ public abstract class ArangoDBBaseDocument {
 
 
     /**
-     * Checks if is paired.
+     * Checks if the document is paired.
      *
      * @return true, if is paired
      */
@@ -167,17 +197,13 @@ public abstract class ArangoDBBaseDocument {
     }
 
     /**
-     * Sets the paired.
+     * Sets the paired value of the document.
      *
      * @param paired the new paired
      */
 
     public void setPaired(boolean paired) {
         this.paired = paired;
-    }
-
-    public int hashCode() {
-        return _id.hashCode();
     }
 
     @Override
@@ -190,5 +216,10 @@ public abstract class ArangoDBBaseDocument {
         if (!(object instanceof ArangoDBBaseDocument))
             return false;
         return this._id().equals(((ArangoDBBaseDocument)object)._id());
+    }
+    
+    @Override
+    public int hashCode() {
+        return _id.hashCode();
     }
 }

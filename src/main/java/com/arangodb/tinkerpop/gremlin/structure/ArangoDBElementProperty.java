@@ -1,3 +1,11 @@
+//////////////////////////////////////////////////////////////////////////////////////////
+//
+// Implementation of the TinkerPop-Enabled Providers OLTP for ArangoDB
+//
+// Copyright triAGENS GmbH Cologne and The University of York
+//
+//////////////////////////////////////////////////////////////////////////////////////////
+
 package com.arangodb.tinkerpop.gremlin.structure;
 
 import java.util.NoSuchElementException;
@@ -11,36 +19,65 @@ import com.arangodb.tinkerpop.gremlin.client.ArangoDBBaseEdge;
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBGraphException;
 import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
 
+
 /**
  * The Class ArangoDBProperty.
  *
- * @param <V> the value type
+ * @param <V> the property value type
+ * 
+ * @author Horacio Hoyos Rodriguez (@horaciohoyosr)
  */
 
 public abstract class ArangoDBElementProperty<V> extends ArangoDBBaseDocument implements Property<V> {
 
     /**
-     * An Edge to link an ArangoDBBaseDocument to one of its properties. The from paramter is an ArangoDBBaseDocument
-     * since we allow ArangoDBElementProperty to have properties too.
+     * An Edge to link an ArangoDBBaseDocument to one of its properties. The from paramter is an
+     * ArangoDBBaseDocument since we allow ArangoDBElementProperty to have properties too.
      */
+	
     public static class ElementHasProperty extends ArangoDBBaseEdge {
 
+        /**
+         * Instantiates a new element has property.
+         *
+         * @param from the from
+         * @param to the to
+         * @param graph the graph
+         */
         public ElementHasProperty(ArangoDBBaseDocument from, ArangoDBElementProperty<?> to, ArangoDBGraph graph) {
             super(from._id(), to._id(), graph, ArangoDBUtil.ELEMENT_PROPERTIES_EDGE);
         }
     }
 	
+	/** The property key. */
+    
 	protected String key;
 
+    /** The proerty value. */
+	
     protected V value;
+    
+    // TODO We could store the exact Java type of the value to correctly deserialize it, at least
+    // for the primitive ones
+    //protected String javaPrimitive
 
 
     /**
-     * Constructor used for ArabgoDB JavaBeans serialisation.
+     * Constructor used for Arabgo DB JavaBeans serialisation.
      */
 
 	public ArangoDBElementProperty() { super();	}
 
+    /**
+     * Instantiates a new Arango DB element property.
+     *
+     * @param id the id
+     * @param key the key
+     * @param value the value
+     * @param owner the owner
+     * @param collection the collection
+     */
+	
     public ArangoDBElementProperty(String id, String key, V value, ArangoDBBaseDocument owner, String collection) {
 	    this._key = id;
         this.key = key;
@@ -49,6 +86,15 @@ public abstract class ArangoDBElementProperty<V> extends ArangoDBBaseDocument im
         this.collection = collection;
     }
 
+    /**
+     * Instantiates a new arango DB element property.
+     *
+     * @param key the key
+     * @param value the value
+     * @param owner the owner
+     * @param collection the collection
+     */
+    
     public ArangoDBElementProperty(String key, V value, ArangoDBBaseDocument owner, String collection) {
         this(null, key, value, owner, collection);
     }
@@ -66,7 +112,7 @@ public abstract class ArangoDBElementProperty<V> extends ArangoDBBaseDocument im
 	@Override
 	public void remove() {
 		try {
-			graph.getClient().deleteDocument(graph.name(), this);
+			graph.getClient().deleteDocument(this);
 		} catch (ArangoDBGraphException ex) {
 			// Pass Removing a property that does not exists should not throw an exception.
 		}
@@ -78,6 +124,12 @@ public abstract class ArangoDBElementProperty<V> extends ArangoDBBaseDocument im
         return (V) ArangoDBUtil.getCorretctPrimitive(value);
 	}
 	
+	/**
+	 * Value.
+	 *
+	 * @param value the value
+	 * @return the v
+	 */
 	public V value(V value) {
 		V oldValue = this.value;
 		this.value = value;
@@ -107,13 +159,18 @@ public abstract class ArangoDBElementProperty<V> extends ArangoDBBaseDocument im
      * @param doc The document
      * @return an ElementHasProperty (edge) that connects the element to this property
      */
+	
     public ElementHasProperty assignToElement(ArangoDBBaseDocument doc) {
         return new ElementHasProperty(doc, this, doc.graph());
     }
 
+    /**
+     * Save.
+     */
+    
     public void save() {
         if (paired) {
-            graph.getClient().updateDocument(graph.name(), this);
+            graph.getClient().updateDocument(this);
         }
     }
 }
