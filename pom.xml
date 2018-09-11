@@ -4,7 +4,7 @@
 
 	<groupId>com.arangodb.community</groupId>
 	<artifactId>arangodb-tinkerpop-provider</artifactId>
-	<version>1.0.6</version>
+	<version>1.0.6-SNAPSHOT</version>
 	<packaging>jar</packaging>
 	
 	<name>ArangoDB-Tinkerpop-Provider</name>
