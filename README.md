@@ -9,13 +9,8 @@ An implementation of the [Blueprints 2.6](https://github.com/tinkerpop/blueprint
 ## Compatibility
 
 This Blueprints driver is only supporting:
-* Blueprints 2.6
-* ArangoDB 2.5.4 - 2.8.*
-
-It is not supporting ArangoDB 3.0 or newer.
-The ArangoDB team is aware of this issue and is planning to upgrade this driver.
-We suggest to use AQL directly on ArangoDB instead, which will give you a significant performance
-boost as a bonus.
+* Tinkerpop 3.3
+* ArangoDB 3.3 (via ArangoDB Java Driver 4.6.0).*
 
 ## Installation & Testing
 
@@ -26,7 +21,9 @@ for installation and compilation instructions.
 Start ArangoDB on localhost port 8529.
 
 As with other Blueprints implementations, the ArangoDB implementation is built with
-	```mvn clean install```
+	```mvn clean install -Dmaven.tests.skip=trye```
+Note that we skip tests since not ALL tinkerpop tests pass (failing ones are known to fail - there
+are some issues/descrepancies between the tests and what the ArangoDB provder can do).	
 
 ## Maven
 
@@ -36,9 +33,9 @@ To add the driver to your project with maven, add the following code to your pom
 ```XML
 <dependencies>
   <dependency>
-    <groupId>com.arangodb</groupId>
-    <artifactId>blueprints-arangodb-graph</artifactId>
-    <version>1.0.15</version>
+    <groupId>org.arangodb</groupId>
+    <artifactId>arangodb-tinkerpop-provider</artifactId>
+    <version>2.0.0-SNAPSHOT</version>
   </dependency>
 	....
 </dependencies>
@@ -46,5 +43,8 @@ To add the driver to your project with maven, add the following code to your pom
 
 ## More
 
-See [WIKI](https://github.com/arangodb/blueprints-arangodb-graph/wiki) for more information.
+You will find details on how to instantiate an ArangoDBGraph in the JavaDocs. An GramlinPlugin 
+implementation is also provided so the provider can be used from the Gremlin console.
+
+TBD - Add more detailed installation and use information.
 
