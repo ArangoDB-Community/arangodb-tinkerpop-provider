@@ -18,10 +18,11 @@ for installation and compilation instructions.
 
 Start ArangoDB on localhost port 8529.
 
-As with other Blueprints implementations, the ArangoDB implementation is built with
-	```mvn clean install -Dmaven.tests.skip=trye```
-Note that we skip tests since not ALL tinkerpop tests pass (failing ones are known to fail - there
-are some issues/descrepancies between the tests and what the ArangoDB provder can do).	
+The ArangoDB Provider implementation can be built locally via 
+	```mvn clean install -Dmaven.tests.skip=true```
+
+**Note** that we skip tests since not ALL Tinkerpop tests pass (failing ones are known to fail - there
+are some issues/discrepancies between the tests and how the ArangoDB provider is implemented).	
 
 ## Maven
 
