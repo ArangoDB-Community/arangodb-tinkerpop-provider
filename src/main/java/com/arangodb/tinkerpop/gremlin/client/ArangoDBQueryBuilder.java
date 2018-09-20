@@ -196,7 +196,7 @@ public class ArangoDBQueryBuilder {
 	 * @param collections 			the list of Collections to use in the statement
 	 * @param bindVars 				the map of bind parameters
 	 *
-	 * @return the query builder
+	 * @return a reference to this object.
 	 */
 	
 	public ArangoDBQueryBuilder with(
@@ -219,13 +219,13 @@ public class ArangoDBQueryBuilder {
 	
 	/**
 	 * Append a Document and FILTER statements to the query builder. Use this to find a single or
-	 * group of elements in the graph. This segment should be used in conjunction with the {@link #with(List, Map)}
-	 * segment.
+	 * group of elements in the graph. This segment should be used in conjunction with the 
+	 * {@link #with(String, List, Map)} segment.
 	 *
 	 * @param ids 					the id(s) to look for
 	 * @param loopVariable 			the loop variable name
-	 * @param bindVars the 			the map of bind parameters
-	 * @return the query builder
+	 * @param bindVars	 			the map of bind parameters
+	 * @return a reference to this object.
 	 */
 	
 	public ArangoDBQueryBuilder documentsById(
@@ -242,20 +242,20 @@ public class ArangoDBQueryBuilder {
 	
 	/**
 	 * Append a Document statement to find a single element in the graph. This segment should be
-	 * used in conjunction with the {@link #with(List, Map)} segment.
+	 * used in conjunction with the {@link #with(String, List, Map)} segment.
 	 *
 	 * @param id 					the id to look for
 	 * @param loopVariable 			the loop variable name
 	 * @param bindVars the 			the map of bind parameters
-	 * @return the query builder
+	 * @return a reference to this object.
 	 */
 	
 	public ArangoDBQueryBuilder documentById(
-		String ids,
+		String id,
 		String loopVariable,
 		Map<String, Object> bindVars) {
 		queryBuilder.append(String.format("LET %s = Document(@id)\n", loopVariable));
-		bindVars.put("id", ids);
+		bindVars.put("id", id);
 		logger.debug("documentById", queryBuilder.toString());
 		return this;
 	}
@@ -267,7 +267,7 @@ public class ArangoDBQueryBuilder {
 	 * @param loopVariable 			the loop variable
 	 * @param bindVars 				the map of bind parameters
 	 *
-	 * @return the query builder
+	 * @return a reference to this object.
 	 */
 	
 	public ArangoDBQueryBuilder union(
@@ -299,7 +299,7 @@ public class ArangoDBQueryBuilder {
 	 * @param collectionName 		the collection name
 	 * @param bindVars 				the map of bind parameters
 	 *
-	 * @return the query builder
+	 * @return a reference to this object.
 	 */
 	
 	public ArangoDBQueryBuilder iterateCollection(
@@ -324,7 +324,7 @@ public class ArangoDBQueryBuilder {
 	 * @param startVertex 			the start vertex id
 	 * @param bindVars 				the map of bind parameters
 	 *
-	 * @return the query builder
+	 * @return a reference to this object.
 	 */
 	
 	public ArangoDBQueryBuilder iterateGraph(
@@ -371,7 +371,7 @@ public class ArangoDBQueryBuilder {
 	 * @param startVertex 			the start vertex id
 	 * @param bindVars 				the map of bind parameters
 	 *
-	 * @return the query builder
+	 * @return a reference to this object.
 	 */
 	
 	public ArangoDBQueryBuilder iterateEdges(
@@ -420,7 +420,7 @@ public class ArangoDBQueryBuilder {
 	 * @param onEdges 				the edges options
 	 * @param bfs 					if true, the traversal will be executed breadth-first, else it will
 	 * 								be executed depth-first.
-	 * @return the query builder
+	 * @return a reference to this object.
 	 */
 	
 	public ArangoDBQueryBuilder graphOptions(
@@ -452,7 +452,7 @@ public class ArangoDBQueryBuilder {
 	 * @param collections 			the collections to filter by
 	 * @param bindVars 				the map of bind parameters
 	 *
-	 * @return the query builder
+	 * @return a reference to this object.
 	 */
 	
 	public ArangoDBQueryBuilder filterSameCollections(
@@ -482,7 +482,7 @@ public class ArangoDBQueryBuilder {
 	 * @param propertyFilter		the property filter
 	 * @param filterVariable 		the filter variable
 	 * @param bindVars 				the map of bind parameters
-	 * @return the query builder
+	 * @return a reference to this object.
 	 */
 	
 	public ArangoDBQueryBuilder filterProperties(
@@ -507,7 +507,7 @@ public class ArangoDBQueryBuilder {
 	 * Add a limit segment to limit the number of elements returned.
 	 *
 	 * @param limit 				the limit number
-	 * @return the query builder
+	 * @return a reference to this object.
 	 */
 	
 	public ArangoDBQueryBuilder limit(Long limit) {
@@ -521,7 +521,7 @@ public class ArangoDBQueryBuilder {
 	 * TODO provide finer grained return statements 
 	 *
 	 * @param returnStatement the return statement
-	 * @return the query builder
+	 * @return a reference to this object.
 	 */
 	
 	public ArangoDBQueryBuilder ret(String returnStatement) {
@@ -529,6 +529,21 @@ public class ArangoDBQueryBuilder {
 		logger.debug("ret", queryBuilder.toString());
 		return this;
 	}
+	
+	/**
+	 * Appends the specified string to this character sequence.
+	 * <p>
+	 * The characters of the String argument are appended, in order, increasing the length of this 
+	 * sequence by the length of the argument. If str is null, then the four characters "null" are
+	 * appended.
+	 * <p>
+	 * Let n be the length of this character sequence just prior to execution of the append method.
+	 * Then the character at index k in the new character sequence is equal to the character at
+	 * index k in the old character sequence, if k is less than n; otherwise, it is equal to the 
+	 * character at index k-n in the argument str.
+	 * @param segment	a str
+	 * @return a reference to this object.
+	 */
 	
 	public ArangoDBQueryBuilder append(String segment) {
 		queryBuilder.append(segment);
@@ -539,165 +554,5 @@ public class ArangoDBQueryBuilder {
 	public String toString() {
 		return queryBuilder.toString();
 	}
-	
-	
-	//// ============================ 
-	
-	
-	
-//	
-//	/**
-//	 * Constructs the AQL query string, executes the query and returns a result cursor.
-//	 *
-//	 * @param <T> 				the type returned by the cursor
-//	 * @param type            	The type of the result (POJO class, VPackSlice, String for Json, or Collection/List/Map)
-//	 * @return the cursor result
-//	 */
-//	
-//	@SuppressWarnings("rawtypes")
-//	public <T> ArangoCursor getCursorResult(final Class<T> type) {
-//
-//		Map<String, Object> bindVars = new HashMap<>();
-//		String prefix = "";
-//		String returnExp;
-//		boolean joinFilter = false;
-//		StringBuilder sb = new StringBuilder();
-//
-//		String same_collection = " FILTER IS_SAME_COLLECTION(";
-//		switch (queryType) {
-//		case GRAPH_VERTICES:
-//			if (!idsFilter.isEmpty()) {
-//				sb.append("WITH ");
-//				sb.append(graph.vertexCollections().stream()
-//						.map(ec -> ArangoDBUtil.getCollectioName(graph.name(), ec))
-//						.collect(Collectors.joining(",")));
-//				sb.append("\n");
-//				sb.append("LET docs = FLATTEN(RETURN Document(@ids))\n");
-//				sb.append("FOR v IN docs\n");
-//				sb.append("  FILTER NOT IS_NULL(v)\n");
-//				bindVars.put("ids", idsFilter);
-//			}
-//			else {
-//				if (graph.vertexCollections().size() > 1) {
-//					sb.append("FOR v in UNION( \n");	// Union of all vertex collections
-//					sb.append(graph.vertexCollections().stream()
-//						.map(vc -> ArangoDBUtil.getCollectioName(graph.name(), vc))
-//						.map(vc -> String.format("FOR v IN %s  RETURN v", vc))
-//						.collect(Collectors.joining("),\n  (", "  (", ")\n  ")));
-//					sb.append(")");
-//				}
-//				else {
-//					String collectionName = ArangoDBUtil.getCollectioName(graph.name(), graph.vertexCollections().get(0));
-//					sb.append(String.format("FOR v IN %s \n", collectionName));
-//				}
-//				
-//			}
-//			returnExp = "    RETURN v";
-//			prefix = "v.";
-//			break;
-//		case GRAPH_EDGES:
-//			if (getStartVertex() == null) {
-//				if (!idsFilter.isEmpty()) {
-//					sb.append("WITH ");
-//					sb.append(graph.edgeCollections().stream()
-//							.map(ec -> ArangoDBUtil.getCollectioName(graph.name(), ec))
-//							.collect(Collectors.joining(",")));
-//					sb.append("\n");
-//					sb.append("LET docs = FLATTEN(RETURN Document(@ids))\n");
-//					sb.append("FOR e IN docs\n");
-//					sb.append("  FILTER NOT IS_NULL(e)\n");
-//					bindVars.put("ids", idsFilter);
-//				}
-//				else {
-//					if (graph.edgeCollections().size() > 1) {
-//						sb.append("FOR e in UNION( \n");	// Union of all vertex collections
-//						sb.append(graph.edgeCollections().stream()
-//								.map(ec -> ArangoDBUtil.getCollectioName(graph.name(), ec))
-//								.map(ec -> String.format("FOR e IN %s RETURN e", ec))
-//								.collect(Collectors.joining("),\n  (", "  (", ")\n  ")));
-//						sb.append(")\n");
-//					}
-//					else {
-//						String collectionName = ArangoDBUtil.getCollectioName(graph.name(), graph.edgeCollections().get(0));
-//						sb.append(String.format("FOR e IN %s \n", collectionName));
-//					}
-//					
-//				}
-//				returnExp = "    RETURN e";
-//				prefix = "e.";
-//			}
-//			else {
-//				sb.append(String.format("FOR v, e IN %s @startId GRAPH @graphName \n", getDirectionString()));
-//				sb.append("  OPTIONS {bfs: true}\n");
-//				if (!idsFilter.isEmpty()) {
-//					sb.append("FILTER e._id IN @ids ");
-//					bindVars.put("ids", idsFilter);
-//					joinFilter = true;
-//				}
-//				if (!labelsFilter.isEmpty()) {
-//					if (joinFilter) {
-//						same_collection = " AND " + same_collection;
-//					}
-//					String filter = labelsFilter.stream()
-//                            .map(lbl -> ArangoDBUtil.getCollectioName(graph.name(), lbl))
-//                            .collect(Collectors.joining(", e) OR IS_SAME_COLLECTION(", same_collection, ", e) "));
-//					sb.append(filter);
-//					joinFilter = true;
-//				}
-//				prefix = "e.";
-//				returnExp = "RETURN DISTINCT e";
-//				bindVars.put("startId", startVertex._id());
-//				bindVars.put("graphName", graph.name());
-//			}
-//			break;
-//		case GRAPH_NEIGHBORS:
-//		default:
-//			// The labelsFilter is used to filter the collection of the edges
-//			sb.append(String.format("FOR v, e IN 1 %s @startId GRAPH @graphName\n", getDirectionString()));
-//			sb.append("  OPTIONS {bfs: true, uniqueVertices: 'global'}\n");
-//			if (!labelsFilter.isEmpty()) {
-//                String filter = labelsFilter.stream()
-//                        .map(lbl -> ArangoDBUtil.getCollectioName(graph.name(), lbl))
-//                        .collect(Collectors.joining(", e) OR IS_SAME_COLLECTION(", same_collection, ", e) "));
-//				sb.append(filter);
-//                joinFilter = true;
-//			}
-//			prefix = "v.";
-//			returnExp = "  RETURN v";
-//			bindVars.put("startId", startVertex._id());
-//			bindVars.put("graphName", graph.name());
-//			break;
-//		}
-//
-//		List<String> andFilter = new ArrayList<String>();
-//
-//		if (propertyFilter == null) {
-//			propertyFilter = new ArangoDBPropertyFilter();
-//		}
-//		propertyFilter.addAqlSegments(prefix, andFilter, bindVars);
-//
-//		if (CollectionUtils.isNotEmpty(andFilter)) {
-//			if (joinFilter) {
-//				sb.append(" AND ");
-//			} else {
-//                sb.append(" FILTER ");
-//            }
-//			sb.append(StringUtils.join(andFilter, " AND "));
-//		}
-//
-//		if (limit != null) {
-//			sb.append(" LIMIT " + limit.toString());
-//		}
-//
-//		sb.append(returnExp);
-//
-//		String query = sb.toString();
-//		logger.debug("ArangoDB query: {}", query);
-//		logger.debug("Binded Vars: {}", bindVars);
-//		AqlQueryOptions aqlQueryOptions = new AqlQueryOptions();
-//		aqlQueryOptions.count(count);
-//
-//		return client.executeAqlQuery(query, bindVars, aqlQueryOptions, type);
-//	}
 
 }

@@ -22,7 +22,8 @@ import com.arangodb.tinkerpop.gremlin.structure.ArangoDBGraph;
  * type.
  *	
  * @see ArangoDBIterator
- * @param <IType> the Graph Element type returned at each iteration
+ * @param <V> 	the Property's type
+ * @param <P> 	the Property implementation returned by the iterator
  * 
  * @author Horacio Hoyos Rodriguez (@horaciohoyosr)
  */
@@ -40,8 +41,8 @@ public class ArangoDBPropertyIterator<V, P extends Property<V>> implements Itera
 	/**
 	 * Instantiates a new arango DB iterator.
 	 *
-	 * @param graph the graph
-	 * @param documentNeighbors the delegate
+	 * @param graph 				the graph
+	 * @param documentNeighbors 	the delegate cursor
 	 */
 	public ArangoDBPropertyIterator(ArangoDBGraph graph, ArangoCursor<? extends Property<V>> documentNeighbors) {
 		super();

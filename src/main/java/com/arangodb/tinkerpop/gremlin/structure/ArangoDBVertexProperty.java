@@ -123,9 +123,8 @@ public class ArangoDBVertexProperty<V> extends ArangoDBElementProperty<V> implem
         for (String pk : propertyKeys) {
             filter.has("key", pk, ArangoDBPropertyFilter.Compare.EQUAL);
         }
-        @SuppressWarnings("rawtypes")
-		ArangoCursor<ArangoDBPropertyProperty> query = graph.getClient().getElementProperties(graph.name(), this, labels, filter, ArangoDBPropertyProperty.class);
-        return new ArangoDBPropertyIterator<U, Property<U>>(graph, (ArangoCursor<? extends Property<U>>) query);
+        ArangoCursor<?> query = graph.getClient().getElementProperties(graph.name(), this, labels, filter, ArangoDBPropertyProperty.class);
+        return new ArangoDBPropertyIterator<U, Property<U>>(graph, (ArangoCursor<ArangoDBPropertyProperty<U>>) query);
 	}
 
 }

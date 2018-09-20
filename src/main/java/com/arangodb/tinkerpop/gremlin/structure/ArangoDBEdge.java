@@ -144,7 +144,7 @@ public class ArangoDBEdge extends ArangoDBBaseEdge implements Edge {
 		return new ArangoDBIterator<>(graph, graph.getClient().getEdgeVertices(graph.name(), _id(), label(), from, to));
 	}
 	
-	/**
+	/*
 	 * Removing a property while iterating will throw ConcurrentModificationException 
 	 */
 	
@@ -157,9 +157,8 @@ public class ArangoDBEdge extends ArangoDBBaseEdge implements Edge {
         for (String pk : propertyKeys) {
             filter.has("key", pk, ArangoDBPropertyFilter.Compare.EQUAL);
         }
-        @SuppressWarnings("rawtypes")
-        ArangoCursor<ArangoDBEdgeProperty> documentNeighbors = graph.getClient().getElementProperties(graph.name(), this, labels, filter, ArangoDBEdgeProperty.class);
-		return new ArangoDBPropertyIterator<V, Property<V>>(graph, (ArangoCursor<? extends Property<V>>) documentNeighbors);
+        ArangoCursor<?> documentNeighbors = graph.getClient().getElementProperties(graph.name(), this, labels, filter, ArangoDBEdgeProperty.class);
+		return new ArangoDBPropertyIterator<V, Property<V>>(graph, (ArangoCursor<ArangoDBEdgeProperty<V>>) documentNeighbors);
 	}
 
 	@Override

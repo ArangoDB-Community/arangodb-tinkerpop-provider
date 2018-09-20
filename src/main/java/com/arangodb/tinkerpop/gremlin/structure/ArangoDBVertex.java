@@ -22,7 +22,6 @@ import org.apache.commons.lang.ArrayUtils;
 import org.apache.tinkerpop.gremlin.structure.Direction;
 import org.apache.tinkerpop.gremlin.structure.Edge;
 import org.apache.tinkerpop.gremlin.structure.Graph;
-import org.apache.tinkerpop.gremlin.structure.Property;
 import org.apache.tinkerpop.gremlin.structure.T;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
 import org.apache.tinkerpop.gremlin.structure.VertexProperty;
@@ -102,7 +101,7 @@ public class ArangoDBVertex extends ArangoDBBaseDocument implements Vertex {
 		logger.info("remove {}", this._id());
 		Map<String, Object> bindVars = new HashMap<>();
 		ArangoDBQueryBuilder queryBuilder = new ArangoDBQueryBuilder();
-		queryBuilder.iterateGraph(graph.name(), "v", Optional.empty(), Optional.empty(),
+		queryBuilder.iterateGraph(graph.name(), "v", Optional.of("e"), Optional.empty(),
 				Optional.of(1), Optional.empty(), ArangoDBQueryBuilder.Direction.OUT,
 				this._id(), bindVars)
 			.append(String.format("    REMOVE v IN %s_ELEMENT_PROPERTIES\n", graph.name()))
@@ -238,9 +237,8 @@ public class ArangoDBVertex extends ArangoDBBaseDocument implements Vertex {
             filter.has("key", pk, ArangoDBPropertyFilter.Compare.EQUAL);
         }
         logger.debug("Creating ArangoDB query");
-        @SuppressWarnings("rawtypes")
-		ArangoCursor<ArangoDBVertexProperty> query = graph.getClient().getElementProperties(graph.name(), this, labels, filter, ArangoDBVertexProperty.class);
-        return (Iterator<VertexProperty<V>>) new ArangoDBPropertyIterator<V, VertexProperty<V>>(graph, (ArangoCursor<? extends Property<V>>) query);
+        ArangoCursor<?> query = graph.getClient().getElementProperties(graph.name(), this, labels, filter, ArangoDBVertexProperty.class);
+        return (Iterator<VertexProperty<V>>) new ArangoDBPropertyIterator<V, VertexProperty<V>>(graph, (ArangoCursor<ArangoDBVertexProperty<V>>) query);
     }
 
 	

@@ -11,7 +11,6 @@ package com.arangodb.tinkerpop.gremlin.utils;
 import static org.apache.tinkerpop.gremlin.structure.Graph.Hidden.isHidden;
 
 import java.io.UnsupportedEncodingException;
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -499,11 +498,11 @@ public class ArangoDBUtil {
     		case "java.lang.Float":
 	    		{
 	    			if (value instanceof Double) {
-	    				double dv = (double) value;
+	    				double dv = (Double) value;
 	    				return (float) dv;
 	    			}
 	    			else if (value instanceof Long) {
-	    				return ((long) value) * 1.0f;
+	    				return ((Long) value) * 1.0f;
 	    			}
 	    			else {
 	    				System.out.println("Add conversion for " + value.getClass().getName() + " to " + valueClass);
@@ -516,7 +515,7 @@ public class ArangoDBUtil {
     				return value;
     			}
     			else if (value instanceof Long) {
-    				return ((long) value) * 1.0;
+    				return ((Long) value) * 1.0;
     			}
     			else {
     				System.out.println("Add conversion for " + value.getClass().getName() + " to " + valueClass);
@@ -539,7 +538,7 @@ public class ArangoDBUtil {
     		case "java.lang.Integer":
     		{
     			if (value instanceof Long) {
-    				long lv = (long) value;
+    				long lv = (Long) value;
     				return (int) lv;
     			}
     			break;
@@ -607,30 +606,5 @@ public class ArangoDBUtil {
 				logger.debug("Add conversion for " + value.getClass().getName() + " to " + valueClass);
     	}
     	return value;
-    	
-//        if (value instanceof Number) {
-//            if (value instanceof Float) {
-//                return value;
-//            }
-//            else if (value instanceof Double) {
-//                return value;
-//            }
-//            else {
-//                String numberStr = value.toString();
-//                BigInteger number = new BigInteger(numberStr);
-//                if(number.longValue() < Integer.MAX_VALUE && number.longValue() > Integer.MIN_VALUE) {
-//                    return new Integer(numberStr);
-//                }
-//                else if(number.longValueExact() < Long.MAX_VALUE && number.longValue() > Long.MIN_VALUE) {
-//                    return new Long(numberStr);
-//                }
-//                else {
-//                    return number;
-//                }
-//            }
-//        }
-//        else {
-//            return value;
-//        }
     }
 }
