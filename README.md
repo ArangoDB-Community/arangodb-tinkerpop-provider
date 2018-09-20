@@ -1,14 +1,12 @@
-![ArangoDB-Logo](https://www.arangodb.org/wp-content/uploads/2012/10/logo_arangodb_transp.png)
+![ArangoDB-Logo](https://docs.arangodb.com/assets/arangodb_logo_2016_inverted.png)
 
-# blueprints-arangodb-graph
+# arangodb-tinkerpop-provider
 
-[![Build Status](https://secure.travis-ci.org/arangodb/blueprints-arangodb-graph.png)](http://travis-ci.org/arangodb/blueprints-arangodb-graph)
-
-An implementation of the [Blueprints 2.6](https://github.com/tinkerpop/blueprints/wiki) API for ArangoDB
+An implementation of the [Tinkerpop3 OLTP Provider](http://tinkerpop.apache.org/docs/3.3.3/dev/provider/#_provider_documentation) API for ArangoDB
 
 ## Compatibility
 
-This Blueprints driver is only supporting:
+This Provider supports:
 * Tinkerpop 3.3
 * ArangoDB 3.3 (via ArangoDB Java Driver 4.6.0).*
 
