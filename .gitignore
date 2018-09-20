@@ -10,3 +10,9 @@ target
 *.war
 *.ear
 /bin/
+
+\.DS_Store
+
+old/
+
+tikerpopTests\.log
