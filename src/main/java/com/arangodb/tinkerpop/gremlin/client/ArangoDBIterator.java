@@ -6,11 +6,12 @@
 //
 //////////////////////////////////////////////////////////////////////////////////////////
 
-package com.arangodb.tinkerpop.gremlin.structure;
+package com.arangodb.tinkerpop.gremlin.client;
 
 import java.util.Iterator;
 
-import com.arangodb.tinkerpop.gremlin.client.ArangoDBBaseDocument;
+import com.arangodb.ArangoCursor;
+import com.arangodb.tinkerpop.gremlin.structure.ArangoDBGraph;
 
 /**
  * The ArangoDBIterator is used to wrap Arango DB documents from a query iterator into Graph
@@ -25,7 +26,7 @@ public class ArangoDBIterator<IType> implements Iterator<IType> {
 	
 	/** The delegate. */
 	
-	private final Iterator<IType> delegate;
+	private final ArangoCursor<? extends IType> delegate;
 	
 	/** The graph. */
 	
@@ -37,7 +38,7 @@ public class ArangoDBIterator<IType> implements Iterator<IType> {
 	 * @param graph the graph
 	 * @param delegate the delegate
 	 */
-	public ArangoDBIterator(ArangoDBGraph graph, Iterator<IType> delegate) {
+	public ArangoDBIterator(ArangoDBGraph graph, ArangoCursor<? extends IType> delegate) {
 		super();
 		this.delegate = delegate;
 		this.graph = graph;
@@ -51,7 +52,8 @@ public class ArangoDBIterator<IType> implements Iterator<IType> {
 	@SuppressWarnings("unchecked")
 	@Override
 	public IType next() {
-        ArangoDBBaseDocument next = (ArangoDBBaseDocument) delegate.next();
+		ArangoDBBaseDocument next = null;
+		next = (ArangoDBBaseDocument) delegate.next();
 		next.graph(graph);
 		next.setPaired(true);
 		return (IType) next;

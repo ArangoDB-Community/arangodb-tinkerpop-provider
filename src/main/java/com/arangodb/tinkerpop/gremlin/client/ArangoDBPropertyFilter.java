@@ -87,7 +87,10 @@ public class ArangoDBPropertyFilter {
 	
 	private static final Logger logger = LoggerFactory.getLogger(ArangoDBPropertyFilter.class);
 
-
+	
+	public static ArangoDBPropertyFilter empty() {
+		return new ArangoDBPropertyFilter();
+	}
 
 	/** The property containers. */
 	

@@ -21,9 +21,11 @@ import org.apache.tinkerpop.gremlin.structure.util.StringFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.arangodb.ArangoCursor;
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBBaseEdge;
+import com.arangodb.tinkerpop.gremlin.client.ArangoDBIterator;
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBPropertyFilter;
-import com.arangodb.tinkerpop.gremlin.client.ArangoDBQuery;
+import com.arangodb.tinkerpop.gremlin.client.ArangoDBPropertyIterator;
 import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
 
 
@@ -42,13 +44,6 @@ public class ArangoDBEdge extends ArangoDBBaseEdge implements Edge {
 	/** The Logger. */
 	private static final Logger logger = LoggerFactory.getLogger(ArangoDBEdge.class);
 	
-	/**  Tinkerpop ids are managed through keys, so we need to keep that information. */
-	
-	private String from_key;
-
-	/**  Tinkerpop ids are managed through keys, so we need to keep that information. */
-	
-	private String to_key;
 	
     /**
      * Constructor used for ArabgoDB JavaBeans serialisation.
@@ -78,8 +73,6 @@ public class ArangoDBEdge extends ArangoDBBaseEdge implements Edge {
 		super(from._id(), to._id(), key, graph, collection);
         this.graph = graph;
         this.collection = collection;
-		this.from_key = from._key();
-		this.to_key = to._key();
 	}
 
     /**
@@ -101,7 +94,7 @@ public class ArangoDBEdge extends ArangoDBBaseEdge implements Edge {
 
     @Override
     public Object id() {
-        return _key;
+        return _id();
     }
 
     @Override
@@ -132,29 +125,29 @@ public class ArangoDBEdge extends ArangoDBBaseEdge implements Edge {
 		graph.getClient().deleteEdge(this);
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public Iterator<Vertex> vertices(Direction direction) {
-		List<String> ids = new ArrayList<>();
+		boolean from = false;
+		boolean to = false;
 		switch(direction) {
 		case BOTH:
-			ids.add(from_key);
-			ids.add(to_key);
+			from = true;
+			to = true;
 			break;
 		case IN:
-			ids.add(from_key);
+			to = true;
 			break;
 		case OUT:
-			ids.add(to_key);
+			from = true;
 			break;
 		}
-		ArangoDBQuery query = graph.getClient().getGraphVertices(graph, ids);
-		return new ArangoDBIterator<Vertex>(graph, query.getCursorResult(ArangoDBVertex.class));
+		return new ArangoDBIterator<>(graph, graph.getClient().getEdgeVertices(graph.name(), _id(), label(), from, to));
 	}
 	
 	/**
 	 * Removing a property while iterating will throw ConcurrentModificationException 
 	 */
+	
 	@SuppressWarnings("unchecked")
 	@Override
 	public <V> Iterator<Property<V>> properties(String... propertyKeys) {
@@ -164,8 +157,9 @@ public class ArangoDBEdge extends ArangoDBBaseEdge implements Edge {
         for (String pk : propertyKeys) {
             filter.has("key", pk, ArangoDBPropertyFilter.Compare.EQUAL);
         }
-        ArangoDBQuery query = graph.getClient().getDocumentNeighbors(graph, this, labels, Direction.OUT, filter);
-        return new ArangoDBIterator<Property<V>>(graph, query.getCursorResult(ArangoDBEdgeProperty.class));
+        @SuppressWarnings("rawtypes")
+        ArangoCursor<ArangoDBEdgeProperty> documentNeighbors = graph.getClient().getElementProperties(graph.name(), this, labels, filter, ArangoDBEdgeProperty.class);
+		return new ArangoDBPropertyIterator<V, Property<V>>(graph, (ArangoCursor<? extends Property<V>>) documentNeighbors);
 	}
 
 	@Override

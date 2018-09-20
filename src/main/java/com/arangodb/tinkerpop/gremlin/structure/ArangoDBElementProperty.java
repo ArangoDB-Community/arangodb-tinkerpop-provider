@@ -31,7 +31,7 @@ import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
 public abstract class ArangoDBElementProperty<V> extends ArangoDBBaseDocument implements Property<V> {
 
     /**
-     * An Edge to link an ArangoDBBaseDocument to one of its properties. The from paramter is an
+     * An Edge to link an ArangoDBBaseDocument to one of its properties. The from parameter is an
      * ArangoDBBaseDocument since we allow ArangoDBElementProperty to have properties too.
      */
 	
@@ -53,17 +53,17 @@ public abstract class ArangoDBElementProperty<V> extends ArangoDBBaseDocument im
     
 	protected String key;
 
-    /** The proerty value. */
+    /** The property value. */
 	
     protected V value;
     
-    // TODO We could store the exact Java type of the value to correctly deserialize it, at least
-    // for the primitive ones
-    //protected String javaPrimitive
+    /** The property type */
+    
+    protected String valutType;
 
 
     /**
-     * Constructor used for Arabgo DB JavaBeans serialisation.
+     * Constructor used for Arango DB JavaBeans serialisation.
      */
 
 	public ArangoDBElementProperty() { super();	}
@@ -79,15 +79,16 @@ public abstract class ArangoDBElementProperty<V> extends ArangoDBBaseDocument im
      */
 	
     public ArangoDBElementProperty(String id, String key, V value, ArangoDBBaseDocument owner, String collection) {
-	    this._key = id;
+	    super(id);
         this.key = key;
         this.value = value;
+        this.valutType = value.getClass().getCanonicalName();
         this.graph = owner.graph();
         this.collection = collection;
     }
 
     /**
-     * Instantiates a new arango DB element property.
+     * Instantiates a new Arango DB element property.
      *
      * @param key the key
      * @param value the value
@@ -121,7 +122,7 @@ public abstract class ArangoDBElementProperty<V> extends ArangoDBBaseDocument im
 	@SuppressWarnings("unchecked")
 	@Override
 	public V value() throws NoSuchElementException {
-        return (V) ArangoDBUtil.getCorretctPrimitive(value);
+        return (V) ArangoDBUtil.getCorretctPrimitive(value, valutType);
 	}
 	
 	/**

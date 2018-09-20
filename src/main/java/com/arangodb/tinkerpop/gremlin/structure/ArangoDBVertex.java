@@ -22,6 +22,7 @@ import org.apache.commons.lang.ArrayUtils;
 import org.apache.tinkerpop.gremlin.structure.Direction;
 import org.apache.tinkerpop.gremlin.structure.Edge;
 import org.apache.tinkerpop.gremlin.structure.Graph;
+import org.apache.tinkerpop.gremlin.structure.Property;
 import org.apache.tinkerpop.gremlin.structure.T;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
 import org.apache.tinkerpop.gremlin.structure.VertexProperty;
@@ -33,8 +34,10 @@ import org.slf4j.LoggerFactory;
 
 import com.arangodb.ArangoCursor;
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBBaseDocument;
+import com.arangodb.tinkerpop.gremlin.client.ArangoDBIterator;
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBPropertyFilter;
-import com.arangodb.tinkerpop.gremlin.client.ArangoDBQuery;
+import com.arangodb.tinkerpop.gremlin.client.ArangoDBPropertyIterator;
+import com.arangodb.tinkerpop.gremlin.client.ArangoDBQueryBuilder;
 import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
 
 
@@ -86,7 +89,7 @@ public class ArangoDBVertex extends ArangoDBBaseDocument implements Vertex {
 
     @Override
     public Object id() {
-        return _key;
+        return _id();
     }
 
     @Override
@@ -96,21 +99,21 @@ public class ArangoDBVertex extends ArangoDBBaseDocument implements Vertex {
 	
 	@Override
 	public void remove() {
-		logger.info("remove {}", this._key());
-		String query = 
-				  "  FOR v, e IN 1 OUTBOUND @startid IncrementalEvl_ELEMENT_HAS_PROPERTIES"
-				+ "	   FOR sv IN @@startCollection"
-				+ "	   FILTER v._id == @startid"
-				+ "	   REMOVE v IN @@startCollection"
-				+ "      REMOVE v IN IncrementalEvl_ELEMENT_PROPERTIES"
-				+ "    	 REMOVE e IN IncrementalEvl_ELEMENT_HAS_PROPERTIES"
-				+ "      LET removed = OLD"
-				+ "      RETURN removed";
+		logger.info("remove {}", this._id());
 		Map<String, Object> bindVars = new HashMap<>();
-		bindVars.put("@startCollection", this.collection);
-		bindVars.put("@startid", this._id());
-		ArangoCursor<? extends ArangoDBVertex> result = graph.getClient().executeAqlQuery(query, bindVars, null, this.getClass());
-		logger.debug("Deleted ", result.next());
+		ArangoDBQueryBuilder queryBuilder = new ArangoDBQueryBuilder();
+		queryBuilder.iterateGraph(graph.name(), "v", Optional.empty(), Optional.empty(),
+				Optional.of(1), Optional.empty(), ArangoDBQueryBuilder.Direction.OUT,
+				this._id(), bindVars)
+			.append(String.format("    REMOVE v IN %s_ELEMENT_PROPERTIES\n", graph.name()))
+			.append(String.format("    REMOVE e IN %s_ELEMENT_HAS_PROPERTIES\n", graph.name()));
+		String query = queryBuilder.toString();
+		graph.getClient().executeAqlQuery(query , bindVars, null, this.getClass());
+		queryBuilder = new ArangoDBQueryBuilder()
+			.append(String.format("REMOVE Document(@startVertex) IN %s", ArangoDBUtil.getCollectioName(graph.name(), label())));
+		
+		query = queryBuilder.toString();
+		graph.getClient().executeAqlQuery(query , bindVars, null, this.getClass());
 	}
 
 	@Override
@@ -180,7 +183,6 @@ public class ArangoDBVertex extends ArangoDBBaseDocument implements Vertex {
 	}
 
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public Iterator<Edge> edges(
 	    Direction direction,
@@ -197,12 +199,10 @@ public class ArangoDBVertex extends ArangoDBBaseDocument implements Vertex {
                 return Collections.emptyIterator();
             }
         }
-		ArangoDBQuery query = graph.getClient().getVertexEdges(graph, this, edgeCollections, direction);
-		return new ArangoDBIterator<Edge>(graph, query.getCursorResult(ArangoDBEdge.class));
+		return new ArangoDBIterator<Edge>(graph, graph.getClient().getVertexEdges(graph.name(), this, edgeCollections, direction));
 	}
 
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public Iterator<Vertex> vertices(Direction direction,
 		String... edgeLabels) {
@@ -222,8 +222,8 @@ public class ArangoDBVertex extends ArangoDBBaseDocument implements Vertex {
 				return Collections.emptyIterator();
 			}
 		}
-		ArangoDBQuery query = graph.getClient().getDocumentNeighbors(graph, this, edgeCollections, direction, null);
-		return new ArangoDBIterator<Vertex>(graph, query.getCursorResult(ArangoDBVertex.class));
+		ArangoCursor<ArangoDBVertex> documentNeighbors = graph.getClient().getDocumentNeighbors(graph.name(), this, edgeCollections, direction, ArangoDBPropertyFilter.empty(), ArangoDBVertex.class);
+		return new ArangoDBIterator<Vertex>(graph, documentNeighbors);
 	}
 
 	
@@ -238,8 +238,9 @@ public class ArangoDBVertex extends ArangoDBBaseDocument implements Vertex {
             filter.has("key", pk, ArangoDBPropertyFilter.Compare.EQUAL);
         }
         logger.debug("Creating ArangoDB query");
-        ArangoDBQuery query = graph.getClient().getDocumentNeighbors(graph, this, labels, Direction.OUT, filter);
-        return new ArangoDBIterator<VertexProperty<V>>(graph, query.getCursorResult(ArangoDBVertexProperty.class));
+        @SuppressWarnings("rawtypes")
+		ArangoCursor<ArangoDBVertexProperty> query = graph.getClient().getElementProperties(graph.name(), this, labels, filter, ArangoDBVertexProperty.class);
+        return (Iterator<VertexProperty<V>>) new ArangoDBPropertyIterator<V, VertexProperty<V>>(graph, (ArangoCursor<? extends Property<V>>) query);
     }
 
 	

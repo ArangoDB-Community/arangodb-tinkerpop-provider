@@ -13,8 +13,10 @@ import java.util.Collections;
 import org.apache.tinkerpop.gremlin.structure.Direction;
 import org.apache.tinkerpop.gremlin.structure.Element;
 
+import com.arangodb.ArangoCursor;
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBBaseDocument;
-import com.arangodb.tinkerpop.gremlin.client.ArangoDBQuery;
+import com.arangodb.tinkerpop.gremlin.client.ArangoDBIterator;
+import com.arangodb.tinkerpop.gremlin.client.ArangoDBPropertyFilter;
 import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
 
 /**
@@ -45,11 +47,12 @@ public class ArangoDBPropertyProperty<U> extends ArangoDBElementProperty<U> {
         super(key, value, owner, ArangoDBUtil.ELEMENT_PROPERTIES_COLLECTION);
     }
     
-    @Override
+    @SuppressWarnings("rawtypes")
+	@Override
     public Element element() {
-        ArangoDBQuery q = graph.getClient().getDocumentNeighbors(graph, this, Collections.emptyList(), Direction.IN, null);
-        @SuppressWarnings("unchecked")
-		ArangoDBIterator<ArangoDBVertexProperty<?>> iterator = new ArangoDBIterator<ArangoDBVertexProperty<?>>(graph, q.getCursorResult(ArangoDBVertexProperty.class));
+        ArangoCursor<ArangoDBVertexProperty> q = graph.getClient()
+        		.getDocumentNeighbors(graph.name(), this, Collections.emptyList(), Direction.IN, ArangoDBPropertyFilter.empty(), ArangoDBVertexProperty.class);
+		ArangoDBIterator<ArangoDBVertexProperty> iterator = new ArangoDBIterator<ArangoDBVertexProperty>(graph, q);
         return iterator.hasNext() ? (Element) iterator.next() : null;
     }
 

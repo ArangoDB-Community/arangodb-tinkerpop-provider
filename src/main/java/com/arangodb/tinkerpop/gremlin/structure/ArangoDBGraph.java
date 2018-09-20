@@ -8,6 +8,7 @@
 
 package com.arangodb.tinkerpop.gremlin.structure;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -38,7 +39,7 @@ import com.arangodb.ArangoGraph;
 import com.arangodb.model.GraphCreateOptions;
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBGraphClient;
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBGraphException;
-import com.arangodb.tinkerpop.gremlin.client.ArangoDBQuery;
+import com.arangodb.tinkerpop.gremlin.client.ArangoDBIterator;
 import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
 
 /**
@@ -47,6 +48,16 @@ import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
  * NOTE: USE OF THIS API REQUIRES A USER WITH <b>ADMINISTRATOR</b> ACCESS IF THE <b>DB</b> USED FOR
  * THE GRAPH DO NOT EXIST. As per ArangoDB, creating DB is only allowed for the root user, hence
  * onlt the root user can be used if the DB does not exist.
+ * <p>
+ * <b>ArangoDB and Tinkerpop Ids.</b>
+ * <p>
+ * In Tinkerpop, graph elements are expected to have a unique Id within the graph; in ArangoDB the
+ * Id (document handle) consists of the collection's name and the document key (_key attribute) 
+ * separated by /, hence the only way to hint at ids is by providing a _key during construction.
+ * Hence, ArangoDBGraph elements do not strictly support <i>User Supplied Ids</i>. We allow
+ * ids to be supplied during vertex creation: {@code graph.addVertex(id,x)}, but this id actually
+ * represents the _key. As a result, posterior search/match by id must prefix the vertex's label
+ * (collection) followed by a /.
  * <p>
  * An ArangoDBGraph is instantiated from an Apache Commons Configuration instance. The configuration
  * must provide both Tinkerpop and ArangoDB configuration options. The ArangoDB options are
@@ -226,84 +237,13 @@ public class ArangoDBGraph implements Graph {
      * The Class ArangoDBGraphFeatures.
      */
 	
-    public class ArangoDBGraphFeatures implements Features {
-	    
+	public class ArangoDBGraphFeatures implements Features {
+    	
     	/**
-         * The Class ArangoDBGraphEdgeFeatures.
-         */
-        public class ArangoDBGraphEdgeFeatures extends ArangoDBGraphElementFeatures implements EdgeFeatures {
-
-		    /** The edge property features. */
-        	
-    		private final EdgePropertyFeatures edgePropertyFeatures = new ArangoDBGraphEdgePropertyFeatures();
-
-            /**
-             * Instantiates a new ArangoDB graph edge features.
-             */
-    		
-            ArangoDBGraphEdgeFeatures() { }
-
-            @Override
-            public EdgePropertyFeatures properties() {
-                return edgePropertyFeatures;
-            }
-			
-			@Override
-			public boolean supportsAnyIds() {
-				return false;
-			}
-			
-			@Override
-			public boolean supportsCustomIds() {
-				return false;
-			}
-			
-			@Override
-			public boolean supportsNumericIds() {
-				return false;
-			}
-
-			@Override
-			public boolean supportsUuidIds() {
-				/*	We can not use Java Objects as keys, ergo we can not support UUID and Integer
-				 *  the string representation of these is fine for ArangoDB, which makes the test
-				 *  complain because it expects the actual class to be deserialized. We can test
-				 *  to see if a string is accepted for deserialization.
-				 */
-				return false;
-			}
-        }
-        
-        /**
-         * The Class ArangoDBGraphEdgePropertyFeatures.
-         */
-        private class ArangoDBGraphEdgePropertyFeatures implements EdgePropertyFeatures {
-
-		    /**
-    		 * Instantiates a new ArangoDB graph edge property features.
-    		 */
-        	
-    		ArangoDBGraphEdgePropertyFeatures() { } 
-        }
-        
-        /**
-         * The Class ArangoDBGraphElementFeatures.
-         */
-        
-        public class ArangoDBGraphElementFeatures implements ElementFeatures {
-
-            /**
-             * Instantiates a new ArangoDB graph element features.
-             */
-        	
-            ArangoDBGraphElementFeatures() { }
-        }
-
-		/**
          * The Class ArangoDBGraphGraphFeatures.
          */
         
-        public class ArangoDBGraphGraphFeatures implements GraphFeatures {
+    	private class ArangoDBGraphGraphFeatures implements GraphFeatures {
 
 			/** The variable features. */
 			private VariableFeatures variableFeatures = new ArangoDBGraphVariables.ArangoDBGraphVariableFeatures();
@@ -334,12 +274,50 @@ public class ArangoDBGraph implements Graph {
 				return variableFeatures;
 			}
 		}
+    	
+    	/**
+         * The Class ArangoDBGraphElementFeatures.
+         */
+        
+        private class ArangoDBGraphElementFeatures implements ElementFeatures {
 
+            /**
+             * Instantiates a new ArangoDB graph element features.
+             */
+        	
+            ArangoDBGraphElementFeatures() { }
+            
+            @Override
+			public boolean supportsAnyIds() {
+				return false;
+			}
+			
+			@Override
+			public boolean supportsCustomIds() {
+				return false;
+			}
+			
+			@Override
+			public boolean supportsNumericIds() {
+				return false;
+			}
+
+			@Override
+			public boolean supportsUuidIds() {
+				/*	We can not use Java Objects as keys, ergo we can not support UUID and Integer
+				 *  the string representation of these is fine for ArangoDB, which makes the test
+				 *  complain because it expects the actual class to be deserialized. We can test
+				 *  to see if a string is accepted for deserialization.
+				 */
+				return false;
+			}
+        }
+        
 		/**
          * The Class ArangoDBGraphVertexFeatures.
          */
         
-        public class ArangoDBGraphVertexFeatures extends ArangoDBGraphElementFeatures implements VertexFeatures {
+        private class ArangoDBGraphVertexFeatures extends ArangoDBGraphElementFeatures implements VertexFeatures {
 
 		    /** The vertex property features. */
         	
@@ -356,30 +334,30 @@ public class ArangoDBGraph implements Graph {
             public VertexPropertyFeatures properties() {
                 return vertexPropertyFeatures;
             }
-			
-			@Override
-			public boolean supportsAnyIds() {
-				return false;
-			}
-			
-			@Override
-			public boolean supportsCustomIds() {
-				return false;
-			}
-			
-			@Override
-			public boolean supportsNumericIds() {
-				return false;
-			}
-
-			@Override
-			public boolean supportsUuidIds() {
-				return false;
-			}
- 
         }
+        
+    	/**
+         * The Class ArangoDBGraphEdgeFeatures.
+         */
+        public class ArangoDBGraphEdgeFeatures extends ArangoDBGraphElementFeatures implements EdgeFeatures {
 
-		/**
+		    /** The edge property features. */
+        	
+    		private final EdgePropertyFeatures edgePropertyFeatures = new ArangoDBGraphEdgePropertyFeatures();
+
+            /**
+             * Instantiates a new ArangoDB graph edge features.
+             */
+    		
+            ArangoDBGraphEdgeFeatures() { }
+
+            @Override
+            public EdgePropertyFeatures properties() {
+                return edgePropertyFeatures;
+            }
+        }
+        
+        /**
          * The Class ArangoDBGraphVertexPropertyFeatures.
          */
         
@@ -390,27 +368,18 @@ public class ArangoDBGraph implements Graph {
     		 */
         	
     		ArangoDBGraphVertexPropertyFeatures() { }
+        }
+        
+        /**
+         * The Class ArangoDBGraphEdgePropertyFeatures.
+         */
+        private class ArangoDBGraphEdgePropertyFeatures implements EdgePropertyFeatures {
 
-			@Override
-			public boolean supportsAnyIds() {
-				return false;
-			}
-			
-			@Override
-			public boolean supportsCustomIds() {
-				return false;
-			}
-			
-			@Override
-			public boolean supportsNumericIds() {
-				return false;
-			}
-
-			@Override
-			public boolean supportsUuidIds() {
-				return false;
-			}
-
+		    /**
+    		 * Instantiates a new ArangoDB graph edge property features.
+    		 */
+        	
+    		ArangoDBGraphEdgePropertyFeatures() { } 
         }
 
 		/** The graph features. */
@@ -429,7 +398,6 @@ public class ArangoDBGraph implements Graph {
 		public EdgeFeatures edge() {
 			return edgeFeatures;
 		}
-
 
         @Override
 		public GraphFeatures graph() {
@@ -573,8 +541,7 @@ public class ArangoDBGraph implements Graph {
         if (graph.exists()) {
     		this.name = graph.name();
             ArangoDBUtil.checkGraphForErrors(vertexCollections, edgeCollections, relations, graph, options);
-            String query = String.format("FOR v IN %s RETURN v._id", ArangoDBUtil.getCollectioName(graph.name(), ArangoDBUtil.GRAPH_VARIABLES_COLLECTION));
-            ArangoCursor<String> iter = client.executeAqlQuery(query, null, null, String.class);
+            ArangoCursor<String> iter = client.getGraphVariablesId(this.name);
             if (iter.hasNext()) {
             	this.variables_id = iter.next();
             }
@@ -588,7 +555,7 @@ public class ArangoDBGraph implements Graph {
         	this.name = graph.name();
 			ArangoDBGraphVariables variables = new ArangoDBGraphVariables(this, ArangoDBUtil.GRAPH_VARIABLES_COLLECTION);
 			client.insertDocument(variables);
-			this.variables_id = variables._key();
+			this.variables_id = variables._id();
 		}
 		this.configuration = configuration;
 	}
@@ -696,17 +663,23 @@ public class ArangoDBGraph implements Graph {
 		return Collections.unmodifiableList(edgeCollections);
 	}
 	
-	@SuppressWarnings("unchecked")
 	@Override
 	public Iterator<Edge> edges(Object... edgeIds) {
+		List<String> edgeCollections = new ArrayList<>();
     	List<String> ids = Arrays.stream(edgeIds)
-        		.map(id -> id instanceof Element ? ((Element)id).id() : id)
+        		.map(id -> {
+        			if (id instanceof Element) {
+        				edgeCollections.add(((Element)id).label());
+        				return ((Element)id).id();
+        			}
+        			else {
+        				// We only support String ids
+        				return id;
+        			}
+        			})
         		.map(id -> id == null ? (String)id : id.toString())
         		.collect(Collectors.toList());
-		ArangoDBQuery query = getClient().getGraphEdges(this, ids);
-		return new ArangoDBIterator<Edge>(this, query.getCursorResult(ArangoDBEdge.class));
-		// TODO Auto-generated catch block
-		//	return null;
+		return new ArangoDBIterator<Edge>(this, getClient().getGraphEdges(this, ids, edgeCollections));
 	}
 
 	@Override
@@ -745,15 +718,51 @@ public class ArangoDBGraph implements Graph {
 		return this.name;
 	}
 
-	/**
-	 * The graph relations.
-	 *
-	 * @return the collection of relations
-	 */
-	private Collection<String> relations() {
-		return relations;
+	@Override
+	public Transaction tx() {
+		throw Graph.Exceptions.transactionsNotSupported();
 	}
 
+	@Override
+	public Variables variables() {
+		ArangoCursor<ArangoDBGraphVariables> iter = client.getGraphVariables(this.name, variables_id);
+		if (iter.hasNext()) {
+			ArangoDBGraphVariables v = iter.next();
+			v.graph(this);
+			return v;
+        }
+        else {
+        	throw new ArangoDBGraphException("Existing graph does not have a Variables collection");
+        }
+	}
+
+	/**
+	 * Vertex collections.
+	 *
+	 * @return the list
+	 */
+	public List<String> vertexCollections() {
+		return Collections.unmodifiableList(vertexCollections);
+	}
+
+	@Override
+	public Iterator<Vertex> vertices(Object... vertexIds) {
+    	List<String> vertexCollections = new ArrayList<>();
+    	List<String> ids = Arrays.stream(vertexIds)
+        		.map(id -> {
+        			if (id instanceof Vertex) {
+        				vertexCollections.add(((Vertex)id).label());
+        				return ((Vertex)id).id();
+        			}
+        			else {
+        				// We only support String ids
+        				return id;
+        			}
+        			})
+        		.map(id -> id == null ? (String)id : id.toString())
+        		.collect(Collectors.toList());
+		return new ArangoDBIterator<Vertex>(this, getClient().getGraphVertices(this, ids, vertexCollections));
+	}
 
 	@Override
 	public String toString() {
@@ -774,45 +783,14 @@ public class ArangoDBGraph implements Graph {
 				+"}";
 		return StringFactory.graphString(this, internal);
 	}
-
-	@Override
-	public Transaction tx() {
-		throw Graph.Exceptions.transactionsNotSupported();
-	}
-
-	@Override
-	public Variables variables() {
-		String query = String.format("FOR v IN %s FILTER v._key == \"%s\" RETURN v", ArangoDBUtil.getCollectioName(name, ArangoDBUtil.GRAPH_VARIABLES_COLLECTION), variables_id);
-		ArangoCursor<ArangoDBGraphVariables> iter = client.executeAqlQuery(query, null, null, ArangoDBGraphVariables.class);
-		if (iter.hasNext()) {
-			ArangoDBGraphVariables v = iter.next();
-			v.graph(this);
-			return v;
-        }
-        else {
-        	throw new ArangoDBGraphException("Existing graph does not have a Variables collection");
-        }
-
-	}
-
+	
 	/**
-	 * Vertex collections.
+	 * The graph relations.
 	 *
-	 * @return the list
+	 * @return the collection of relations
 	 */
-	public List<String> vertexCollections() {
-		return Collections.unmodifiableList(vertexCollections);
-	}
-
-    @SuppressWarnings("unchecked")
-	@Override
-	public Iterator<Vertex> vertices(Object... vertexIds) {
-    	List<String> ids = Arrays.stream(vertexIds)
-        		.map(id -> id instanceof Element ? ((Element)id).id() : id)
-        		.map(id -> id == null ? (String)id : id.toString())
-        		.collect(Collectors.toList());
-		ArangoDBQuery query = getClient().getGraphVertices(this, ids);
-		return new ArangoDBIterator<Vertex>(this, query.getCursorResult(ArangoDBVertex.class));
+	private Collection<String> relations() {
+		return relations;
 	}
 
    // TODO Decide which of these methods we want to keep

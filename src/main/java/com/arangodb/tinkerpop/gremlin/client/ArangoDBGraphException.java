@@ -19,6 +19,21 @@ public class ArangoDBGraphException extends RuntimeException {
     /** The Constant serialVersionUID. */
 	
     private static final long serialVersionUID = -8478050406116402002L;
+    
+    private int code;
+    
+    /**
+     * Instantiates a new Arango DB graph exception.
+     *
+     * @param code 		the ArangoDB error code
+     * @param message 	the message
+     * @param cause 	the cause
+     */
+    
+    public ArangoDBGraphException(int code, String message, Throwable cause) {
+        super(message, cause);
+        this.code = code;
+    }
 
     /**
      * Instantiates a new Arango DB graph exception.
@@ -29,6 +44,17 @@ public class ArangoDBGraphException extends RuntimeException {
     
     public ArangoDBGraphException(String message, Throwable cause) {
         super(message, cause);
+    }
+    
+    /**
+     * Instantiates a new Arango DB graph exception.
+     *
+     * @param code 		the ArangoDB error code
+     * @param message 	the message
+     */
+    
+    public ArangoDBGraphException(int code, String message) {
+        super(message);
     }
 
     /**
@@ -50,5 +76,9 @@ public class ArangoDBGraphException extends RuntimeException {
     public ArangoDBGraphException(Throwable cause) {
         super(cause);
     }
+
+	public int getCode() {
+		return code;
+	}
 
 }

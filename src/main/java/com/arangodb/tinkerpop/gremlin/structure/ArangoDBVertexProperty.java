@@ -8,17 +8,26 @@
 
 package com.arangodb.tinkerpop.gremlin.structure;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
 
-import com.arangodb.tinkerpop.gremlin.client.ArangoDBBaseDocument;
-import com.arangodb.tinkerpop.gremlin.client.ArangoDBPropertyFilter;
-import com.arangodb.tinkerpop.gremlin.client.ArangoDBQuery;
-import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
-import org.apache.tinkerpop.gremlin.structure.*;
+import org.apache.tinkerpop.gremlin.structure.Direction;
+import org.apache.tinkerpop.gremlin.structure.Property;
+import org.apache.tinkerpop.gremlin.structure.Vertex;
+import org.apache.tinkerpop.gremlin.structure.VertexProperty;
 import org.apache.tinkerpop.gremlin.structure.util.ElementHelper;
 import org.apache.tinkerpop.gremlin.structure.util.StringFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.arangodb.ArangoCursor;
+import com.arangodb.tinkerpop.gremlin.client.ArangoDBBaseDocument;
+import com.arangodb.tinkerpop.gremlin.client.ArangoDBIterator;
+import com.arangodb.tinkerpop.gremlin.client.ArangoDBPropertyFilter;
+import com.arangodb.tinkerpop.gremlin.client.ArangoDBPropertyIterator;
+import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
 
 
 /**
@@ -75,7 +84,7 @@ public class ArangoDBVertexProperty<V> extends ArangoDBElementProperty<V> implem
 
 	@Override
 	public Object id() {
-		return _key;
+		return _id();
 	}
 	
 	@Override
@@ -85,8 +94,9 @@ public class ArangoDBVertexProperty<V> extends ArangoDBElementProperty<V> implem
 
     @Override
     public Vertex element() {
-        ArangoDBQuery q = graph.getClient().getDocumentNeighbors(graph, this, Collections.emptyList(), Direction.IN, null);
-        ArangoDBIterator<ArangoDBVertex> iterator = new ArangoDBIterator<ArangoDBVertex>(graph, q.getCursorResult(ArangoDBVertex.class));
+        ArangoCursor<ArangoDBVertex> q = graph.getClient()
+        		.getDocumentNeighbors(graph.name(), this, Collections.emptyList(), Direction.IN, ArangoDBPropertyFilter.empty(), ArangoDBVertex.class);
+        ArangoDBIterator<ArangoDBVertex> iterator = new ArangoDBIterator<ArangoDBVertex>(graph, q);
         return iterator.hasNext() ? iterator.next() : null;
     }
 
@@ -104,7 +114,7 @@ public class ArangoDBVertexProperty<V> extends ArangoDBElementProperty<V> implem
 	}
 
 
-    @SuppressWarnings("unchecked")
+	@SuppressWarnings("unchecked")
 	@Override
 	public <U> Iterator<Property<U>> properties(String... propertyKeys) {
         List<String> labels = new ArrayList<>();
@@ -113,8 +123,9 @@ public class ArangoDBVertexProperty<V> extends ArangoDBElementProperty<V> implem
         for (String pk : propertyKeys) {
             filter.has("key", pk, ArangoDBPropertyFilter.Compare.EQUAL);
         }
-        ArangoDBQuery query = graph.getClient().getDocumentNeighbors(graph, this, labels, Direction.OUT, filter);
-        return new ArangoDBIterator<Property<U>>(graph, query.getCursorResult(ArangoDBPropertyProperty.class));
+        @SuppressWarnings("rawtypes")
+		ArangoCursor<ArangoDBPropertyProperty> query = graph.getClient().getElementProperties(graph.name(), this, labels, filter, ArangoDBPropertyProperty.class);
+        return new ArangoDBPropertyIterator<U, Property<U>>(graph, (ArangoCursor<? extends Property<U>>) query);
 	}
 
 }
