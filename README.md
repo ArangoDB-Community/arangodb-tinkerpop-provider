@@ -1,6 +1,6 @@
 ![ArangoDB-Logo](https://docs.arangodb.com/assets/arangodb_logo_2016_inverted.png)
 
-# arangodb-tinkerpop-provider
+# tinkerpop-arangodb-provider
 
 An implementation of the [Tinkerpop3 OLTP Provider](http://tinkerpop.apache.org/docs/3.3.3/dev/provider/#_provider_documentation) API for ArangoDB
 
@@ -8,7 +8,7 @@ An implementation of the [Tinkerpop3 OLTP Provider](http://tinkerpop.apache.org/
 
 This Provider supports:
 * Tinkerpop 3.3
-* ArangoDB 3.3 (via ArangoDB Java Driver 4.6.0).*
+* ArangoDB 3.3 (via ArangoDB Java Driver 4.6.0).
 
 ## Installation & Testing
 
