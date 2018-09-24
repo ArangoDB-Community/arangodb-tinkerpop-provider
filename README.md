@@ -1,6 +1,6 @@
 ![ArangoDB-Logo](https://docs.arangodb.com/assets/arangodb_logo_2016_inverted.png)
 
-# tinkerpop-arangodb-provider
+# arangodb-tinkerpop-provider
 
 An implementation of the [Tinkerpop3 OLTP Provider](http://tinkerpop.apache.org/docs/3.3.3/dev/provider/#_provider_documentation) API for ArangoDB
 
