@@ -71,18 +71,6 @@ public class ArangoDBPropertyFilter {
 	
 	private static final String PROPERTY = "property";
 	
-	/** The Constant COMPARE. */
-	
-	private static final String COMPARE = "compare";
-	
-	/** The Constant KEY. */
-	
-	private static final String KEY = "key";
-	
-	/** The Constant VALUE. */
-	
-	private static final String VALUE = "value";
-	
 	/** The Constant logger. */
 	
 	private static final Logger logger = LoggerFactory.getLogger(ArangoDBPropertyFilter.class);
