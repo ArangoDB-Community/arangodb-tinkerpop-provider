@@ -5,8 +5,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
-import com.arangodb.tinkerpop.gremlin.client.ArangoDBGraphClient;
-import org.apache.commons.configuration.BaseConfiguration;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationConverter;
 import org.apache.tinkerpop.gremlin.AbstractGraphProvider;
@@ -15,13 +13,15 @@ import org.apache.tinkerpop.gremlin.LoadGraphWith.GraphData;
 import org.apache.tinkerpop.gremlin.structure.Element;
 import org.apache.tinkerpop.gremlin.structure.Graph;
 
-import com.arangodb.tinkerpop.gremlin.structure.ArangoDBEdge;
+import com.arangodb.tinkerpop.gremlin.client.ArangoDBGraphClient;
 import com.arangodb.tinkerpop.gremlin.structure.AbstractArangoDBElement;
+import com.arangodb.tinkerpop.gremlin.structure.ArangoDBEdge;
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBElementProperty;
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBGraph;
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBGraphVariables;
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBVertex;
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBVertexProperty;
+import com.arangodb.tinkerpop.gremlin.utils.ArangoDBConfigurationBuilder;
 
 /**
  * The Class ArangoDBGraphProvider. This provider assumes that there is a local ArangoDB running (i.e.
@@ -48,8 +48,7 @@ public class ArangoDBGraphProvider extends AbstractGraphProvider {
                                                final String testMethodName,
                                                final Map<String, Object> configurationOverrides,
                                                final LoadGraphWith.GraphData loadGraphWith) {
-        final Configuration conf = new BaseConfiguration();
-        getBaseConfiguration(graphName, test, testMethodName, loadGraphWith, conf);
+        Configuration conf = getConfiguration(graphName, test, testMethodName, loadGraphWith);
 
         // assign overrides but don't allow gremlin.graph setting to be overridden.  the test suite should
         // not be able to override that.
@@ -59,50 +58,45 @@ public class ArangoDBGraphProvider extends AbstractGraphProvider {
         return conf;
     }
     
-	public void getBaseConfiguration(
+	private Configuration getConfiguration(
 		String graphName,
 		Class<?> test,
 		String testMethodName,
-		GraphData loadGraphWith,
-		Configuration conf) {
-		conf.addProperty(Graph.GRAPH, ArangoDBGraph.class.getName());
-		conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + "." + ArangoDBGraph.CONFIG_DB_NAME, "tinkerpop");
-		conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + "." + ArangoDBGraph.CONFIG_GRAPH_NAME, graphName);
-		conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".arangodb.user", "gremlin");
-		conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".arangodb.password", "gremlin");
-		
+		GraphData loadGraphWith) {
+		ArangoDBConfigurationBuilder builder = new ArangoDBConfigurationBuilder();
+		builder.graph(graphName);
 		if (loadGraphWith != null) {
 			switch(loadGraphWith) {
 			case CLASSIC:
 				System.out.println("CLASSIC");
 				System.out.println("case \"" + testMethodName + "\":");
-				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "knows");
-				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "created");
-				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.relation", "knows:vertex->vertex");
-				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.relation", "created:vertex->vertex");
+				builder.withEdgeCollection("knows");
+				builder.withEdgeCollection("created");
+				builder.configureEdge("knows", "vertex", "vertex");
+				builder.configureEdge("created", "vertex", "vertex");
 				break;
 			case CREW:
 				System.out.println("CREW");
-				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.vertex", "software");
-				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.vertex", "person");
-				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "uses");
-				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "develops");
-				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "traverses");
-				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.relation", "uses:person->software");
-				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.relation", "develops:person->software");
-				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.relation", "traverses:software->software");
+				builder.withVertexCollection("software");
+				builder.withVertexCollection("person");
+				builder.withEdgeCollection("uses");
+				builder.withEdgeCollection("develops");
+				builder.withEdgeCollection("traverses");
+				builder.configureEdge("uses", "person", "software");
+				builder.configureEdge("develops", "person", "software");
+				builder.configureEdge("traverses", "software", "software");
 				break;
 			case GRATEFUL:
 				System.out.println("GRATEFUL");
 				break;
 			case MODERN:
 				System.out.println("MODERN");
-				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.vertex", "person");
-				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.vertex", "software");
-				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "knows");
-				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "created");
-				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.relation", "knows:person->person");
-				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.relation", "created:person->software");
+				builder.withVertexCollection("software");
+				builder.withVertexCollection("person");
+				builder.withEdgeCollection("knows");
+				builder.withEdgeCollection("created");
+				builder.configureEdge("knows", "person", "person");
+				builder.configureEdge("created", "person", "software");
 				break;
 			default:
 				System.out.println("default");
@@ -110,108 +104,103 @@ public class ArangoDBGraphProvider extends AbstractGraphProvider {
 			}
 		}
 		else {
-			if (testMethodName.startsWith("shouldProcessVerticesEdges") ||
-					testMethodName.startsWith("shouldGenerate") ||
-					testMethodName.startsWith("shouldSetValueOnEdge")) {
-				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "knows");
+			if (testMethodName.startsWith("shouldProcessVerticesEdges")
+					|| testMethodName.startsWith("shouldGenerate")
+					|| testMethodName.startsWith("shouldSetValueOnEdge")
+					|| testMethodName.startsWith("shouldAutotype")) {
+				builder.withEdgeCollection("knows");
 			}
 			else if(testMethodName.startsWith("shouldIterateEdgesWithStringIdSupport")) {
-				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "self");
-			}
-			else if(testMethodName.startsWith("shouldAutotype")) {
-				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "knows");
+				builder.withEdgeCollection("self");
 			}
 			else if(testMethodName.startsWith("shouldSupportUserSuppliedIds")) {
-				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "test");
+				builder.withEdgeCollection("test");
 			}
 			else if(testMethodName.startsWith("shouldSupportUUID")) {
-				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "friend");
-			}
-			else if(testMethodName.startsWith("shouldSupportUUID")) {
-				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "friend");
+				builder.withEdgeCollection("friend");
 			}
 			else if(testMethodName.startsWith("shouldReadWrite")) {
-				conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "friends");
+				builder.withEdgeCollection("friends");
 			}
 			else {
 				// Perhaps change for startsWith, but then it would be more verbose. Perhaps a set?
 				switch (testMethodName) {
 				case "shouldGetPropertyKeysOnEdge":
 				case "shouldNotGetConcurrentModificationException":
-					conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "friend");
+					builder.withEdgeCollection("friend");
 					break;
 				case "shouldTraverseInOutFromVertexWithMultipleEdgeLabelFilter":
 				case "shouldTraverseInOutFromVertexWithSingleEdgeLabelFilter":
-					conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "hate");
-					conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "friend");
+					builder.withEdgeCollection("hate");
+					builder.withEdgeCollection("friend");
 					break;
 				case "shouldPersistDataOnClose":
-					conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "collaborator");
+					builder.withEdgeCollection("collaborator");
 					break;
 				case "shouldTestTreeConnectivity":
-					conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "test1");
-					conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "test2");
-					conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "test3");
+					builder.withEdgeCollection("test1");
+					builder.withEdgeCollection("test2");
+					builder.withEdgeCollection("test3");
 					break;
 				case "shouldEvaluateConnectivityPatterns":
-					conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "knows");
-					conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "hates");
+					builder.withEdgeCollection("knows");
+					builder.withEdgeCollection("knows");
 					break;
 				case "shouldRemoveEdgesWithoutConcurrentModificationException":
-					conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "link");
+					builder.withEdgeCollection("link");
 					break;
 				case "shouldGetValueThatIsNotPresentOnEdge":
 				case "shouldHaveStandardStringRepresentationForEdgeProperty":
 				case "shouldHaveTruncatedStringRepresentationForEdgeProperty":
 				case "shouldValidateIdEquality":
 				case "shouldValidateEquality":
-					conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "self");
+					builder.withEdgeCollection("self");
 					break;
 				case "shouldAllowRemovalFromEdgeWhenAlreadyRemoved":
 				case "shouldRespectWhatAreEdgesAndWhatArePropertiesInMultiProperties":
 				case "shouldProcessEdges":	
 				case "shouldReturnOutThenInOnVertexIterator":
 				case "shouldReturnEmptyIteratorIfNoProperties":
-					conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "knows");
+					builder.withEdgeCollection("knows");
 					break;
 				case "shouldNotHaveAConcurrentModificationExceptionWhenIteratingAndRemovingAddingEdges":
-					conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "knows");
-					conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "pets");
-					conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "walks");
-					conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "livesWith");
+					builder.withEdgeCollection("knows");
+					builder.withEdgeCollection("pets");
+					builder.withEdgeCollection("walks");
+					builder.withEdgeCollection("livesWith");
 					break;
-				case "shouldHaveStandardStringRepresentation":		
-					conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "friends");
+				case "shouldHaveStandardStringRepresentation":
+					builder.withEdgeCollection("friends");
 					break;
 				case "shouldReadWriteSelfLoopingEdges":
-					conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "CONTROL");
-					conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "SELFLOOP");
+					builder.withEdgeCollection("CONTROL");
+					builder.withEdgeCollection("SELFLOOP");
 					break;
 				case "shouldReadGraphML":
-					conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "knows");
-					conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "created");
-					break;
 				case "shouldReadGraphMLUnorderedElements":
 				case "shouldTransformGraphMLV2ToV3ViaXSLT":
 				case "shouldReadLegacyGraphSON":
-					conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "created");
-					conf.addProperty(ArangoDBGraph.ARANGODB_CONFIG_PREFIX + ".graph.edge", "knows");
+					builder.withEdgeCollection("knows");
+					builder.withEdgeCollection("created");
 					break;
 				default:
 					System.out.println("case \"" + testMethodName + "\":");
 				}
 			}
 		}
+		Configuration conf = builder.build();
+		conf.addProperty(Graph.GRAPH, ArangoDBGraph.class.getName());
+		return conf;
 	}
 
 	@Override
 	public void clear(Graph graph, Configuration configuration) throws Exception {
 		ArangoDBGraphClient client;
 		if (graph ==null) {
-			Configuration arangoConfig = configuration.subset(ArangoDBGraph.ARANGODB_CONFIG_PREFIX);
+			Configuration arangoConfig = configuration.subset(ArangoDBGraph.PROPERTY_KEY_PREFIX);
 			Properties arangoProperties = ConfigurationConverter.getProperties(arangoConfig);
 			client = new ArangoDBGraphClient(arangoProperties, "tinkerpop", 0);
-			client.deleteGraph(arangoConfig.getString(ArangoDBGraph.CONFIG_GRAPH_NAME));
+			client.deleteGraph(arangoConfig.getString(ArangoDBGraph.PROPERTY_KEY_GRAPH_NAME));
 		}
 		else {
 			ArangoDBGraph agraph = (ArangoDBGraph) graph;

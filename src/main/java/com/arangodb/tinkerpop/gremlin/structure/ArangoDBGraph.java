@@ -421,27 +421,27 @@ public class ArangoDBGraph implements Graph {
     
     /** The properties key CONFIG_CONF. */
 	
-    public static final String ARANGODB_CONFIG_PREFIX = "gremlin.arangodb.conf";
+    public static final String PROPERTY_KEY_PREFIX = "gremlin.arangodb.conf";
     
     /** The properties key  CONFIG_DB. */
     
-    public static final String CONFIG_DB_NAME = "graph.db";
+    public static final String PROPERTY_KEY_DB_NAME = "graph.db";
     
     /** The properties key  CONFIG_NAME. */
     
-    public static final String CONFIG_GRAPH_NAME = "graph.name";
+    public static final String PROPERTY_KEY_GRAPH_NAME = "graph.name";
     
     /** The properties key CONFIG_VERTICES. */
     
-    public static final String CONFIG_VERTICES = "graph.vertex";
+    public static final String PROPERTY_KEY_VERTICES = "graph.vertex";
     
     /** The properties key CONFIG_EDGES. */
     
-    public static final String CONFIG_EDGES = "graph.edge";
+    public static final String PROPERTY_KEY_EDGES = "graph.edge";
     
     /** The properties key CONFIG_RELATIONS. */
     
-    public static final String CONFIG_RELATIONS = "graph.relation";
+    public static final String PROPERTY_KEY_RELATIONS = "graph.relation";
     
     /** The Constant DEFAULT_VERTEX_COLLECTION. */
     
@@ -512,18 +512,18 @@ public class ArangoDBGraph implements Graph {
 	public ArangoDBGraph(Configuration configuration) {
 		
 		logger.info("Creating new ArangoDB Graph from configuration");
-		Configuration arangoConfig = configuration.subset(ARANGODB_CONFIG_PREFIX);
-		vertexCollections = arangoConfig.getList(CONFIG_VERTICES).stream()
+		Configuration arangoConfig = configuration.subset(PROPERTY_KEY_PREFIX);
+		vertexCollections = arangoConfig.getList(PROPERTY_KEY_VERTICES).stream()
 				.map(String.class::cast)
 				.collect(Collectors.toList());
-		edgeCollections = arangoConfig.getList(CONFIG_EDGES).stream()
+		edgeCollections = arangoConfig.getList(PROPERTY_KEY_EDGES).stream()
 				.map(String.class::cast)
 				.collect(Collectors.toList());
-		relations = arangoConfig.getList(CONFIG_RELATIONS).stream()
+		relations = arangoConfig.getList(PROPERTY_KEY_RELATIONS).stream()
 				.map(String.class::cast)
 				.collect(Collectors.toList());
-		String graphName = arangoConfig.getString(CONFIG_GRAPH_NAME);
-		checkValues(arangoConfig.getString(CONFIG_DB_NAME), graphName,	vertexCollections,
+		String graphName = arangoConfig.getString(PROPERTY_KEY_GRAPH_NAME);
+		checkValues(arangoConfig.getString(PROPERTY_KEY_DB_NAME), graphName,	vertexCollections,
 				edgeCollections, relations);
 		if (CollectionUtils.isEmpty(vertexCollections)) {
 			schemaless = true;
@@ -534,7 +534,7 @@ public class ArangoDBGraph implements Graph {
 		}
 		Properties arangoProperties = ConfigurationConverter.getProperties(arangoConfig);
 		int batchSize = 0;
-		client = new ArangoDBGraphClient(arangoProperties, arangoConfig.getString(CONFIG_DB_NAME), batchSize);
+		client = new ArangoDBGraphClient(arangoProperties, arangoConfig.getString(PROPERTY_KEY_DB_NAME), batchSize);
         ArangoGraph graph = client.getGraph(graphName);
         GraphCreateOptions options = new  GraphCreateOptions();
         options.orphanCollections(ArangoDBUtil.getCollectioName(graphName, ArangoDBUtil.GRAPH_VARIABLES_COLLECTION));
