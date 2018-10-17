@@ -42,7 +42,7 @@ To add the driver to your project with maven, add the following code to your pom
 
 ## More
 
-You will find details on how to instantiate an ArangoDBGraph in the JavaDocs. An GramlinPlugin 
+You will find details on how to instantiate an ArangoDBGraph in the JavaDocs. A GremlinPlugin 
 implementation is also provided so the provider can be used from the Gremlin console.
 
 TBD - Add more detailed installation and use information.
