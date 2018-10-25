@@ -44,15 +44,15 @@ import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
 
 /**
  * The ArangoDB graph class.
- * 
+ *
  * NOTE: USE OF THIS API REQUIRES A USER WITH <b>ADMINISTRATOR</b> ACCESS IF THE <b>DB</b> USED FOR
- * THE GRAPH DO NOT EXIST. As per ArangoDB, creating DB is only allowed for the root user, hence
- * onlt the root user can be used if the DB does not exist.
+ * THE GRAPH DOES NOT EXIST. As per ArangoDB, creating DB is only allowed for the root user, hence
+ * only the root user can be used if the DB does not exist.
  * <p>
- * <b>ArangoDB and Tinkerpop Ids.</b>
+ * <b>ArangoDB and TinkerPop Ids.</b>
  * <p>
- * In Tinkerpop, graph elements are expected to have a unique Id within the graph; in ArangoDB the
- * Id (document handle) consists of the collection's name and the document key (_key attribute) 
+ * In TinkerPop, graph elements are expected to have a unique Id within the graph; in ArangoDB the
+ * Id (document handle) consists of the collection's name and the document key (_key attribute)
  * separated by /, hence the only way to hint at ids is by providing a _key during construction.
  * Hence, ArangoDBGraph elements do not strictly support <i>User Supplied Ids</i>. We allow
  * ids to be supplied during vertex creation: {@code graph.addVertex(id,x)}, but this id actually
@@ -60,12 +60,12 @@ import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
  * (collection) followed by a /.
  * <p>
  * An ArangoDBGraph is instantiated from an Apache Commons Configuration instance. The configuration
- * must provide both Tinkerpop and ArangoDB configuration options. The ArangoDB options are
+ * must provide both TinkerPop and ArangoDB configuration options. The ArangoDB options are
  * described in the ArangoDB Java Driver <a href="https://github.com/arangodb/arangodb-java-driver/blob/master/docs/Drivers/Java/Reference/Setup.md">documentation.</a>
- *  
- * For the Tinkerpop part, the configuration must provide as a minimum the database name and the
+ *
+ * For the TinkerPop part, the configuration must provide as a minimum the database name and the
  * graph name. If no vertex, edge and relation information is provided, the graph will be considered
- * schema-less. 
+ * schema-less.
  * <p>
  * All settings are prefixed with "gremlin.arangodb.conf". So, for example, to set the value of the
  * Arango DB hosts property (arango db configuration), the configuration must read:
@@ -75,7 +75,7 @@ import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
  * <pre>gremlin.arangodb.conf.graph.db = myDB
  * </pre>
  * <p>
- * To define the schema, (EdgeCollecitons in ArangoDB world ) three properties can be used:
+ * To define the schema, (EdgeCollections in ArangoDB world) three properties can be used:
  * <tt>graph.vertex</tt>, <tt>graph.edge</tt> and <tt>graph.relation</tt>. The graph.vertex and
  * graph.edge properties allow definition of the ArangoDB collections used to store nodes and edges
  * respectively. The relations property is used to describe the allowed edge-node relations. For
@@ -92,7 +92,7 @@ import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
  * For more complex graph structures, the graph.relation property is used to tell the ArangoDB what
  * relations are allowed, e.g.:
  * <ul>
- * <li>On-to-one edges
+ * <li>One-to-one edges
  *<pre>gremlin.arangodb.conf.graph.vertex = Place
  *gremlin.arangodb.conf.graph.vertex = Transition
  *gremlin.arangodb.conf.graph.edge = PTArc
@@ -104,8 +104,8 @@ import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
  * Arcs. However, in this case, we have two type of arcs: PTArc and TPArc. The relations specify
  * that PTArcs can only go from Place to Transitions and TPArcs can only go from Transitions to
  * Places. A relation can also specify multiple to/from nodes. In this case, the to/from values is a
- * comma separated list of names. 
- * <li>many-to-many edges
+ * comma separated list of names.
+ * <li>Many-to-many edges
  *  <pre>gremlin.arangodb.conf.graph.vertex = male
  *gremlin.arangodb.conf.graph.vertex = female
  *gremlin.arangodb.conf.graph.edge = relation
@@ -130,12 +130,12 @@ import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
  *   <li>  arangodb.acquireHostList
  *   <li>  arangodb.loadBalancingStrategy
  * </ul>
- * 
+ *
  * @author Achim Brandt (http://www.triagens.de)
  * @author Johannes Gocke (http://www.triagens.de)
  * @author Guido Schwab (http://www.triagens.de)
  * @author Horacio Hoyos Rodriguez (@horaciohoyosr)
- * 
+ *
  */
 
 @Graph.OptIn(Graph.OptIn.SUITE_STRUCTURE_STANDARD)
@@ -236,13 +236,13 @@ public class ArangoDBGraph implements Graph {
 	/**
      * The Class ArangoDBGraphFeatures.
      */
-	
+
 	public class ArangoDBGraphFeatures implements Features {
-    	
+
     	/**
          * The Class ArangoDBGraphGraphFeatures.
          */
-        
+
     	private class ArangoDBGraphGraphFeatures implements GraphFeatures {
 
 			/** The variable features. */
@@ -251,7 +251,7 @@ public class ArangoDBGraph implements Graph {
 			/**
 			 * Instantiates a new ArangoDB graph graph features.
 			 */
-			
+
 			ArangoDBGraphGraphFeatures () { }
 
 			@Override
@@ -274,29 +274,29 @@ public class ArangoDBGraph implements Graph {
 				return variableFeatures;
 			}
 		}
-    	
+
     	/**
          * The Class ArangoDBGraphElementFeatures.
          */
-        
+
         private class ArangoDBGraphElementFeatures implements ElementFeatures {
 
             /**
              * Instantiates a new ArangoDB graph element features.
              */
-        	
+
             ArangoDBGraphElementFeatures() { }
-            
+
             @Override
 			public boolean supportsAnyIds() {
 				return false;
 			}
-			
+
 			@Override
 			public boolean supportsCustomIds() {
 				return false;
 			}
-			
+
 			@Override
 			public boolean supportsNumericIds() {
 				return false;
@@ -313,21 +313,21 @@ public class ArangoDBGraph implements Graph {
 				return false;
 			}
         }
-        
+
 		/**
          * The Class ArangoDBGraphVertexFeatures.
          */
-        
+
         private class ArangoDBGraphVertexFeatures extends ArangoDBGraphElementFeatures implements VertexFeatures {
 
 		    /** The vertex property features. */
-        	
+
     		private final VertexPropertyFeatures vertexPropertyFeatures = new ArangoDBGraphVertexPropertyFeatures();
 
             /**
              * Instantiates a new ArangoDB graph vertex features.
              */
-    		
+
             ArangoDBGraphVertexFeatures () { }
 
 
@@ -336,20 +336,20 @@ public class ArangoDBGraph implements Graph {
                 return vertexPropertyFeatures;
             }
         }
-        
+
     	/**
          * The Class ArangoDBGraphEdgeFeatures.
          */
         public class ArangoDBGraphEdgeFeatures extends ArangoDBGraphElementFeatures implements EdgeFeatures {
 
 		    /** The edge property features. */
-        	
+
     		private final EdgePropertyFeatures edgePropertyFeatures = new ArangoDBGraphEdgePropertyFeatures();
 
             /**
              * Instantiates a new ArangoDB graph edge features.
              */
-    		
+
             ArangoDBGraphEdgeFeatures() { }
 
             @Override
@@ -357,29 +357,29 @@ public class ArangoDBGraph implements Graph {
                 return edgePropertyFeatures;
             }
         }
-        
+
         /**
          * The Class ArangoDBGraphVertexPropertyFeatures.
          */
-        
+
         private class ArangoDBGraphVertexPropertyFeatures implements VertexPropertyFeatures {
 
 		    /**
     		 * Instantiates a new ArangoDB graph vertex property features.
     		 */
-        	
+
     		ArangoDBGraphVertexPropertyFeatures() { }
-    		
+
     		@Override
 			public boolean supportsAnyIds() {
 				return false;
 			}
-			
+
 			@Override
 			public boolean supportsCustomIds() {
 				return false;
 			}
-			
+
 			@Override
 			public boolean supportsNumericIds() {
 				return false;
@@ -396,7 +396,7 @@ public class ArangoDBGraph implements Graph {
 				return false;
 			}
         }
-        
+
         /**
          * The Class ArangoDBGraphEdgePropertyFeatures.
          */
@@ -405,20 +405,20 @@ public class ArangoDBGraph implements Graph {
 		    /**
     		 * Instantiates a new ArangoDB graph edge property features.
     		 */
-        	
-    		ArangoDBGraphEdgePropertyFeatures() { } 
+
+    		ArangoDBGraphEdgePropertyFeatures() { }
         }
 
 		/** The graph features. */
-        
+
     	protected GraphFeatures graphFeatures = new ArangoDBGraphGraphFeatures();
 
         /** The vertex features. */
-    	
+
         protected VertexFeatures vertexFeatures = new ArangoDBGraphVertexFeatures();
 
         /** The edge features. */
-        
+
         protected EdgeFeatures edgeFeatures = new ArangoDBGraphEdgeFeatures();
 
         @Override
@@ -443,89 +443,89 @@ public class ArangoDBGraph implements Graph {
     }
 
 	/** The Logger. */
-    
+
 	private static final Logger logger = LoggerFactory.getLogger(ArangoDBGraph.class);
-    
+
     /** The properties key CONFIG_CONF. */
-	
+
     public static final String PROPERTY_KEY_PREFIX = "gremlin.arangodb.conf";
-    
+
     /** The properties key  CONFIG_DB. */
-    
+
     public static final String PROPERTY_KEY_DB_NAME = "graph.db";
-    
+
     /** The properties key  CONFIG_NAME. */
-    
+
     public static final String PROPERTY_KEY_GRAPH_NAME = "graph.name";
-    
+
     /** The properties key CONFIG_VERTICES. */
-    
+
     public static final String PROPERTY_KEY_VERTICES = "graph.vertex";
-    
+
     /** The properties key CONFIG_EDGES. */
-    
+
     public static final String PROPERTY_KEY_EDGES = "graph.edge";
-    
+
     /** The properties key CONFIG_RELATIONS. */
-    
+
     public static final String PROPERTY_KEY_RELATIONS = "graph.relation";
-    
+
     /** The Constant DEFAULT_VERTEX_COLLECTION. */
-    
+
     public static final String DEFAULT_VERTEX_COLLECTION = "vertex";
-    
+
 	/** The Constant DEFAULT_VERTEX_COLLECTION. */
-    
+
     public static final String DEFAULT_EDGE_COLLECTION = "edge";
-    
+
     /** The regex to match DOCUMENT_KEY. */
-    
+
     private static final Pattern DOCUMENT_KEY = Pattern.compile("^[A-Za-z0-9_:\\.@()\\+,=;\\$!\\*'%-]*");
-    
+
 	/** The features. */
-    
+
 	private final Features FEATURES = new ArangoDBGraphFeatures();
-	
+
 	/** A ArangoDBGraphClient to handle the connection to the Database. */
-	
+
 	private ArangoDBGraphClient client = null;
-	
+
 	/** The name. */
-	
+
 	private String name;
-	
+
 	/** The vertex collections. */
-	
+
 	private final List<String> vertexCollections;
 
 	/** The edge collections. */
-	
+
 	private final List<String> edgeCollections;
-	
+
 	/** The relations. */
-	
+
 	private final List<String> relations;
-	
+
 	/**  Flat to indicate that the graph has no schema. */
-	
+
 	private boolean schemaless = false;
 
 	/** The configuration. */
-	
+
 	private Configuration configuration;
 
 	/** The variables id. */
-	
+
 	private String variables_id;
-	
-	
+
+
     /**
      * Create a new ArangoDBGraph from the provided configuration.
      *
      * @param configuration		the Apache Commons configuration
      * @return 					the Arango DB graph
      */
-    
+
     public static ArangoDBGraph open(Configuration configuration) {
 		return new ArangoDBGraph(configuration);
 	}
@@ -537,7 +537,7 @@ public class ArangoDBGraph implements Graph {
 	 */
 
 	public ArangoDBGraph(Configuration configuration) {
-		
+
 		logger.info("Creating new ArangoDB Graph from configuration");
 		Configuration arangoConfig = configuration.subset(PROPERTY_KEY_PREFIX);
 		vertexCollections = arangoConfig.getList(PROPERTY_KEY_VERTICES).stream()
@@ -617,7 +617,7 @@ public class ArangoDBGraph implements Graph {
         	else {
         		throw Vertex.Exceptions.userSuppliedIdsOfThisTypeNotSupported();
         	}
-        	
+
         }
         else {
         	vertex = new ArangoDBVertex(this, collection);
@@ -637,14 +637,14 @@ public class ArangoDBGraph implements Graph {
 	 * @param edges the edges
 	 * @param relations the relations
 	 */
-    
+
 	private void checkValues(
 	    String db,
         String name,
         List<String> vertices,
         List<String> edges,
         List<String> relations) {
-		
+
 		if (StringUtils.isBlank(db)) {
             throw new ArangoDBGraphException(String.format("The provided argument can not be empty/null: %s", db));
 		}
@@ -663,7 +663,7 @@ public class ArangoDBGraph implements Graph {
 	public void close() {
 		client.shutdown();
 	}
-	
+
 
 	@Override
 	public GraphComputer compute() throws IllegalArgumentException {
@@ -685,11 +685,11 @@ public class ArangoDBGraph implements Graph {
 	 *
 	 * @return the list
 	 */
-	
+
 	public List<String> edgeCollections() {
 		return Collections.unmodifiableList(edgeCollections);
 	}
-	
+
 	@Override
 	public Iterator<Edge> edges(Object... edgeIds) {
 		List<String> edgeCollections = new ArrayList<>();
@@ -719,7 +719,7 @@ public class ArangoDBGraph implements Graph {
 	 *
 	 * @return the ArangoDBGraphClient object
 	 */
-	
+
 	public ArangoDBGraphClient getClient() {
 		return client;
 	}
@@ -729,7 +729,7 @@ public class ArangoDBGraph implements Graph {
 	 *
 	 * @return the identifier of the graph
 	 */
-	
+
 	public String getId() {
 		ArangoGraph graph = client.getGraph(name);
 		return graph.getInfo().getName();
@@ -740,7 +740,7 @@ public class ArangoDBGraph implements Graph {
 	 *
 	 * @return the name
 	 */
-	
+
 	public String name() {
 		return this.name;
 	}
@@ -810,7 +810,7 @@ public class ArangoDBGraph implements Graph {
 				+"}";
 		return StringFactory.graphString(this, internal);
 	}
-	
+
 	/**
 	 * The graph relations.
 	 *

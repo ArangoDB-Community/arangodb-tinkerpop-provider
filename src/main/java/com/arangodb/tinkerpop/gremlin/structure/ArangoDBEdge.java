@@ -43,8 +43,8 @@ public class ArangoDBEdge extends ArangoDBBaseEdge implements Edge {
 
 	/** The Logger. */
 	private static final Logger logger = LoggerFactory.getLogger(ArangoDBEdge.class);
-	
-	
+
+
     /**
      * Constructor used for ArabgoDB JavaBeans serialisation.
      */
@@ -143,11 +143,11 @@ public class ArangoDBEdge extends ArangoDBBaseEdge implements Edge {
 		}
 		return new ArangoDBIterator<>(graph, graph.getClient().getEdgeVertices(graph.name(), _id(), label(), from, to));
 	}
-	
+
 	/*
-	 * Removing a property while iterating will throw ConcurrentModificationException 
+	 * Removing a property while iterating will throw ConcurrentModificationException
 	 */
-	
+
 	@SuppressWarnings("unchecked")
 	@Override
 	public <V> Iterator<Property<V>> properties(String... propertyKeys) {
@@ -176,5 +176,5 @@ public class ArangoDBEdge extends ArangoDBBaseEdge implements Edge {
     public int hashCode() {
         return ElementHelper.hashCode(this);
     }
-	
+
 }

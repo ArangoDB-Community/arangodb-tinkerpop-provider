@@ -50,9 +50,9 @@ import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
  */
 
 public class ArangoDBVertex extends ArangoDBBaseDocument implements Vertex {
-	
+
 	/** The Logger. */
-	
+
 	private static final Logger logger = LoggerFactory.getLogger(ArangoDBVertex.class);
 
     /**
@@ -95,7 +95,7 @@ public class ArangoDBVertex extends ArangoDBBaseDocument implements Vertex {
     public String label() {
         return collection();
     }
-	
+
 	@Override
 	public void remove() {
 		logger.info("remove {}", this._id());
@@ -110,7 +110,7 @@ public class ArangoDBVertex extends ArangoDBBaseDocument implements Vertex {
 		graph.getClient().executeAqlQuery(query , bindVars, null, this.getClass());
 		queryBuilder = new ArangoDBQueryBuilder()
 			.append(String.format("REMOVE Document(@startVertex) IN %s", ArangoDBUtil.getCollectioName(graph.name(), label())));
-		
+
 		query = queryBuilder.toString();
 		graph.getClient().executeAqlQuery(query , bindVars, null, this.getClass());
 	}
@@ -225,7 +225,7 @@ public class ArangoDBVertex extends ArangoDBBaseDocument implements Vertex {
 		return new ArangoDBIterator<Vertex>(graph, documentNeighbors);
 	}
 
-	
+
 	@SuppressWarnings("unchecked")
 	@Override
 	public <V> Iterator<VertexProperty<V>> properties(String... propertyKeys) {
@@ -241,7 +241,7 @@ public class ArangoDBVertex extends ArangoDBBaseDocument implements Vertex {
         return (Iterator<VertexProperty<V>>) new ArangoDBPropertyIterator<V, VertexProperty<V>>(graph, (ArangoCursor<ArangoDBVertexProperty<V>>) query);
     }
 
-	
+
 	@Override
     public String toString() {
     	return StringFactory.vertexString(this);
