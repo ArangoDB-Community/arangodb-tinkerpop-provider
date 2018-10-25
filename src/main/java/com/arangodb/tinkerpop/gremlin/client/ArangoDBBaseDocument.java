@@ -15,16 +15,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * The ArangoDB BaseBaseDocument provides the internal fields required for the driver to correctly 
+ * The ArangoDB BaseBaseDocument provides the internal fields required for the driver to correctly
  * serialize and deserialize edges.
- * 
+ *
  * @author Horacio Hoyos Rodriguez (@horaciohoyosr)
  */
 
 public abstract class ArangoDBBaseDocument {
 
     /** The Logger. */
-	
+
     private static final Logger logger = LoggerFactory.getLogger(ArangoDBBaseDocument.class);
 
     /** ArangoDB internal id. */
@@ -37,7 +37,7 @@ public abstract class ArangoDBBaseDocument {
     @DocumentField(DocumentField.Type.REV)
     private String _rev;
 
-    /** ArangoDB internal key - mapped to Tinkerpop's ID. */
+    /** ArangoDB internal key - mapped to TinkerPop's ID. */
 
     @DocumentField(DocumentField.Type.KEY)
     protected String _key;
@@ -69,7 +69,7 @@ public abstract class ArangoDBBaseDocument {
      *
      * @param key 			the key to assign to the docuement
      */
-    
+
     public ArangoDBBaseDocument(String key) {
         this._key = key;
     }
@@ -217,7 +217,7 @@ public abstract class ArangoDBBaseDocument {
             return false;
         return this._id().equals(((ArangoDBBaseDocument)object)._id());
     }
-    
+
     @Override
     public int hashCode() {
         return _id.hashCode();
