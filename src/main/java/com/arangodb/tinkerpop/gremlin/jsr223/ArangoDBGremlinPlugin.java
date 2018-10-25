@@ -16,13 +16,13 @@ import com.arangodb.tinkerpop.gremlin.structure.*;
 import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
 
 /**
- * The Class ArangoDBGramlinPlugin.
+ * The Class ArangoDBGremlinPlugin.
  */
-public class ArangoDBGramlinPlugin extends AbstractGremlinPlugin {
-	
+public class ArangoDBGremlinPlugin extends AbstractGremlinPlugin {
+
 	/** The Constant NAME. */
 	private static final String NAME = "tinkerpop.arangodb";
-	
+
 	/** The Constant IMPORTS. */
 	private static final ImportCustomizer IMPORTS;
 
@@ -52,23 +52,23 @@ public class ArangoDBGramlinPlugin extends AbstractGremlinPlugin {
             throw new RuntimeException(ex);
         }
     }
-    
+
     /** The Constant INSTANCE. */
-    private static final ArangoDBGramlinPlugin INSTANCE = new ArangoDBGramlinPlugin();
+    private static final ArangoDBGremlinPlugin INSTANCE = new ArangoDBGremlinPlugin();
 
     /**
      * Instantiates a new Arango DB gremlin plugin.
      */
-    public ArangoDBGramlinPlugin() {
+    public ArangoDBGremlinPlugin() {
         super(NAME, IMPORTS);
     }
 
     /**
      * Instance.
      *
-     * @return the arango DB gramlin plugin
+     * @return the arango DB gremlin plugin
      */
-    public static ArangoDBGramlinPlugin instance() {
+    public static ArangoDBGremlinPlugin instance() {
         return INSTANCE;
     }
 
