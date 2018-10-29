@@ -16,6 +16,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang.ArrayUtils;
@@ -33,6 +34,7 @@ import org.slf4j.LoggerFactory;
 
 import com.arangodb.ArangoCursor;
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBBaseDocument;
+import com.arangodb.tinkerpop.gremlin.client.ArangoDBGraphException;
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBIterator;
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBPropertyFilter;
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBPropertyIterator;
@@ -130,8 +132,25 @@ public class ArangoDBVertex extends ArangoDBBaseDocument implements Vertex {
 		ArangoDBEdge edge = null;
 		if (ElementHelper.getIdValue(keyValues).isPresent()) {
         	id = ElementHelper.getIdValue(keyValues).get();
+        	if (id.toString().contains("/")) {
+        		String fullId = id.toString();
+        		String[] parts = fullId.split("/");
+        		// The collection name is the last part of the full name
+        		String[] collectionParts = parts[0].split("_");
+				String collectionName = collectionParts[collectionParts.length-1];
+				if (collectionName.contains(label)) {
+        			id = parts[1];
+        			
+        		}
+        	}
         	if (graph.features().edge().willAllowId(id)) {
-        		edge = new ArangoDBEdge(graph, label, this, ((ArangoDBVertex) inVertex), id.toString());
+        		Matcher m = ArangoDBUtil.DOCUMENT_KEY.matcher((String)id);
+        		if (m.matches()) {
+        			edge = new ArangoDBEdge(graph, label, this, ((ArangoDBVertex) inVertex), id.toString());
+        		}
+        		else {
+            		throw new ArangoDBGraphException(String.format("Given id (%s) has unsupported characters.", id));
+            	}
         	}
         	else {
         		throw Vertex.Exceptions.userSuppliedIdsOfThisTypeNotSupported();
@@ -159,10 +178,27 @@ public class ArangoDBVertex extends ArangoDBBaseDocument implements Vertex {
 		Optional<Object> idValue = ElementHelper.getIdValue(keyValues);
 		String id = null;
 		if (idValue.isPresent()) {
-			if (!graph.features().vertex().willAllowId(idValue.get())) {
+			id = (String) idValue.get();
+			if (id.toString().contains("/")) {
+        		String fullId = id.toString();
+        		String[] parts = fullId.split("/");
+        		// The collection name is the last part of the full name
+        		String[] collectionParts = parts[0].split("_");
+				String collectionName = collectionParts[collectionParts.length-1];
+				if (collectionName.contains(ArangoDBUtil.ELEMENT_PROPERTIES_COLLECTION)) {
+        			id = parts[1];
+        			
+        		}
+        	}
+			if (graph.features().vertex().willAllowId(idValue.get())) {
+		        Matcher m = ArangoDBUtil.DOCUMENT_KEY.matcher((String)id);
+				if (!m.matches()) {
+					throw new ArangoDBGraphException(String.format("Given id (%s) has unsupported characters.", id));
+		    	}
+			}
+			else {
 				throw VertexProperty.Exceptions.userSuppliedIdsOfThisTypeNotSupported();
 			}
-			id = (String) idValue.get();
 			int idIndex = 0;
             for (int i = 0; i < keyValues.length; i+=2) {
                 if (keyValues[i] == T.id) {
@@ -175,6 +211,7 @@ public class ArangoDBVertex extends ArangoDBBaseDocument implements Vertex {
 		}
         final Optional<VertexProperty<V>> optionalVertexProperty = ElementHelper.stageVertexProperty(this, cardinality, key, value, keyValues);
         if (optionalVertexProperty.isPresent()) return optionalVertexProperty.get();
+        
 
         ArangoDBVertexProperty<V> p = ArangoDBUtil.createArangoDBVertexProperty(id, key, value, this);
         ElementHelper.attachProperties(p, keyValues);

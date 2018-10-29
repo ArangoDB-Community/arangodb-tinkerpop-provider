@@ -19,6 +19,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -60,15 +61,15 @@ public class ArangoDBUtil {
 
     /** The Constant GRAPH_VARIABLES_COLLECTION. */
 	
-    public static final String GRAPH_VARIABLES_COLLECTION = "GRAPH_VARIABLES";
+    public static final String GRAPH_VARIABLES_COLLECTION = "GRAPH-VARIABLES";
     
     /** The Constant ELEMENT_PROPERTIES_COLLECTION. */
     
-    public static final String ELEMENT_PROPERTIES_COLLECTION = "ELEMENT_PROPERTIES";
+    public static final String ELEMENT_PROPERTIES_COLLECTION = "ELEMENT-PROPERTIES";
     
     /** The Constant ELEMENT_PROPERTIES_EDGE. */
     
-    public static final String ELEMENT_PROPERTIES_EDGE = "ELEMENT_HAS_PROPERTIES";
+    public static final String ELEMENT_PROPERTIES_EDGE = "ELEMENT-HAS-PROPERTIES";
     
 	/**
 	 * The prefix to denote that a collection is a hidden collection.
@@ -79,6 +80,10 @@ public class ArangoDBUtil {
 	/** The Constant HIDDEN_PREFIX_LENGTH. */
 	
 	private static final int HIDDEN_PREFIX_LENGTH = HIDDEN_PREFIX.length();
+
+	/** The regex to match DOCUMENT_KEY. */
+	
+	public static final Pattern DOCUMENT_KEY = Pattern.compile("^[A-Za-z0-9_:\\.@()\\+,=;\\$!\\*'%-]*");
 
 	/**
 	 * Instantiates a new ArangoDB Util.
