@@ -687,6 +687,7 @@ public class ArangoDBGraphClient {
 			.ret("v");
 		
 		String query = queryBuilder.toString();
+		logger.debug("AQL {}", query);
 		return executeAqlQuery(query, bindVars, null, propertyType);
 	}
 	
@@ -725,6 +726,7 @@ public class ArangoDBGraphClient {
 		}
 		queryBuilder.ret("v");
 		String query = queryBuilder.toString();
+		logger.debug("AQL {}", query);
 		return executeAqlQuery(query, bindVars, null, ArangoDBVertex.class);
 	}
 	
@@ -762,6 +764,7 @@ public class ArangoDBGraphClient {
 		}
 		queryBuilder.ret("e");
 		String query = queryBuilder.toString();
+		logger.debug("AQL {}", query);
 		return executeAqlQuery(query, bindVars, null, ArangoDBEdge.class);
 	}
 	
@@ -794,6 +797,7 @@ public class ArangoDBGraphClient {
 						.collect(Collectors.joining(",", "[", "]\n")))
 				.ret("Document(v)");
 			String query = queryBuilder.toString();
+			logger.debug("AQL {}", query);
 			return executeAqlQuery(query, bindVars, null, ArangoDBVertex.class);
 		}
 	
@@ -810,6 +814,7 @@ public class ArangoDBGraphClient {
 		queryBuilder.iterateCollection(graphName, "v", ArangoDBUtil.GRAPH_VARIABLES_COLLECTION, bindVars)
 			.ret("v._id");
 		String query = queryBuilder.toString();
+		logger.debug("AQL {}", query);
 		return executeAqlQuery(query, bindVars, null, String.class);
 	}
 	
@@ -831,6 +836,7 @@ public class ArangoDBGraphClient {
 			.documentById(id, "v", bindVars)
 			.ret("v");
 		String query = queryBuilder.toString();
+		logger.debug("AQL {}", query);
 		return executeAqlQuery(query, bindVars, null, ArangoDBGraphVariables.class);
 	}
 	
