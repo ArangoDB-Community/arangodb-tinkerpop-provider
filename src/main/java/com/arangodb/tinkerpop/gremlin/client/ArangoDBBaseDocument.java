@@ -205,21 +205,5 @@ public abstract class ArangoDBBaseDocument {
     public void setPaired(boolean paired) {
         this.paired = paired;
     }
-
-    @Override
-    public boolean equals(final Object object) {
-        if (null == object)
-            return false;
-
-        if (this == object)
-            return true;
-        if (!(object instanceof ArangoDBBaseDocument))
-            return false;
-        return this._id().equals(((ArangoDBBaseDocument)object)._id());
-    }
-
-    @Override
-    public int hashCode() {
-        return _id.hashCode();
-    }
+    
 }

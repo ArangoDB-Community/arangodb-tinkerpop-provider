@@ -165,8 +165,7 @@ public class ArangoDBEdge extends ArangoDBBaseEdge implements Edge {
     public String toString() {
     	return StringFactory.edgeString(this);
     }
-
-
+	
     @Override
     public boolean equals(final Object object) {
         return ElementHelper.areEqual(this, object);

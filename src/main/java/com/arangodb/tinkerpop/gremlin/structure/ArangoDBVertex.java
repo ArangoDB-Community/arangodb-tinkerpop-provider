@@ -292,6 +292,16 @@ public class ArangoDBVertex extends ArangoDBBaseDocument implements Vertex {
 			graph.getClient().updateDocument(this);
 		}
 	}
+	
+    @Override
+    public boolean equals(final Object object) {
+        return ElementHelper.areEqual(this, object);
+    }
+
+    @Override
+    public int hashCode() {
+        return ElementHelper.hashCode(this);
+    }
 
 }
 
