@@ -125,7 +125,11 @@ public class ArangoDBConfigurationBuilder {
 	public BaseConfiguration build() {
 		BaseConfiguration config = new BaseConfiguration();
 		config.setListDelimiter('/');
-		List<String> emtpyRels = new ArrayList<>();
+		config.addProperty(fullPropertyKey(ArangoDBGraph.PROPERTY_KEY_DB_NAME), dbName);
+		config.addProperty(fullPropertyKey(ArangoDBGraph.PROPERTY_KEY_GRAPH_NAME), graphName);
+		config.addProperty(fullPropertyKey(ArangoDBGraph.PROPERTY_KEY_VERTICES), vertices);
+		config.addProperty(fullPropertyKey(ArangoDBGraph.PROPERTY_KEY_EDGES), edges);
+		List<String> rels = new ArrayList<>();
 		for (Triple<String, Set<String>, Set<String>> r : relations) {
 			// Make sure edge and vertex collections have been added
 			StringBuilder rVal = new StringBuilder();
@@ -150,13 +154,12 @@ public class ArangoDBConfigurationBuilder {
 				}
 			}
 			rVal.append(r.getRight().stream().collect(Collectors.joining(",")));
-			List<Object> rels = config.getList(fullPropertyKey(ArangoDBGraph.PROPERTY_KEY_RELATIONS), emtpyRels);
-			rels.add(rVal);
+			rels.add(rVal.toString());
+			
 		}
-		config.addProperty(fullPropertyKey(ArangoDBGraph.PROPERTY_KEY_DB_NAME), dbName);
-		config.addProperty(fullPropertyKey(ArangoDBGraph.PROPERTY_KEY_GRAPH_NAME), graphName);
-		config.addProperty(fullPropertyKey(ArangoDBGraph.PROPERTY_KEY_VERTICES), vertices);
-		config.addProperty(fullPropertyKey(ArangoDBGraph.PROPERTY_KEY_EDGES), edges);
+		if (!rels.isEmpty()) {
+			config.addProperty(fullPropertyKey(ArangoDBGraph.PROPERTY_KEY_RELATIONS), rels.stream().collect(Collectors.joining("/")));
+		}
 		config.addProperty(fullPropertyKey(PROPERTY_KEY_USER), user);
 		config.addProperty(fullPropertyKey(PROPERTY_KEY_PASSWORD), password);
 		if (hostList) {

@@ -16,7 +16,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
 import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
@@ -478,11 +477,7 @@ public class ArangoDBGraph implements Graph {
 
     public static final String DEFAULT_EDGE_COLLECTION = "edge";
 
-    /** The regex to match DOCUMENT_KEY. */
-
-    private static final Pattern DOCUMENT_KEY = Pattern.compile("^[A-Za-z0-9_:\\.@()\\+,=;\\$!\\*'%-]*");
-
-	/** The features. */
+    /** The features. */
 
 	private final Features FEATURES = new ArangoDBGraphFeatures();
 
@@ -606,7 +601,18 @@ public class ArangoDBGraph implements Graph {
         if (ElementHelper.getIdValue(keyValues).isPresent()) {
         	id = ElementHelper.getIdValue(keyValues).get();
         	if (this.features().vertex().willAllowId(id)) {
-        		Matcher m = DOCUMENT_KEY.matcher((String)id);
+	        	if (id.toString().contains("/")) {
+	        		String fullId = id.toString();
+	        		String[] parts = fullId.split("/");
+	        		// The collection name is the last part of the full name
+	        		String[] collectionParts = parts[0].split("_");
+					String collectionName = collectionParts[collectionParts.length-1];
+					if (collectionName.contains(collection)) {
+	        			id = parts[1];
+	        			
+	        		}
+	        	}
+        		Matcher m = ArangoDBUtil.DOCUMENT_KEY.matcher((String)id);
         		if (m.matches()) {
         			vertex = new ArangoDBVertex(this, collection, id.toString());
         		}

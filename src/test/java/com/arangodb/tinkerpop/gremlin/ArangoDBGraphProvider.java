@@ -69,7 +69,6 @@ public class ArangoDBGraphProvider extends AbstractGraphProvider {
 			switch(loadGraphWith) {
 			case CLASSIC:
 				System.out.println("CLASSIC");
-				System.out.println("case \"" + testMethodName + "\":");
 				builder.withEdgeCollection("knows");
 				builder.withEdgeCollection("created");
 				builder.configureEdge("knows", "vertex", "vertex");
@@ -119,7 +118,25 @@ public class ArangoDBGraphProvider extends AbstractGraphProvider {
 			else if(testMethodName.startsWith("shouldSupportUUID")) {
 				builder.withEdgeCollection("friend");
 			}
-			else if(testMethodName.startsWith("shouldReadWrite")) {
+			else if(testMethodName.startsWith("shouldReadWriteVertexWithBOTHEdges")) {
+				builder.withEdgeCollection("friends");
+			}
+			else if(testMethodName.startsWith("shouldReadWriteVertexWithINEdges")) {
+				builder.withEdgeCollection("friends");
+			}
+			else if(testMethodName.startsWith("shouldReadWriteVertexMultiPropsNoEdges")) {
+				builder.withEdgeCollection("friends");
+			}
+			else if(testMethodName.startsWith("shouldReadWriteDetachedVertexAsReferenceNoEdges")) {
+				builder.withEdgeCollection("friends");
+			}
+			else if(testMethodName.startsWith("shouldReadWriteVertexNoEdges")) {
+				builder.withEdgeCollection("friends");
+			}
+			else if(testMethodName.startsWith("shouldReadWriteVertexWithOUTEdges")) {
+				builder.withEdgeCollection("friends");
+			}
+			else if(testMethodName.startsWith("shouldReadWriteDetachedVertexNoEdges")) {
 				builder.withEdgeCollection("friends");
 			}
 			else {

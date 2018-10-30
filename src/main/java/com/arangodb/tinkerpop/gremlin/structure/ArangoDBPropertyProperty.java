@@ -12,6 +12,7 @@ import java.util.Collections;
 
 import org.apache.tinkerpop.gremlin.structure.Direction;
 import org.apache.tinkerpop.gremlin.structure.Element;
+import org.apache.tinkerpop.gremlin.structure.util.ElementHelper;
 
 import com.arangodb.ArangoCursor;
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBBaseDocument;
@@ -54,6 +55,16 @@ public class ArangoDBPropertyProperty<U> extends ArangoDBElementProperty<U> {
         		.getDocumentNeighbors(graph.name(), this, Collections.emptyList(), Direction.IN, ArangoDBPropertyFilter.empty(), ArangoDBVertexProperty.class);
 		ArangoDBIterator<ArangoDBVertexProperty> iterator = new ArangoDBIterator<ArangoDBVertexProperty>(graph, q);
         return iterator.hasNext() ? (Element) iterator.next() : null;
+    }
+    
+    @Override
+    public boolean equals(final Object object) {
+        return ElementHelper.areEqual(this, object);
+    }
+
+    @Override
+    public int hashCode() {
+    	return key().hashCode() + value().hashCode();
     }
 
 }
