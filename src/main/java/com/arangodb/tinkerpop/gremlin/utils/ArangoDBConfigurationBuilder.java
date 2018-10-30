@@ -157,7 +157,9 @@ public class ArangoDBConfigurationBuilder {
 			rels.add(rVal.toString());
 			
 		}
-		config.addProperty(fullPropertyKey(ArangoDBGraph.PROPERTY_KEY_RELATIONS), rels.stream().collect(Collectors.joining("/")));
+		if (!rels.isEmpty()) {
+			config.addProperty(fullPropertyKey(ArangoDBGraph.PROPERTY_KEY_RELATIONS), rels.stream().collect(Collectors.joining("/")));
+		}
 		config.addProperty(fullPropertyKey(PROPERTY_KEY_USER), user);
 		config.addProperty(fullPropertyKey(PROPERTY_KEY_PASSWORD), password);
 		if (hostList) {

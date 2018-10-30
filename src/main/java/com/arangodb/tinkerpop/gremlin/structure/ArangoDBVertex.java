@@ -106,14 +106,16 @@ public class ArangoDBVertex extends ArangoDBBaseDocument implements Vertex {
 		queryBuilder.iterateGraph(graph.name(), "v", Optional.of("e"), Optional.empty(),
 				Optional.of(1), Optional.empty(), ArangoDBQueryBuilder.Direction.OUT,
 				this._id(), bindVars)
-			.append(String.format("    REMOVE v IN %s_ELEMENT_PROPERTIES\n", graph.name()))
-			.append(String.format("    REMOVE e IN %s_ELEMENT_HAS_PROPERTIES\n", graph.name()));
+			.append(String.format("    REMOVE v IN '%s_%s'\n", graph.name(), ArangoDBUtil.ELEMENT_PROPERTIES_COLLECTION))
+			.append(String.format("    REMOVE e IN '%s_%s'\n", graph.name(), ArangoDBUtil.ELEMENT_PROPERTIES_EDGE));
 		String query = queryBuilder.toString();
+		logger.debug("AQL {}", query);
 		graph.getClient().executeAqlQuery(query , bindVars, null, this.getClass());
 		queryBuilder = new ArangoDBQueryBuilder()
 			.append(String.format("REMOVE Document(@startVertex) IN %s", ArangoDBUtil.getCollectioName(graph.name(), label())));
 
 		query = queryBuilder.toString();
+		logger.debug("AQL {}", query);
 		graph.getClient().executeAqlQuery(query , bindVars, null, this.getClass());
 	}
 
@@ -132,18 +134,18 @@ public class ArangoDBVertex extends ArangoDBBaseDocument implements Vertex {
 		ArangoDBEdge edge = null;
 		if (ElementHelper.getIdValue(keyValues).isPresent()) {
         	id = ElementHelper.getIdValue(keyValues).get();
-        	if (id.toString().contains("/")) {
-        		String fullId = id.toString();
-        		String[] parts = fullId.split("/");
-        		// The collection name is the last part of the full name
-        		String[] collectionParts = parts[0].split("_");
-				String collectionName = collectionParts[collectionParts.length-1];
-				if (collectionName.contains(label)) {
-        			id = parts[1];
-        			
-        		}
-        	}
         	if (graph.features().edge().willAllowId(id)) {
+	        	if (id.toString().contains("/")) {
+	        		String fullId = id.toString();
+	        		String[] parts = fullId.split("/");
+	        		// The collection name is the last part of the full name
+	        		String[] collectionParts = parts[0].split("_");
+					String collectionName = collectionParts[collectionParts.length-1];
+					if (collectionName.contains(label)) {
+	        			id = parts[1];
+	        			
+	        		}
+	        	}
         		Matcher m = ArangoDBUtil.DOCUMENT_KEY.matcher((String)id);
         		if (m.matches()) {
         			edge = new ArangoDBEdge(graph, label, this, ((ArangoDBVertex) inVertex), id.toString());
@@ -178,19 +180,19 @@ public class ArangoDBVertex extends ArangoDBBaseDocument implements Vertex {
 		Optional<Object> idValue = ElementHelper.getIdValue(keyValues);
 		String id = null;
 		if (idValue.isPresent()) {
-			id = (String) idValue.get();
-			if (id.toString().contains("/")) {
-        		String fullId = id.toString();
-        		String[] parts = fullId.split("/");
-        		// The collection name is the last part of the full name
-        		String[] collectionParts = parts[0].split("_");
-				String collectionName = collectionParts[collectionParts.length-1];
-				if (collectionName.contains(ArangoDBUtil.ELEMENT_PROPERTIES_COLLECTION)) {
-        			id = parts[1];
-        			
-        		}
-        	}
 			if (graph.features().vertex().willAllowId(idValue.get())) {
+				id = idValue.get().toString();
+				if (id.toString().contains("/")) {
+	        		String fullId = id.toString();
+	        		String[] parts = fullId.split("/");
+	        		// The collection name is the last part of the full name
+	        		String[] collectionParts = parts[0].split("_");
+					String collectionName = collectionParts[collectionParts.length-1];
+					if (collectionName.contains(ArangoDBUtil.ELEMENT_PROPERTIES_COLLECTION)) {
+	        			id = parts[1];
+	        			
+	        		}
+	        	}
 		        Matcher m = ArangoDBUtil.DOCUMENT_KEY.matcher((String)id);
 				if (!m.matches()) {
 					throw new ArangoDBGraphException(String.format("Given id (%s) has unsupported characters.", id));
@@ -273,7 +275,6 @@ public class ArangoDBVertex extends ArangoDBBaseDocument implements Vertex {
         for (String pk : propertyKeys) {
             filter.has("key", pk, ArangoDBPropertyFilter.Compare.EQUAL);
         }
-        logger.debug("Creating ArangoDB query");
         ArangoCursor<?> query = graph.getClient().getElementProperties(graph.name(), this, labels, filter, ArangoDBVertexProperty.class);
         return (Iterator<VertexProperty<V>>) new ArangoDBPropertyIterator<V, VertexProperty<V>>(graph, (ArangoCursor<ArangoDBVertexProperty<V>>) query);
     }

@@ -600,18 +600,18 @@ public class ArangoDBGraph implements Graph {
         ArangoDBVertex vertex = null;
         if (ElementHelper.getIdValue(keyValues).isPresent()) {
         	id = ElementHelper.getIdValue(keyValues).get();
-        	if (id.toString().contains("/")) {
-        		String fullId = id.toString();
-        		String[] parts = fullId.split("/");
-        		// The collection name is the last part of the full name
-        		String[] collectionParts = parts[0].split("_");
-				String collectionName = collectionParts[collectionParts.length-1];
-				if (collectionName.contains(collection)) {
-        			id = parts[1];
-        			
-        		}
-        	}
         	if (this.features().vertex().willAllowId(id)) {
+	        	if (id.toString().contains("/")) {
+	        		String fullId = id.toString();
+	        		String[] parts = fullId.split("/");
+	        		// The collection name is the last part of the full name
+	        		String[] collectionParts = parts[0].split("_");
+					String collectionName = collectionParts[collectionParts.length-1];
+					if (collectionName.contains(collection)) {
+	        			id = parts[1];
+	        			
+	        		}
+	        	}
         		Matcher m = ArangoDBUtil.DOCUMENT_KEY.matcher((String)id);
         		if (m.matches()) {
         			vertex = new ArangoDBVertex(this, collection, id.toString());

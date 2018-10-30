@@ -18,6 +18,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -218,7 +219,7 @@ public class ArangoDBUtil {
 		EdgeDefinition result = new EdgeDefinition();
 		String[] info = relation.split(":");
 		if (info.length != 2) {
-			throw new ArangoDBGraphException("Error in configuration. Malformed relation> " + relation);
+			throw new ArangoDBGraphException("Error in configuration. Malformed relation " + relation);
 		}
 		result.collection(getCollectioName(graphName, info[0]));
 		info = info[1].split("->");
@@ -553,9 +554,16 @@ public class ArangoDBUtil {
     		case "":
     			return value;
     		case "java.util.HashMap":
-    			// We might need to check individual values...
-    			System.out.println(((Map<?,?>)value).keySet().stream().map(Object::getClass).collect(Collectors.toList()));
-    			System.out.println("Add conversion for map values to " + valueClass);
+    			//System.out.println(((Map<?,?>)value).keySet().stream().map(Object::getClass).collect(Collectors.toList()));
+    			//System.out.println("Add conversion for map values to " + valueClass);
+    			// Maps are handled by ArangoOK, but we have an extra field, remove it
+				Map<String, ?> valueMap = (Map<String,?>)value;
+				for (String key : valueMap.keySet()) {
+	    			if (key.startsWith("_")) {
+    					valueMap.remove(key);
+    				}
+	    			// We might need to check individual values...
+    			}
     			break;
     		case "java.util.ArrayList":
     			// Should we save the type per item?
