@@ -126,5 +126,15 @@ public class ArangoDBVertexProperty<V> extends ArangoDBElementProperty<V> implem
         ArangoCursor<?> query = graph.getClient().getElementProperties(graph.name(), this, labels, filter, ArangoDBPropertyProperty.class);
         return new ArangoDBPropertyIterator<U, Property<U>>(graph, (ArangoCursor<ArangoDBPropertyProperty<U>>) query);
 	}
+	
+    @Override
+    public boolean equals(final Object object) {
+        return ElementHelper.areEqual(this, object);
+    }
+
+    @Override
+    public int hashCode() {
+    	return key().hashCode() + value().hashCode();
+    }
 
 }

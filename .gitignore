@@ -16,3 +16,5 @@ target
 old/
 
 tikerpopTests\.log
+
+ArangoDBGraphTest*

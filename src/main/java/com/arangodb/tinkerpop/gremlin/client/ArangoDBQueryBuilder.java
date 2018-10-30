@@ -347,9 +347,10 @@ public class ArangoDBQueryBuilder {
 		queryBuilder.append("\n  IN ");
 		if (min.isPresent()) {
 			queryBuilder.append(min.get());
-		}
-		if (max.isPresent()) {
-			queryBuilder.append(String.format("..%s", max.get()));
+			if (max.isPresent()) {
+				queryBuilder.append(String.format("..%s", max.get()));
+			}
+			queryBuilder.append(" ");
 		}
 		queryBuilder.append(direction.getAqlName()).append(" @startVertex\n")
 			.append("    GRAPH '").append(graphName).append("'\n");		// FIXME Graph could be a parameter
