@@ -18,6 +18,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.configuration.BaseConfiguration;
 import org.apache.commons.lang3.tuple.ImmutableTriple;
 import org.apache.commons.lang3.tuple.Triple;
+import org.apache.tinkerpop.gremlin.structure.Graph;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -189,6 +190,7 @@ public class ArangoDBConfigurationBuilder {
 		if (!hosts.isEmpty()) {
 			config.addProperty(fullPropertyKey(PROPERTY_KEY_HOSTS), hosts.stream().collect(Collectors.joining(",")));
 		}
+		config.addProperty(Graph.GRAPH, ArangoDBGraph.class.getName());
 		return config;
 	}
 	
