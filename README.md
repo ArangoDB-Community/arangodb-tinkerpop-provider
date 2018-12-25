@@ -8,7 +8,7 @@ An implementation of the [Apache TinkerPop OLTP Provider](https://tinkerpop.apac
 
 This Provider supports:
 * Apache TinkerPop 3.3
-* ArangoDB 3.3 (via ArangoDB Java Driver 5.0.0).
+* ArangoDB 3.3+ (via ArangoDB Java Driver 5.0.0).
 
 ## ArangoDB
 
@@ -24,7 +24,7 @@ To add the provider to your project via maven you need to add the following depe
   <dependency>
     <groupId>org.arangodb</groupId>
     <artifactId>arangodb-tinkerpop-provider</artifactId>
-    <version>2.0.0</version>
+    <version>2.0.1</version>
   </dependency>
     ....
 </dependencies>
@@ -53,8 +53,6 @@ builder.graph("modern")
 
 // create a ArangoDB graph
 BaseConfiguration conf = builder.build();
-// The Graph.GRAPH ("gremlin.graph") configuration must point to the Graph implementation class
-conf.addProperty(Graph.GRAPH, ArangoDBGraph.class.getName());
 Graph graph = GraphFactory.open(conf);
 GraphTraversalSource gts = new GraphTraversalSource(graph);
 

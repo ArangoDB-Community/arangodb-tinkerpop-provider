@@ -205,9 +205,7 @@ public class ArangoDBGraphProvider extends AbstractGraphProvider {
 				}
 			}
 		}
-		Configuration conf = builder.build();
-		conf.addProperty(Graph.GRAPH, ArangoDBGraph.class.getName());
-		return conf;
+		return builder.build();
 	}
 
 	@Override
