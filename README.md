@@ -53,6 +53,8 @@ builder.graph("modern")
 
 // create a ArangoDB graph
 BaseConfiguration conf = builder.build();
+// The Graph.GRAPH ("gremlin.graph") configuration must point to the Graph implementation class
+conf.addProperty(Graph.GRAPH, ArangoDBGraph.class.getName());
 Graph graph = GraphFactory.open(conf);
 GraphTraversalSource gts = new GraphTraversalSource(graph);
 
