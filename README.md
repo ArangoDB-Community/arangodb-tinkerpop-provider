@@ -59,15 +59,15 @@ GraphTraversalSource gts = new GraphTraversalSource(graph);
 // Clone to avoid setup time
 GraphTraversalSource g = gts.clone();
 // Add vertices
-Vertex v1 = g.addV("person").property(T.id, 1).property("name", "marko")
+Vertex v1 = g.addV("person").property(T.id, "1").property("name", "marko")
     .property("age", 29).next();
 g = gts.clone();
-Vertex v2 = g.addV("software").property(T.id, 3).property("name", "lop")
+Vertex v2 = g.addV("software").property(T.id, "3").property("name", "lop")
     .property("lang", "java").next();
 
 // Add edges
 g = gts.clone();
-Edge e1 = g.addEd("created").from(v1).to(v2).property(T.id, 9)
+Edge e1 = g.addE("created").from(v1).to(v2).property(T.id, "9")
     .property("weight", 0.4).next();
 
 // Graph traversal 
@@ -90,25 +90,28 @@ assert rv == v2;
 
 // Select the "name" property of the "software" vertices
 g = gts.clone();
-String name = g.V().has("name","marko").out("created").values("name").next();
+String name = (String) g.V().has("name","marko").out("created").values("name").next();
 assert name.equals("lop");
 
-// close the graph
+// close the graph and the traversal source
+gts.close();
 graph.close();
 ```
 
 ## A note on element IDs
 
-The provider inmplementation supports user supplied IDs, that is:
+The provider implementation supports user supplied IDs, i.e. provide an id property for graph
+elements, but currently we only support String ids, that is:
 
 ```
-Vertex v1 = g.addV("person").property(T.id, 1);
+Vertex v1 = g.addV("person").property(T.id, "1");
 ```
 
-will create a vertex with id "1". However, implementation wise, in ArangoDB we are only allowed to manipulate the documents `key`, not its `id`. For this reason, providing a TinkerPop vertex id (`T.id`) actually sets the vertex's ArangoDB `key`. As a result, retreiving the vertex by the given id will fail:
+
+will create a vertex with id "1". However, implementation wise, in ArangoDB we are only allowed to manipulate the documents `key`, not its `id`. For this reason, providing a TinkerPop vertex id (`T.id`) actually sets the vertex's ArangoDB `key`. As a result, retrieving the vertex by the given id will fail:
 
 ```
-Vertex v2 = g.V(1);
+Vertex v2 = g.V("1");
 assert v2 == null;
 ```
 
