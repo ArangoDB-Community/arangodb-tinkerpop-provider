@@ -232,6 +232,11 @@ Graph.OptOut(
 		*/
 public class ArangoDBGraph implements Graph {
 
+
+	public String getCollectioName(String graphName, String collectionName) {
+		return ArangoDBUtil.getCollectioName(graphName, collectionName, shouldPrefixCollectionNames);
+	}
+
 	/**
      * The Class ArangoDBGraphFeatures.
      */
@@ -469,15 +474,19 @@ public class ArangoDBGraph implements Graph {
 
     public static final String PROPERTY_KEY_RELATIONS = "graph.relation";
 
-    /** The Constant DEFAULT_VERTEX_COLLECTION. */
+	/** The properties key CONFIG_SHOULD_PREFIX_COLLECTION_NAMES **/
 
-    public static final String DEFAULT_VERTEX_COLLECTION = "vertex";
+	public static final String PROPERTY_KEY_SHOULD_PREFIX_COLLECTION_NAMES = "graph.shouldPrefixCollectionNames";
 
 	/** The Constant DEFAULT_VERTEX_COLLECTION. */
 
-    public static final String DEFAULT_EDGE_COLLECTION = "edge";
+	public static final String DEFAULT_VERTEX_COLLECTION = "vertex";
 
-    /** The features. */
+	/** The Constant DEFAULT_VERTEX_COLLECTION. */
+
+	public static final String DEFAULT_EDGE_COLLECTION = "edge";
+
+	/** The features. */
 
 	private final Features FEATURES = new ArangoDBGraphFeatures();
 
@@ -512,6 +521,9 @@ public class ArangoDBGraph implements Graph {
 	/** The variables id. */
 
 	private String variables_id;
+
+	/** If collection names should be prefixed with graph name */
+	private final boolean shouldPrefixCollectionNames;
 
 
     /**
@@ -554,15 +566,18 @@ public class ArangoDBGraph implements Graph {
 		if (CollectionUtils.isEmpty(edgeCollections)) {
 			edgeCollections.add(DEFAULT_EDGE_COLLECTION);
 		}
+
+		shouldPrefixCollectionNames = arangoConfig.getBoolean(PROPERTY_KEY_SHOULD_PREFIX_COLLECTION_NAMES);
+
 		Properties arangoProperties = ConfigurationConverter.getProperties(arangoConfig);
 		int batchSize = 0;
-		client = new ArangoDBGraphClient(arangoProperties, arangoConfig.getString(PROPERTY_KEY_DB_NAME), batchSize);
+		client = new ArangoDBGraphClient(arangoProperties, arangoConfig.getString(PROPERTY_KEY_DB_NAME), batchSize, shouldPrefixCollectionNames);
         ArangoGraph graph = client.getGraph(graphName);
         GraphCreateOptions options = new  GraphCreateOptions();
-        options.orphanCollections(ArangoDBUtil.getCollectioName(graphName, ArangoDBUtil.GRAPH_VARIABLES_COLLECTION));
+        options.orphanCollections(ArangoDBUtil.getCollectioName(graphName, ArangoDBUtil.GRAPH_VARIABLES_COLLECTION, true)); // Graph Variables is a collection specific for given Graph.
         if (graph.exists()) {
     		this.name = graph.name();
-            ArangoDBUtil.checkGraphForErrors(vertexCollections, edgeCollections, relations, graph, options);
+            ArangoDBUtil.checkGraphForErrors(vertexCollections, edgeCollections, relations, graph, options, shouldPrefixCollectionNames);
             ArangoCursor<String> iter = client.getGraphVariablesId(this.name);
             if (iter.hasNext()) {
             	this.variables_id = iter.next();

@@ -60,7 +60,7 @@ import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
  */
 
 public class ArangoDBGraphClient {
-	
+
 	/**
      * Common exceptions to use with an ArangoDB. This class is intended to translate ArangoDB
      * error codes into meaningful exceptions with standard messages. ArangoDBException exception
@@ -151,7 +151,11 @@ public class ArangoDBGraphClient {
 	/** The batch size. */
 	
 	private int batchSize;
-	
+
+	/** If the collection names should be prefixed or not */
+
+	private final boolean shouldPrefixCollectionWithGraphName;
+
 	/**
 	 * Create a simple graph client and connect to the provided db. If the DB does not exist,
 	 * the driver will try to create one
@@ -165,9 +169,10 @@ public class ArangoDBGraphClient {
 	public ArangoDBGraphClient(
 		Properties properties,
 		String dbname,
-		int batchSize)
+		int batchSize,
+			boolean shouldPrefixCollectionWithGraphName)
 		throws ArangoDBGraphException {
-		this(properties, dbname, batchSize, true);
+		this(properties, dbname, batchSize, true, shouldPrefixCollectionWithGraphName);
 	}
 	
 	/**
@@ -185,7 +190,8 @@ public class ArangoDBGraphClient {
 		Properties properties, 
 		String dbname, 
 		int batchSize,
-		boolean create) 
+		boolean create,
+		boolean shouldPrefixCollectionWithGraphName)
 		throws ArangoDBGraphException {	
 		logger.info("Initiating the ArangoDb Client");
 		ByteArrayOutputStream os = new ByteArrayOutputStream();
@@ -220,6 +226,7 @@ public class ArangoDBGraphClient {
 			}
 		}
 		this.batchSize = batchSize;
+		this.shouldPrefixCollectionWithGraphName = shouldPrefixCollectionWithGraphName;
 	}
 
 	/**
@@ -345,7 +352,7 @@ public class ArangoDBGraphClient {
 		V result;
 		try {
 			result = db.graph(graph.name())
-					.vertexCollection(ArangoDBUtil.getCollectioName(graph.name(), collection)).getVertex(id, docClass);
+					.vertexCollection(ArangoDBUtil.getCollectioName(graph.name(), collection, shouldPrefixCollectionWithGraphName)).getVertex(id, docClass);
 		} catch (ArangoDBException e) {
 			logger.error("Failed to retrieve vertex: {}", e.getErrorMessage());
 			throw new ArangoDBGraphException("Failed to retrieve vertex.", e);
@@ -376,7 +383,7 @@ public class ArangoDBGraphClient {
 		VertexEntity vertexEntity;
 		try {
 			vertexEntity = db.graph(graphName)
-					.vertexCollection(ArangoDBUtil.getCollectioName(graphName, document.collection()))
+					.vertexCollection(ArangoDBUtil.getCollectioName(graphName, document.collection(), shouldPrefixCollectionWithGraphName))
 					.insertVertex(document);
 		} catch (ArangoDBException e) {
 			logger.error("Failed to insert document: {}", e.getMessage());
@@ -412,7 +419,7 @@ public class ArangoDBGraphClient {
 		logger.debug("Delete document {} in {}", document, graphName);
 		try {
 			db.graph(graphName)
-			.vertexCollection(ArangoDBUtil.getCollectioName(graphName, document.collection()))
+			.vertexCollection(ArangoDBUtil.getCollectioName(graphName, document.collection(), shouldPrefixCollectionWithGraphName))
 			.deleteVertex(document._key());
 		} catch (ArangoDBException e) {
 			logger.error("Failed to delete document: {}", e.getErrorMessage());
@@ -441,7 +448,7 @@ public class ArangoDBGraphClient {
 		VertexUpdateEntity vertexEntity;
 		try {
 			vertexEntity = db.graph(graphName)
-					.vertexCollection(ArangoDBUtil.getCollectioName(graphName, document.collection()))
+					.vertexCollection(ArangoDBUtil.getCollectioName(graphName, document.collection(), shouldPrefixCollectionWithGraphName))
 					.updateVertex(document._key(), document);
 		} catch (ArangoDBException e) {
 			logger.error("Failed to update document: {}", e.getErrorMessage());
@@ -472,7 +479,7 @@ public class ArangoDBGraphClient {
 		V result;
 		try {
 			result = db.graph(graph.name())
-					.edgeCollection(ArangoDBUtil.getCollectioName(graph.name(), collection))
+					.edgeCollection(ArangoDBUtil.getCollectioName(graph.name(), collection, shouldPrefixCollectionWithGraphName))
 					.getEdge(id, edgeClass);
 		} catch (ArangoDBException e) {
 			logger.error("Failed to retrieve edge: {}", e.getErrorMessage());
@@ -501,7 +508,7 @@ public class ArangoDBGraphClient {
 		logger.debug("Insert edge {} in {}", edge, graphName);
 		try {
 			db.graph(graphName)
-					.edgeCollection(ArangoDBUtil.getCollectioName(graphName, edge.collection()))
+					.edgeCollection(ArangoDBUtil.getCollectioName(graphName, edge.collection(), shouldPrefixCollectionWithGraphName))
 					.insertEdge(edge);
 		} catch (ArangoDBException e) {
 			logger.error("Failed to insert edge: {}", e.getErrorMessage());
@@ -527,7 +534,7 @@ public class ArangoDBGraphClient {
 		logger.debug("Delete edge {} in {}", edge, graphName);
 		try {
 			db.graph(graphName)
-			.edgeCollection(ArangoDBUtil.getCollectioName(graphName, edge.collection()))
+			.edgeCollection(ArangoDBUtil.getCollectioName(graphName, edge.collection(), shouldPrefixCollectionWithGraphName))
 			.deleteEdge(edge._key());
 		} catch (ArangoDBException e) {
 			logger.error("Failed to delete vertex: {}", e.getErrorMessage());
@@ -554,7 +561,7 @@ public class ArangoDBGraphClient {
 		EdgeUpdateEntity edgeEntity;
 		try {
 			edgeEntity = db.graph(graphName)
-					.edgeCollection(ArangoDBUtil.getCollectioName(graphName, edge.collection()))
+					.edgeCollection(ArangoDBUtil.getCollectioName(graphName, edge.collection(), shouldPrefixCollectionWithGraphName))
 					.updateEdge(edge._key(), edge);
 		} catch (ArangoDBException e) {
 			logger.error("Failed to update vertex: {}", e.getErrorMessage());
@@ -584,7 +591,7 @@ public class ArangoDBGraphClient {
 		logger.debug("Get Vertex's {}:{} Edges, in {}, from collections {}", vertex, direction, graphName, edgeLabels);
 		Map<String, Object> bindVars = new HashMap<>();
 		ArangoDBQueryBuilder.Direction arangoDirection = null;
-		ArangoDBQueryBuilder queryBuilder = new ArangoDBQueryBuilder();
+		ArangoDBQueryBuilder queryBuilder = new ArangoDBQueryBuilder(shouldPrefixCollectionWithGraphName);
 		switch(direction) {
 		case BOTH:
 			arangoDirection = ArangoDBQueryBuilder.Direction.ALL;
@@ -631,7 +638,7 @@ public class ArangoDBGraphClient {
 		logger.debug("Get Document's {}:{} Neighbors, in {}, from collections {}", document, direction, graphName, edgeLabelsFilter);
 		ArangoDBQueryBuilder.Direction arangoDirection = null;
 		Map<String, Object> bindVars = new HashMap<>();
-		ArangoDBQueryBuilder queryBuilder = new ArangoDBQueryBuilder();
+		ArangoDBQueryBuilder queryBuilder = new ArangoDBQueryBuilder(shouldPrefixCollectionWithGraphName);
 		switch(direction) {
 		case BOTH:
 			arangoDirection = ArangoDBQueryBuilder.Direction.ALL;
@@ -676,7 +683,7 @@ public class ArangoDBGraphClient {
         Class<T> propertyType) {
 		logger.debug("Get Vertex's {}:{} Neighbors, in {}, from collections {}", document, graphName, edgeLabelsFilter);
 		Map<String, Object> bindVars = new HashMap<>();
-		ArangoDBQueryBuilder queryBuilder = new ArangoDBQueryBuilder();
+		ArangoDBQueryBuilder queryBuilder = new ArangoDBQueryBuilder(shouldPrefixCollectionWithGraphName);
 		logger.debug("Creating query");
 		queryBuilder.iterateGraph(graphName, "v", Optional.of("e"),
 				Optional.empty(), Optional.empty(), Optional.empty(),
@@ -708,7 +715,7 @@ public class ArangoDBGraphClient {
 		String graphName = graph.name();
 		logger.debug("Get all {} graph vertices, filterd by ids: {}", graphName, ids);
 		Map<String, Object> bindVars = new HashMap<>();
-		ArangoDBQueryBuilder queryBuilder = new ArangoDBQueryBuilder();
+		ArangoDBQueryBuilder queryBuilder = new ArangoDBQueryBuilder(shouldPrefixCollectionWithGraphName);
 		if (ids.isEmpty()) {
 			if (graph.vertexCollections().size() > 1) {
 				queryBuilder.union(graphName, graph.vertexCollections(), "v", bindVars);
@@ -746,7 +753,7 @@ public class ArangoDBGraphClient {
 		String graphName = graph.name();
 		logger.debug("Get all {} graph edges, filterd by ids: {}", graphName, ids);
 		Map<String, Object> bindVars = new HashMap<>();
-		ArangoDBQueryBuilder queryBuilder = new ArangoDBQueryBuilder();
+		ArangoDBQueryBuilder queryBuilder = new ArangoDBQueryBuilder(shouldPrefixCollectionWithGraphName);
 		if (ids.isEmpty()) {
 			if (graph.edgeCollections().size() > 1) {
 				queryBuilder.union(graphName, graph.edgeCollections(), "e", bindVars);
@@ -784,7 +791,7 @@ public class ArangoDBGraphClient {
 			String edgeCollection,
 			boolean from, boolean to) {
 			Map<String, Object> bindVars = new HashMap<>();
-			ArangoDBQueryBuilder queryBuilder = new ArangoDBQueryBuilder();
+			ArangoDBQueryBuilder queryBuilder = new ArangoDBQueryBuilder(shouldPrefixCollectionWithGraphName);
 			List<String> edgeCollections = new ArrayList<>();
 			List<String> vertices = new ArrayList<>();
 			edgeCollections.add(edgeCollection);
@@ -809,7 +816,7 @@ public class ArangoDBGraphClient {
 	 * @return the graph 			variables id
 	 */
 	public ArangoCursor<String> getGraphVariablesId(String graphName) {
-		ArangoDBQueryBuilder queryBuilder = new ArangoDBQueryBuilder();
+		ArangoDBQueryBuilder queryBuilder = new ArangoDBQueryBuilder(false);
 		Map<String, Object> bindVars = new HashMap<>();
 		queryBuilder.iterateCollection(graphName, "v", ArangoDBUtil.GRAPH_VARIABLES_COLLECTION, bindVars)
 			.ret("v._id");
@@ -828,7 +835,7 @@ public class ArangoDBGraphClient {
 	public ArangoCursor<ArangoDBGraphVariables> getGraphVariables(
 		String graphName,
 		String id) {
-		ArangoDBQueryBuilder queryBuilder = new ArangoDBQueryBuilder();
+		ArangoDBQueryBuilder queryBuilder = new ArangoDBQueryBuilder(false);
 		Map<String, Object> bindVars = new HashMap<>();
 		List<String> collections = new ArrayList<>();
 		collections.add(ArangoDBUtil.GRAPH_VARIABLES_COLLECTION);
@@ -866,6 +873,7 @@ public class ArangoDBGraphClient {
 		if (db != null) {
 			ArangoGraph graph = db.graph(name);
 			if (graph.exists()) {
+				//TODO maybe use getCollectionName as well?
 				Collection<String> edgeDefinitions = dropCollections ? graph.getEdgeDefinitions() : Collections.emptyList();
 				Collection<String> vertexCollections = dropCollections ? graph.getVertexCollections(): Collections.emptyList();;
 				// Drop graph first because it will break if the graph collections do not exist
@@ -902,6 +910,7 @@ public class ArangoDBGraphClient {
 	 */
 	
 	public boolean deleteCollection(String name) {
+		//TODO maybe use getCollectionName as well?
 		ArangoCollection collection = db.collection(name);
 		if (collection.exists()) {
 			collection.drop();
@@ -950,10 +959,10 @@ public class ArangoDBGraphClient {
 		final Collection<EdgeDefinition> edgeDefinitions = new ArrayList<>();
 		if (relations.isEmpty()) {
 			logger.info("No relations, creating default one.");
-			edgeDefinitions.addAll(ArangoDBUtil.createDefaultEdgeDefinitions(name, verticesCollectionNames, edgesCollectionNames));
+			edgeDefinitions.addAll(ArangoDBUtil.createDefaultEdgeDefinitions(name, verticesCollectionNames, edgesCollectionNames, shouldPrefixCollectionWithGraphName));
 		} else {
 			for (String value : relations) {
-				EdgeDefinition ed = ArangoDBUtil.relationPropertyToEdgeDefinition(name, value);
+				EdgeDefinition ed = ArangoDBUtil.relationPropertyToEdgeDefinition(name, value, shouldPrefixCollectionWithGraphName);
 				edgeDefinitions.add(ed);
 			}
 		}
@@ -966,7 +975,7 @@ public class ArangoDBGraphClient {
             throw ArangoDBExceptions.getArangoDBException(e);
         }
 		ArangoGraph g = db.graph(name);
-		EdgeDefinition ed = ArangoDBUtil.createPropertyEdgeDefinitions(name, verticesCollectionNames, edgesCollectionNames);
+		EdgeDefinition ed = ArangoDBUtil.createPropertyEdgeDefinitions(name, verticesCollectionNames, edgesCollectionNames, shouldPrefixCollectionWithGraphName);
 		g.addEdgeDefinition(ed);
 		return g;
 	}
