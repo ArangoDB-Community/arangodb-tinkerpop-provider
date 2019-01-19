@@ -35,7 +35,7 @@ public class ArangoDBQueryBuilder {
 	/** The Logger. */
 	
 	private static final Logger logger = LoggerFactory.getLogger(ArangoDBQueryBuilder.class);
-	
+
 	/**
 	 * The Enum QueryType.
 	 */
@@ -64,7 +64,10 @@ public class ArangoDBQueryBuilder {
 	/** The filtered flag. */
 	
 	private boolean filtered = false;
-	
+
+	/** Whether the builder should prefix collection names with grpah name. */
+	private Boolean shouldPrefixWithGraphName;
+
 	/**
 	 * Direction to navigate for vertex paths.
 	 */
@@ -181,14 +184,13 @@ public class ArangoDBQueryBuilder {
 	}
 	
 	/**
-	 * Create a new QueryBuilder.
+	 * Create a new QueryBuilder with config of whether Collection Names should be prefixed with Graph name or not.
 	 */
-	
-	public ArangoDBQueryBuilder() {
+	public ArangoDBQueryBuilder( boolean shouldPrefixCollectionWithGraphName) {
+		this.shouldPrefixWithGraphName = shouldPrefixCollectionWithGraphName;
 		this.queryBuilder = new StringBuilder();
 	}
-	
-	
+
 	/**
 	 * Append a WITH statement to the query builder for the given collections. The required bindVars are
 	 * added to the bindVars map.
@@ -210,7 +212,7 @@ public class ArangoDBQueryBuilder {
 			separator = ",";
 			String varName = String.format("@with%s", colId);
 			queryBuilder.append("@").append(varName);
-			bindVars.put(varName, ArangoDBUtil.getCollectioName(graphName, c));
+			bindVars.put(varName, ArangoDBUtil.getCollectioName(graphName, c, this.shouldPrefixWithGraphName));
 		}
 		queryBuilder.append("\n");
 		logger.debug("with", queryBuilder.toString());
@@ -283,7 +285,7 @@ public class ArangoDBQueryBuilder {
 			queryBuilder.append(separator);
 			separator = "),\n  (";
 			queryBuilder.append(String.format("FOR x%1$s IN @@col%1$s RETURN x%1$s", count));
-			bindVars.put(String.format("@col%s", count++), ArangoDBUtil.getCollectioName(graphName, c));
+			bindVars.put(String.format("@col%s", count++), ArangoDBUtil.getCollectioName(graphName, c, shouldPrefixWithGraphName));
 		}
 		queryBuilder.append("  )\n");
 		queryBuilder.append(")\n");
@@ -307,7 +309,7 @@ public class ArangoDBQueryBuilder {
 		String loopVariable,
 		String collectionName, Map<String, Object> bindVars) {
 		queryBuilder.append(String.format("FOR %1$s IN @@col%2$s", loopVariable, iterateCnt)).append("\n");
-		bindVars.put(String.format("@col%s", iterateCnt++), ArangoDBUtil.getCollectioName(graphName, collectionName));
+		bindVars.put(String.format("@col%s", iterateCnt++), ArangoDBUtil.getCollectioName(graphName, collectionName, shouldPrefixWithGraphName));
 		logger.debug("iterateCollection", queryBuilder.toString());
 		return this;
 	}
@@ -405,7 +407,7 @@ public class ArangoDBQueryBuilder {
 			queryBuilder.append(separator);
 			separator = ", ";
 			queryBuilder.append(String.format("@@col%s", iterateCnt));
-			bindVars.put(String.format("@col%s", iterateCnt++), ArangoDBUtil.getCollectioName(graphName, c));
+			bindVars.put(String.format("@col%s", iterateCnt++), ArangoDBUtil.getCollectioName(graphName, c, shouldPrefixWithGraphName));
 		}
 		bindVars.put("@startVertex", startVertex);
 		logger.debug("iterateGraph", queryBuilder.toString());
@@ -467,7 +469,7 @@ public class ArangoDBQueryBuilder {
 				queryBuilder.append(separator);
 				separator = String.format(", %s) OR IS_SAME_COLLECTION(", filterVariable);
 				queryBuilder.append(String.format("@@col%s", iterateCnt));
-				bindVars.put(String.format("@col%s", iterateCnt++), ArangoDBUtil.getCollectioName(graphName, c));
+				bindVars.put(String.format("@col%s", iterateCnt++), ArangoDBUtil.getCollectioName(graphName, c, shouldPrefixWithGraphName));
 			}
 			queryBuilder.append(String.format(", %s))\n", filterVariable));
 		}
