@@ -10,30 +10,12 @@ package com.arangodb.tinkerpop.gremlin.utils;
 
 import static org.apache.tinkerpop.gremlin.structure.Graph.Hidden.isHidden;
 
-import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-
-import org.apache.commons.collections4.CollectionUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.arangodb.ArangoGraph;
 import com.arangodb.entity.EdgeDefinition;
 import com.arangodb.entity.GraphEntity;
 import com.arangodb.model.GraphCreateOptions;
-import com.arangodb.tinkerpop.gremlin.client.ArangoDBGraphException;
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBGraphClient;
+import com.arangodb.tinkerpop.gremlin.client.ArangoDBGraphException;
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBEdge;
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBEdgeProperty;
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBElementProperty.ElementHasProperty;
@@ -44,6 +26,21 @@ import com.arangodb.tinkerpop.gremlin.structure.ArangoDBVertexProperty;
 import com.arangodb.velocypack.VPack;
 import com.arangodb.velocypack.VPackSlice;
 import com.arangodb.velocypack.exception.VPackParserException;
+import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import org.apache.commons.collections4.CollectionUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class provides utility methods for creating properties and for normalising property and
