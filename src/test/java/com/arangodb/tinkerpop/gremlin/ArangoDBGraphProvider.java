@@ -214,7 +214,7 @@ public class ArangoDBGraphProvider extends AbstractGraphProvider {
 		if (graph ==null) {
 			Configuration arangoConfig = configuration.subset(ArangoDBGraph.PROPERTY_KEY_PREFIX);
 			Properties arangoProperties = ConfigurationConverter.getProperties(arangoConfig);
-			client = new ArangoDBGraphClient(arangoProperties, "tinkerpop", 0);
+			client = new ArangoDBGraphClient(arangoProperties, "tinkerpop", 0, true);
 			client.deleteGraph(arangoConfig.getString(ArangoDBGraph.PROPERTY_KEY_GRAPH_NAME));
 		}
 		else {
