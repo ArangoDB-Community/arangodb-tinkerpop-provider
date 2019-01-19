@@ -5,6 +5,13 @@
 // Copyright triAGENS GmbH Cologne and The University of York
 //
 //////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////
+//
+// Implementation of the TinkerPop-Enabled Providers OLTP for ArangoDB
+//
+// Copyright triAGENS GmbH Cologne and The University of York
+//
+//////////////////////////////////////////////////////////////////////////////////////////
 
 package com.arangodb.tinkerpop.gremlin.utils;
 
@@ -211,28 +218,29 @@ public class ArangoDBUtil {
 	
 	public static EdgeDefinition relationPropertyToEdgeDefinition(
 		String graphName,
-		String relation) throws ArangoDBGraphException {
+		String relation,
+			boolean shouldPrefixCollectionWithGraphName) throws ArangoDBGraphException {
 		logger.info("Creating EdgeRelation from {}", relation);
 		EdgeDefinition result = new EdgeDefinition();
 		String[] info = relation.split(":");
 		if (info.length != 2) {
 			throw new ArangoDBGraphException("Error in configuration. Malformed relation " + relation);
 		}
-		result.collection(getCollectioName(graphName, info[0]));
+		result.collection(getCollectioName(graphName, info[0], shouldPrefixCollectionWithGraphName));
 		info = info[1].split("->");
 		if (info.length != 2) {
 			throw new ArangoDBGraphException("Error in configuration. Malformed relation> " + relation);
 		}
 		List<String> trimmed = Arrays.stream(info[0].split(","))
 				.map(String::trim)
-				.map(c -> getCollectioName(graphName, c))
+				.map(c -> getCollectioName(graphName, c, shouldPrefixCollectionWithGraphName))
 				.collect(Collectors.toList());
 		String[] from = new String[trimmed.size()];
 		from = trimmed.toArray(from);
 		
 		trimmed = Arrays.stream(info[1].split(","))
 				.map(String::trim)
-				.map(c -> getCollectioName(graphName, c))
+				.map(c -> getCollectioName(graphName, c, shouldPrefixCollectionWithGraphName))
 				.collect(Collectors.toList());
 		String[] to = new String[trimmed.size()];
 		to = trimmed.toArray(to);
@@ -255,15 +263,15 @@ public class ArangoDBUtil {
 	public static List<EdgeDefinition> createDefaultEdgeDefinitions (
 		String graphName,
 		List<String> verticesCollectionNames,
-		List<String> edgesCollectionNames) {
+		List<String> edgesCollectionNames, boolean shouldPrefixCollectionWithGraphName) {
 		List<EdgeDefinition> result = new ArrayList<>();
 		for (String e : edgesCollectionNames) {
 			for (String from : verticesCollectionNames) {
 				for (String to : verticesCollectionNames) {
 					EdgeDefinition ed = new EdgeDefinition()
-						.collection(getCollectioName(graphName, e))
-						.from(getCollectioName(graphName, from))
-						.to(getCollectioName(graphName, to));	
+						.collection(getCollectioName(graphName, e, shouldPrefixCollectionWithGraphName))
+						.from(getCollectioName(graphName, from, shouldPrefixCollectionWithGraphName))
+						.to(getCollectioName(graphName, to, shouldPrefixCollectionWithGraphName));
 					result.add(ed);
 				}
 			}
@@ -280,8 +288,12 @@ public class ArangoDBUtil {
 	 * @return 					the unique collection name
 	 */
 	
-	public static String getCollectioName(String graphName, String collectionName) {
-		return String.format("%s_%s", graphName, collectionName);
+	public static String getCollectioName(String graphName, String collectionName, Boolean shouldPrefixWithGraphName) {
+		if(shouldPrefixWithGraphName) {
+			return String.format("%s_%s", graphName, collectionName);
+		}else{
+			return collectionName;
+		}
 	}
 	
 	/**
@@ -299,11 +311,11 @@ public class ArangoDBUtil {
 	public static void checkGraphForErrors(List<String> verticesCollectionNames,
 			List<String> edgesCollectionNames,
 			List<String> relations,
-			ArangoGraph graph, GraphCreateOptions options) throws ArangoDBGraphException {
+			ArangoGraph graph, GraphCreateOptions options, boolean shouldPrefixCollectionWithGraphName) throws ArangoDBGraphException {
 		
 		
 		List<String> allVertexCollections = verticesCollectionNames.stream()
-				.map(vc -> ArangoDBUtil.getCollectioName(graph.name(), vc))
+				.map(vc -> ArangoDBUtil.getCollectioName(graph.name(), vc, shouldPrefixCollectionWithGraphName))
 				.collect(Collectors.toList());
 		allVertexCollections.addAll(options.getOrphanCollections());
 		if (!graph.getVertexCollections().containsAll(allVertexCollections)) {
@@ -325,15 +337,17 @@ public class ArangoDBUtil {
         Map<String, EdgeDefinition> requiredDefinitions;
         final Collection<EdgeDefinition> eds = new ArrayList<>();
         if (relations.isEmpty()) {
-			eds.addAll(ArangoDBUtil.createDefaultEdgeDefinitions(graph.name(), verticesCollectionNames, edgesCollectionNames));
+			eds.addAll(
+					ArangoDBUtil.createDefaultEdgeDefinitions(graph.name(), verticesCollectionNames, edgesCollectionNames, shouldPrefixCollectionWithGraphName)
+			);
 
 		} else {
 			for (Object value : relations) {
-				EdgeDefinition ed = ArangoDBUtil.relationPropertyToEdgeDefinition(graph.name(), (String) value);
+				EdgeDefinition ed = ArangoDBUtil.relationPropertyToEdgeDefinition(graph.name(), (String) value, shouldPrefixCollectionWithGraphName);
 				eds.add(ed);
 			}
 		}
-        eds.add(ArangoDBUtil.createPropertyEdgeDefinitions(graph.name(), verticesCollectionNames, edgesCollectionNames));
+        eds.add(ArangoDBUtil.createPropertyEdgeDefinitions(graph.name(), verticesCollectionNames, edgesCollectionNames, shouldPrefixCollectionWithGraphName));
         requiredDefinitions = eds.stream().collect(Collectors.toMap(EdgeDefinition::getCollection, ed -> ed));
         Iterator<EdgeDefinition> it = graphEdgeDefinitions.iterator();
         while (it.hasNext()) {
@@ -382,16 +396,17 @@ public class ArangoDBUtil {
     public static EdgeDefinition createPropertyEdgeDefinitions(
     	String graphName,
     	List<String> vertexCollections,
-    	List<String> edgeCollections) {
+    	List<String> edgeCollections,
+		  boolean shouldPrefixCollectionWithGraphName) {
         List<String> from = vertexCollections
-        		.stream().map(vc -> ArangoDBUtil.getCollectioName(graphName, vc))
+        		.stream().map(vc -> ArangoDBUtil.getCollectioName(graphName, vc, shouldPrefixCollectionWithGraphName))
         		.collect(Collectors.toList());
-        edgeCollections.forEach(ec -> from.add(ArangoDBUtil.getCollectioName(graphName, ec)));
-        String propCollection = ArangoDBUtil.getCollectioName(graphName, ELEMENT_PROPERTIES_COLLECTION);
+        edgeCollections.forEach(ec -> from.add(ArangoDBUtil.getCollectioName(graphName, ec, shouldPrefixCollectionWithGraphName)));
+        String propCollection = ArangoDBUtil.getCollectioName(graphName, ELEMENT_PROPERTIES_COLLECTION, true);
         from.add(propCollection);
         String[] f = from.toArray(new String[from.size()]);
         EdgeDefinition ed = new EdgeDefinition()
-                .collection(ArangoDBUtil.getCollectioName(graphName, ELEMENT_PROPERTIES_EDGE))
+                .collection(ArangoDBUtil.getCollectioName(graphName, ELEMENT_PROPERTIES_EDGE, true))
                 .from(f)
                 .to(propCollection);
         return ed;
