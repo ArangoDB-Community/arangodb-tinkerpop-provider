@@ -361,16 +361,16 @@ public class ArangoDBGraphClient {
 		result.graph(graph);
 		return result;
 	}
-	
+
 	/**
 	 * Insert a ArangoDBBaseDocument in the graph. The document is updated with the id, rev and key
-	 * (if not * present) 
+	 * (if not * present)
 	 * @param document 					the document
+	 * @param shouldPrefixCollectionNames whether a collection name of the Document should be prefixed with Graph Name.
 	 * @throws ArangoDBGraphException 	If there was an error inserting the document
 	 */
-	
 	public void insertDocument(
-		ArangoDBBaseDocument document) {
+			ArangoDBBaseDocument document, boolean shouldPrefixCollectionNames) {
 		String graphName;
 		try {
 			graphName = document.graph().name();
@@ -378,17 +378,17 @@ public class ArangoDBGraphClient {
 			logger.error("Document not paired: {}", document);
 			throw new ArangoDBGraphException("Document does not have a graph. Can only delete paired documents.");
 		}
-		
+
 		logger.debug("Insert document {} in {}", document, graphName);
 		VertexEntity vertexEntity;
 		try {
 			vertexEntity = db.graph(graphName)
-					.vertexCollection(ArangoDBUtil.getCollectioName(graphName, document.collection(), shouldPrefixCollectionWithGraphName))
+					.vertexCollection(ArangoDBUtil.getCollectioName(graphName, document.collection(), shouldPrefixCollectionNames))
 					.insertVertex(document);
 		} catch (ArangoDBException e) {
 			logger.error("Failed to insert document: {}", e.getMessage());
-            ArangoDBGraphException arangoDBException = ArangoDBExceptions.getArangoDBException(e);
-            if (arangoDBException.getCode() == 1210) {
+			ArangoDBGraphException arangoDBException = ArangoDBExceptions.getArangoDBException(e);
+			if (arangoDBException.getCode() == 1210) {
 				throw Graph.Exceptions.vertexWithIdAlreadyExists(document._key);
 			}
 			throw arangoDBException;
@@ -399,6 +399,19 @@ public class ArangoDBGraphClient {
 			document._key(vertexEntity.getKey());
 		}
 		document.setPaired(true);
+	}
+
+	/**
+	 * Insert a ArangoDBBaseDocument in the graph. The document is updated with the id, rev and key
+	 * (if not * present).
+	 * <br/> This method takes the Class field {@code shouldPrefixCollectionWithGraphName} to decide whether colelction names are prefixed or not.
+	 * @param document 					the document
+	 * @throws ArangoDBGraphException 	If there was an error inserting the document
+	 */
+	
+	public void insertDocument(
+		ArangoDBBaseDocument document) {
+		insertDocument(document, shouldPrefixCollectionWithGraphName);
 	}
 
 	/**
@@ -816,7 +829,7 @@ public class ArangoDBGraphClient {
 	 * @return the graph 			variables id
 	 */
 	public ArangoCursor<String> getGraphVariablesId(String graphName) {
-		ArangoDBQueryBuilder queryBuilder = new ArangoDBQueryBuilder(false);
+		ArangoDBQueryBuilder queryBuilder = new ArangoDBQueryBuilder(true);
 		Map<String, Object> bindVars = new HashMap<>();
 		queryBuilder.iterateCollection(graphName, "v", ArangoDBUtil.GRAPH_VARIABLES_COLLECTION, bindVars)
 			.ret("v._id");
@@ -835,7 +848,7 @@ public class ArangoDBGraphClient {
 	public ArangoCursor<ArangoDBGraphVariables> getGraphVariables(
 		String graphName,
 		String id) {
-		ArangoDBQueryBuilder queryBuilder = new ArangoDBQueryBuilder(false);
+		ArangoDBQueryBuilder queryBuilder = new ArangoDBQueryBuilder(true);
 		Map<String, Object> bindVars = new HashMap<>();
 		List<String> collections = new ArrayList<>();
 		collections.add(ArangoDBUtil.GRAPH_VARIABLES_COLLECTION);

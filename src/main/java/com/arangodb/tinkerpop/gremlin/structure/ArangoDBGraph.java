@@ -591,7 +591,7 @@ public class ArangoDBGraph implements Graph {
             		edgeCollections, relations, options);
         	this.name = graph.name();
 			ArangoDBGraphVariables variables = new ArangoDBGraphVariables(this, ArangoDBUtil.GRAPH_VARIABLES_COLLECTION);
-			client.insertDocument(variables);
+			client.insertDocument(variables, true);
 			this.variables_id = variables._id();
 		}
 		this.configuration = configuration;
