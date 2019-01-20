@@ -505,12 +505,12 @@ public class ArangoDBGraphClient {
 
 	/**
 	 * Insert an edge in the graph. The edge is updated with the id, rev and key (if not
-	 * present) 
+	 * present)
 	 * @param edge            			the edge
+	 * @param shouldPrefixCollectionWithGraphName whether a collection should be prefixed with graph name or not.
 	 * @throws ArangoDBGraphException 	If there was an error inserting the edge
 	 */
-
-	public void insertEdge(ArangoDBBaseEdge edge) {
+	public void insertEdge(ArangoDBBaseEdge edge, boolean shouldPrefixCollectionWithGraphName) {
 		String graphName;
 		try {
 			graphName = edge.graph().name();
@@ -525,9 +525,21 @@ public class ArangoDBGraphClient {
 					.insertEdge(edge);
 		} catch (ArangoDBException e) {
 			logger.error("Failed to insert edge: {}", e.getErrorMessage());
-            throw ArangoDBExceptions.getArangoDBException(e);
+			throw ArangoDBExceptions.getArangoDBException(e);
 		}
 		edge.setPaired(true);
+	}
+
+	/**
+	 * Insert an edge in the graph. The edge is updated with the id, rev and key (if not
+	 * present)
+	 * <br/> THis method uses field {@code shouldPrefixCollectionWithGraphName} to decide whether to prefix the collection name with graph name or not.
+	 * @param edge            			the edge
+	 * @throws ArangoDBGraphException 	If there was an error inserting the edge
+	 */
+
+	public void insertEdge(ArangoDBBaseEdge edge) {
+		insertEdge(edge, shouldPrefixCollectionWithGraphName);
 	}
 
 	/**

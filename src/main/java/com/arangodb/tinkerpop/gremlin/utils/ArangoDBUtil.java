@@ -474,9 +474,11 @@ public class ArangoDBUtil {
         p = new ArangoDBVertexProperty<>(id, key, value, vertex);
         ArangoDBGraph g = vertex.graph();
         ArangoDBGraphClient c = g.getClient();
-        c.insertDocument(p);
+				//This is insertion of a property to ELEMENT-PROPERTIES collection, which must be always prefixed with graph name
+				c.insertDocument(p, true);
         ElementHasProperty e = p.assignToElement(vertex);
-        c.insertEdge(e);
+        //This is insertion of edge to ELEMENT-HAS-PROPERTIES collection, between ArangoBaseDocument and Property
+        c.insertEdge(e, true);
         return p;
     }
 
