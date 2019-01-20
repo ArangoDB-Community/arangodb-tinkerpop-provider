@@ -476,7 +476,7 @@ public class ArangoDBGraph implements Graph {
 
 	/** The properties key CONFIG_SHOULD_PREFIX_COLLECTION_NAMES **/
 
-	public static final String PROPERTY_KEY_SHOULD_PREFIX_COLLECTION_NAMES = "graph.shouldPrefixCollectionNames";
+	public static final String PROPERTY_KEY_SHOULD_PREFIX_COLLECTION_NAMES = "arangodb.shouldPrefixCollectionNames";
 
 	/** The Constant DEFAULT_VERTEX_COLLECTION. */
 
