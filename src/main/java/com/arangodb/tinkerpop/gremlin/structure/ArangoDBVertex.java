@@ -102,18 +102,20 @@ public class ArangoDBVertex extends ArangoDBBaseDocument implements Vertex {
 	public void remove() {
 		logger.info("remove {}", this._id());
 		Map<String, Object> bindVars = new HashMap<>();
-		ArangoDBQueryBuilder queryBuilder = new ArangoDBQueryBuilder();
+		//Remove 1.. OUT v and e.
+		ArangoDBQueryBuilder queryBuilder = new ArangoDBQueryBuilder(true);
 		queryBuilder.iterateGraph(graph.name(), "v", Optional.of("e"), Optional.empty(),
 				Optional.of(1), Optional.empty(), ArangoDBQueryBuilder.Direction.OUT,
 				this._id(), bindVars)
-			.append(String.format("    REMOVE v IN '%s_%s'\n", graph.name(), ArangoDBUtil.ELEMENT_PROPERTIES_COLLECTION))
-			.append(String.format("    REMOVE e IN '%s_%s'\n", graph.name(), ArangoDBUtil.ELEMENT_PROPERTIES_EDGE));
+			.append(String.format("    REMOVE v IN '%s'\n", ArangoDBUtil.getCollectioName(graph.name(), ArangoDBUtil.ELEMENT_PROPERTIES_COLLECTION, true)))
+			.append(String.format("    REMOVE e IN '%s'\n", ArangoDBUtil.getCollectioName(graph.name(), ArangoDBUtil.ELEMENT_PROPERTIES_EDGE, true)));
 		String query = queryBuilder.toString();
 		logger.debug("AQL {}", query);
 		graph.getClient().executeAqlQuery(query , bindVars, null, this.getClass());
-		queryBuilder = new ArangoDBQueryBuilder()
-			.append(String.format("REMOVE Document(@startVertex) IN %s", ArangoDBUtil.getCollectioName(graph.name(), label())));
 
+		//Remove vertex
+		queryBuilder = new ArangoDBQueryBuilder(false)// the false here is never used, because querybuilder is just appending direct AQL query.
+			.append(String.format("REMOVE Document(@startVertex) IN %s", graph.getCollectioName(graph.name(), label())));
 		query = queryBuilder.toString();
 		logger.debug("AQL {}", query);
 		graph.getClient().executeAqlQuery(query , bindVars, null, this.getClass());

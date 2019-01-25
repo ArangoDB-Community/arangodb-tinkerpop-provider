@@ -1,26 +1,33 @@
 package com.arangodb.tinkerpop.gremlin.client.test;
 
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.startsWith;
+import static org.junit.Assert.assertThat;
+
+import com.arangodb.ArangoDBException;
+import com.arangodb.ArangoDatabase;
+import com.arangodb.ArangoGraph;
+import com.arangodb.entity.EdgeDefinition;
+import com.arangodb.tinkerpop.gremlin.client.ArangoDBGraphClient;
+import com.arangodb.tinkerpop.gremlin.client.ArangoDBGraphException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 import java.util.stream.Collectors;
-
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.assertThat;
-
-import com.arangodb.tinkerpop.gremlin.client.ArangoDBGraphException;
-import com.arangodb.tinkerpop.gremlin.client.ArangoDBGraphClient;
 import org.apache.commons.configuration.ConfigurationConverter;
 import org.apache.commons.configuration.PropertiesConfiguration;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Rule;
+import org.junit.Test;
 import org.junit.rules.ExpectedException;
-
-import com.arangodb.ArangoDBException;
-import com.arangodb.ArangoDatabase;
-import com.arangodb.ArangoGraph;
-import com.arangodb.entity.EdgeDefinition;
 
 /**
  * This tests require four users:
@@ -52,7 +59,7 @@ public class ClientTest {
 		configuration.setProperty("arangodb.user", "gremlin");
 		configuration.setProperty("arangodb.password", "gremlin");
 		Properties arangoProperties = ConfigurationConverter.getProperties(configuration);
-		client = new ArangoDBGraphClient(arangoProperties, "tinkerpop", 30000);
+		client = new ArangoDBGraphClient(arangoProperties, "tinkerpop", 30000, true);
 	}
 	
 	@After
@@ -120,7 +127,7 @@ public class ClientTest {
 		String pwd = System.getenv("ARANGODB_ROOT_PWD");
 		configuration.setProperty("arangodb.password", pwd);
 		Properties arangoProperties = ConfigurationConverter.getProperties(configuration);
-		ArangoDBGraphClient localClient = new ArangoDBGraphClient(arangoProperties, "demo", 30000);
+		ArangoDBGraphClient localClient = new ArangoDBGraphClient(arangoProperties, "demo", 30000, true);
 		assertThat(localClient.dbExists(), is(true));
 		localClient.deleteDb();
 		localClient.shutdown();
@@ -141,7 +148,7 @@ public class ClientTest {
 		configuration.setProperty("arangodb.user", "reader");
 		configuration.setProperty("arangodb.password", "reader");
 		Properties arangoProperties = ConfigurationConverter.getProperties(configuration);
-		ArangoDBGraphClient localClient = new ArangoDBGraphClient(arangoProperties, "tinkerpop", 30000);
+		ArangoDBGraphClient localClient = new ArangoDBGraphClient(arangoProperties, "tinkerpop", 30000, true);
 		assertThat(localClient.dbExists(), is(true));
 		List<String> verticesCollectionNames = new ArrayList<>(); 
 		List<String> edgesCollectionNames = new ArrayList<>();
