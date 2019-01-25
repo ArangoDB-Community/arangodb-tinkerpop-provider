@@ -156,6 +156,24 @@ public class ArangoDBGraphClient {
 
 	private final boolean shouldPrefixCollectionWithGraphName;
 
+    /**
+     * Create a simple graph client and connect to the provided db. If the DB does not exist,
+     * the driver will try to create one
+     *
+     * @param properties 				the ArangoDB configuration properties
+     * @param dbname 					the ArangoDB name to connect to or create
+     * @param batchSize					the size of the batch mode chunks
+     * @throws ArangoDBGraphException 	If the db does not exist and cannot be created
+     */
+
+    public ArangoDBGraphClient(
+            Properties properties,
+            String dbname,
+            int batchSize)
+            throws ArangoDBGraphException {
+        this(properties, dbname, batchSize, false, true);
+    }
+
 	/**
 	 * Create a simple graph client and connect to the provided db. If the DB does not exist,
 	 * the driver will try to create one
@@ -163,6 +181,7 @@ public class ArangoDBGraphClient {
 	 * @param properties 				the ArangoDB configuration properties
 	 * @param dbname 					the ArangoDB name to connect to or create
 	 * @param batchSize					the size of the batch mode chunks
+	 * @param shouldPrefixCollectionWithGraphName					prepend the graph names to collections
 	 * @throws ArangoDBGraphException 	If the db does not exist and cannot be created
 	 */
 
@@ -170,9 +189,9 @@ public class ArangoDBGraphClient {
 		Properties properties,
 		String dbname,
 		int batchSize,
-			boolean shouldPrefixCollectionWithGraphName)
+		boolean shouldPrefixCollectionWithGraphName)
 		throws ArangoDBGraphException {
-		this(properties, dbname, batchSize, true, shouldPrefixCollectionWithGraphName);
+		this(properties, dbname, batchSize, false, shouldPrefixCollectionWithGraphName);
 	}
 	
 	/**
@@ -182,7 +201,8 @@ public class ArangoDBGraphClient {
 	 * @param properties 				the ArangoDB configuration properties
 	 * @param dbname 					the ArangoDB name to connect to or create
 	 * @param batchSize					the size of the batch mode chunks
-	 * @param create					if true, the driver will attempt to crate the DB if it does not exist
+	 * @param createDatabase			if true, the driver will attempt to crate the DB if it does not exist
+     * @param shouldPrefixCollectionWithGraphName					prepend the graph names to collections
 	 * @throws ArangoDBGraphException 	If the db does not exist and cannot be created
 	 */
 	
@@ -190,7 +210,7 @@ public class ArangoDBGraphClient {
 		Properties properties, 
 		String dbname, 
 		int batchSize,
-		boolean create,
+		boolean createDatabase,
 		boolean shouldPrefixCollectionWithGraphName)
 		throws ArangoDBGraphException {	
 		logger.info("Initiating the ArangoDb Client");
@@ -205,7 +225,7 @@ public class ArangoDBGraphClient {
 			throw new ArangoDBGraphException("Unable to read properties", e);
 		}
 		db = driver.db(dbname);
-		if (create) {
+		if (createDatabase) {
 			if (!db.exists()) {
 				logger.info("DB not found, attemtping to create it.");
 				try {
