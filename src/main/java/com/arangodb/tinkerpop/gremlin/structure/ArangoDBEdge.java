@@ -127,18 +127,16 @@ public class ArangoDBEdge extends ArangoDBBaseEdge implements Edge {
 
 	@Override
 	public Iterator<Vertex> vertices(Direction direction) {
-		boolean from = false;
-		boolean to = false;
+		boolean from = true;
+		boolean to = true;
 		switch(direction) {
 		case BOTH:
-			from = true;
-			to = true;
 			break;
 		case IN:
-			to = true;
+			from = true;
 			break;
 		case OUT:
-			from = true;
+			to = true;
 			break;
 		}
 		return new ArangoDBIterator<>(graph, graph.getClient().getEdgeVertices(graph.name(), _id(), label(), from, to));

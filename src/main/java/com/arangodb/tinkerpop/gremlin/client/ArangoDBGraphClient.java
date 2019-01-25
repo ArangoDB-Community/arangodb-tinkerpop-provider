@@ -213,7 +213,13 @@ public class ArangoDBGraphClient {
 			}
 		}
 		else {
-			if (!db.exists()) {
+			boolean exists = false;
+			try {
+				exists = db.exists();
+			} catch (ArangoDBException ex) {
+				// Pass
+			}
+			if (!exists) {
 				logger.error("Database does not exist, or the user has no access");
 				throw new ArangoDBGraphException(String.format("DB not found or user has no access: {}@{}",
 						properties.getProperty("arangodb.user"), dbname));

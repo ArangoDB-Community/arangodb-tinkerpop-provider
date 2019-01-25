@@ -36,7 +36,6 @@ import com.arangodb.entity.EdgeDefinition;
  * @author Horacio Hoyos Rodriguez (@horaciohoyosr)
  *
  */
-@Ignore
 public class ClientTest {
 	
 	@Rule
@@ -61,31 +60,56 @@ public class ClientTest {
 		// Drop used graphs and collections, if present
 		ArangoDatabase db = client.getDB();
 		// know_graph
-		try { db.graph("knows_graph").drop(); } catch (ArangoDBException ex) { }
-		try { db.collection("person").drop(); } catch (ArangoDBException ex) { }
-		try { db.collection("knows").drop(); } catch (ArangoDBException ex) { }
-		// social graph
-		try { db.graph("social").drop(); } catch (ArangoDBException ex) { }
-		try { db.collection("male").drop(); } catch (ArangoDBException ex) { }
-		try { db.collection("female").drop(); } catch (ArangoDBException ex) { }
-		try { db.collection("relation").drop(); } catch (ArangoDBException ex) { }
+		deleteGraph(db, "knows", true);
+        // social graph
+        deleteGraph(db, "social", true);
 		// city graph
-		try { db.graph("routeplanner").drop(); } catch (ArangoDBException ex) { }
-		try { db.collection("germanCity").drop(); } catch (ArangoDBException ex) { }
-		try { db.collection("frenchCity").drop(); } catch (ArangoDBException ex) { }
-		try { db.collection("frenchHighway").drop(); } catch (ArangoDBException ex) { }
-		try { db.collection("germanHighway").drop(); } catch (ArangoDBException ex) { }
-		try { db.collection("internationalHighway").drop(); } catch (ArangoDBException ex) { }
-		client.shutdown();
+        deleteGraph(db, "routeplanner", true);
+        client.shutdown();
 		client = null;
 	}
+
+    private boolean deleteGraph(
+        ArangoDatabase db,
+        String name,
+        boolean dropCollections) {
+        if (db != null) {
+            ArangoGraph graph = db.graph(name);
+            if (graph.exists()) {
+                Collection<String> edgeDefinitions = dropCollections ? graph.getEdgeDefinitions() : Collections.emptyList();
+                Collection<String> vertexCollections = dropCollections ? graph.getVertexCollections(): Collections.emptyList();;
+                // Drop graph first because it will break if the graph collections do not exist
+                graph.drop();
+                for (String definitionName : edgeDefinitions) {
+                    String collectioName = definitionName;
+                    if (db.collection(collectioName).exists()) {
+                        db.collection(collectioName).drop();
+                    }
+                }
+                for (String vc : vertexCollections) {
+                    String collectioName = vc;
+                    if (db.collection(collectioName).exists()) {
+                        db.collection(collectioName).drop();
+                    }
+                }
+                return true;
+            } else {
+                try {
+                    graph.drop();
+                } catch (ArangoDBException e) {
+                    //throw ArangoDBExceptions.getArangoDBException(e);
+                }
+            }
+        }
+        return false;
+    }
 	
 	@Test
-	public void test_RestritedUserNewDatabase() throws Exception {
+	public void test_RestrictedUserNewDatabase() throws Exception {
 		Properties arangoProperties = ConfigurationConverter.getProperties(configuration);
 		
 		exception.expect(ArangoDBGraphException.class);
-		exception.expectMessage(startsWith("Unable to crate the database"));
+		exception.expectMessage(startsWith("General ArangoDB error (unkown error code)"));
 		new ArangoDBGraphClient(arangoProperties, "demo", 30000);
 	}
 
@@ -103,7 +127,7 @@ public class ClientTest {
 	}
 	
 	@Test
-	public void test_RestritedUserExistingDb() throws Exception {
+	public void test_RestrictedUserExistingDb() throws Exception {
 		configuration.setProperty("arangodb.user", "limited");
 		configuration.setProperty("arangodb.password", "limited");
 		Properties arangoProperties = ConfigurationConverter.getProperties(configuration);
@@ -125,8 +149,8 @@ public class ClientTest {
 		edgesCollectionNames.add("knows");
 		
 		exception.expect(ArangoDBGraphException.class);
-		exception.expectMessage(startsWith("Error creating graph"));
-		localClient.createGraph("knows_graph", verticesCollectionNames, edgesCollectionNames, Collections.emptyList());
+		exception.expectMessage(startsWith("General ArangoDB error (unkown error code)"));
+		localClient.createGraph("knows", verticesCollectionNames, edgesCollectionNames, Collections.emptyList());
 		localClient.shutdown();
 	}
 	
@@ -141,7 +165,7 @@ public class ClientTest {
 	@Test
 	public void test_CreateSimpleGraph() throws Exception {
 		
-		String graph_name = "knows_graph";
+		String graph_name = "knows";
 		List<String> verticesCollectionNames = new ArrayList<>(); 
 		List<String> edgesCollectionNames = new ArrayList<>();
 		verticesCollectionNames.add("person");
@@ -149,16 +173,16 @@ public class ClientTest {
 		
 		client.createGraph(graph_name, verticesCollectionNames, edgesCollectionNames, Collections.emptyList());
 		ArangoDatabase db = client.getDB();
-		assertThat("Craeted graph not found in db", db.graph(graph_name).exists(), is(true));
-		assertThat("Vertex collection found in db", db.collection("person").exists(), is(true));
-		assertThat("Edge collection found in db", db.collection("knows").exists(), is(true));
+		assertThat("Graph not found in db", db.graph(graph_name).exists(), is(true));
+		assertThat("Vertex collection found in db", db.collection("knows_person").exists(), is(true));
+		assertThat("Edge collection found in db", db.collection("knows_knows").exists(), is(true));
 		ArangoGraph g = db.graph(graph_name);
 		Collection<EdgeDefinition> defs = g.getInfo().getEdgeDefinitions();
-		assertThat(defs, hasSize(1));
+		assertThat(defs, hasSize(2));       // +1 for ELEMENT_HAS_PROPERTIES
 		EdgeDefinition d = defs.iterator().next();
-		assertThat(d.getCollection(), is("knows"));
-		assertThat(d.getFrom(), contains("person"));
-		assertThat(d.getTo(), contains("person"));
+		assertThat(d.getCollection(), is("knows_knows"));
+		assertThat(d.getFrom(), contains("knows_person"));
+		assertThat(d.getTo(), contains("knows_person"));
 	}
 	
 	@Test
@@ -176,16 +200,16 @@ public class ClientTest {
 		client.createGraph(graph_name, verticesCollectionNames, edgesCollectionNames, relations);
 		ArangoDatabase db = client.getDB();
 		assertThat("Craeted graph not found in db", db.graph(graph_name).exists(), is(true));
-		assertThat("Vertex collection not found in db", db.collection("male").exists(), is(true));
-		assertThat("Vertex collection not found in db", db.collection("female").exists(), is(true));
-		assertThat("Edge collection found in db", db.collection("relation").exists(), is(true));
+		assertThat("Vertex collection not found in db", db.collection("social_male").exists(), is(true));
+		assertThat("Vertex collection not found in db", db.collection("social_female").exists(), is(true));
+		assertThat("Edge collection found in db", db.collection("social_relation").exists(), is(true));
 		ArangoGraph g = db.graph(graph_name);
 		Collection<EdgeDefinition> defs = g.getInfo().getEdgeDefinitions();
-		assertThat(defs, hasSize(1));
+		assertThat(defs, hasSize(2));
 		EdgeDefinition d = defs.iterator().next();
-		assertThat(d.getCollection(), is("relation"));
-		assertThat(d.getFrom(), containsInAnyOrder("male", "female"));
-		assertThat(d.getTo(), containsInAnyOrder("male", "female"));
+		assertThat(d.getCollection(), is("social_relation"));
+		assertThat(d.getFrom(), containsInAnyOrder("social_male", "social_female"));
+		assertThat(d.getTo(), containsInAnyOrder("social_male", "social_female"));
 	}
 	
 	@Test
@@ -207,25 +231,26 @@ public class ClientTest {
 		client.createGraph(graph_name, verticesCollectionNames, edgesCollectionNames, relations);
 		ArangoDatabase db = client.getDB();
 		assertThat("Craeted graph not found in db", db.graph(graph_name).exists(), is(true));
-		assertThat("Vertex collection not found in db", db.collection("germanCity").exists(), is(true));
-		assertThat("Vertex collection not found in db", db.collection("frenchCity").exists(), is(true));
-		assertThat("Edge collection found in db", db.collection("frenchHighway").exists(), is(true));
-		assertThat("Edge collection found in db", db.collection("germanHighway").exists(), is(true));
-		assertThat("Edge collection found in db", db.collection("internationalHighway").exists(), is(true));
+		assertThat("Vertex collection not found in db", db.collection("routeplanner_germanCity").exists(), is(true));
+		assertThat("Vertex collection not found in db", db.collection("routeplanner_frenchCity").exists(), is(true));
+		assertThat("Edge collection found in db", db.collection("routeplanner_frenchHighway").exists(), is(true));
+		assertThat("Edge collection found in db", db.collection("routeplanner_germanHighway").exists(), is(true));
+		assertThat("Edge collection found in db", db.collection("routeplanner_internationalHighway").exists(), is(true));
 		ArangoGraph g = db.graph(graph_name);
 		Collection<EdgeDefinition> defs = g.getInfo().getEdgeDefinitions();
-		assertThat("Not all edge definitions created", defs, hasSize(3));
+		assertThat("Not all edge definitions created", defs, hasSize(4));
 		List<String> edgeNames = defs.stream().map(EdgeDefinition::getCollection).collect(Collectors.toList());
-		assertThat("Missmatch name in edge collecion names", edgeNames, containsInAnyOrder("frenchHighway", "germanHighway", "internationalHighway"));
-		EdgeDefinition fh = defs.stream().filter(ed -> "frenchHighway".equals(ed.getCollection())).findFirst().get();
-		assertThat("FrenchHighway connects incorrect collections", fh.getFrom(), contains("frenchCity"));
-		assertThat("FrenchHighway connects incorrect collections", fh.getTo(), contains("frenchCity"));
-		EdgeDefinition gh = defs.stream().filter(ed -> "germanHighway".equals(ed.getCollection())).findFirst().get();
-		assertThat("GermanHighway connects incorrect collections", gh.getFrom(), contains("germanCity"));
-		assertThat("GermanHighway connects incorrect collections", gh.getTo(), contains("germanCity"));
-		EdgeDefinition ih = defs.stream().filter(ed -> "internationalHighway".equals(ed.getCollection())).findFirst().get();
-		assertThat("InternationalHighway connects incorrect collections", ih.getFrom(), containsInAnyOrder("frenchCity", "germanCity"));
-		assertThat("InternationalHighway connects incorrect collections", ih.getTo(), containsInAnyOrder("frenchCity", "germanCity"));
+		assertThat("Missmatch name in edge collecion names", edgeNames,
+                containsInAnyOrder("routeplanner_frenchHighway", "routeplanner_germanHighway", "routeplanner_internationalHighway", "routeplanner_ELEMENT-HAS-PROPERTIES"));
+		EdgeDefinition fh = defs.stream().filter(ed -> "routeplanner_frenchHighway".equals(ed.getCollection())).findFirst().get();
+		assertThat("FrenchHighway connects incorrect collections", fh.getFrom(), contains("routeplanner_frenchCity"));
+		assertThat("FrenchHighway connects incorrect collections", fh.getTo(), contains("routeplanner_frenchCity"));
+		EdgeDefinition gh = defs.stream().filter(ed -> "routeplanner_germanHighway".equals(ed.getCollection())).findFirst().get();
+		assertThat("GermanHighway connects incorrect collections", gh.getFrom(), contains("routeplanner_germanCity"));
+		assertThat("GermanHighway connects incorrect collections", gh.getTo(), contains("routeplanner_germanCity"));
+		EdgeDefinition ih = defs.stream().filter(ed -> "routeplanner_internationalHighway".equals(ed.getCollection())).findFirst().get();
+		assertThat("InternationalHighway connects incorrect collections", ih.getFrom(), containsInAnyOrder("routeplanner_frenchCity", "routeplanner_germanCity"));
+		assertThat("InternationalHighway connects incorrect collections", ih.getTo(), containsInAnyOrder("routeplanner_frenchCity", "routeplanner_germanCity"));
 	}
 	
 	

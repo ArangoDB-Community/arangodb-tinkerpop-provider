@@ -7,7 +7,7 @@
 	<groupId>org.arangodb</groupId>
 	<artifactId>arangodb-tinkerpop-provider</artifactId>
 	<version>2.0.1</version>
-	<packaging>jar</packaging>
+  <packaging>jar</packaging>
 
 	<name>ArangoDB-TinkerPop-Provider</name>
 	<description>An implementation of the Tinkerpop Provider OLTP for ArangoDB</description>
@@ -20,180 +20,6 @@
 			<distribution>repo</distribution>
 		</license>
 	</licenses>
-
-	<developers>
-		<developer>
-			<id>gschwab</id>
-			<name>gschwab</name>
-			<url>https://github.com/gschwab</url>
-		</developer>
-		<developer>
-			<id>scottashton</id>
-			<name>scottashton</name>
-			<url>https://github.com/scottashton</url>
-		</developer>
-		<developer>
-			<id>a-brandt</id>
-			<name>a-brandt</name>
-			<url>https://github.com/a-brandt</url>
-		</developer>
-		<developer>
-			<id>arcanefoam</id>
-			<name>Horacio Hoyos Rodriguez</name>
-			<url>https://github.com/arcanefoam</url>
-		</developer>
-	</developers>
-
-	<profiles>
-		<profile>
-			<id>doclint-java8-disable</id>
-			<activation>
-				<jdk>[1.8,)</jdk>
-			</activation>
-			<properties>
-				<javadoc.opts>-Xdoclint:none</javadoc.opts>
-			</properties>
-		</profile>
-
-		<profile>
-			<id>release</id>
-			<build>
-				<plugins>
-					<plugin>
-						<groupId>org.apache.maven.plugins</groupId>
-						<artifactId>maven-source-plugin</artifactId>
-						<version>2.4</version>
-						<executions>
-							<execution>
-								<goals>
-									<goal>jar</goal>
-								</goals>
-							</execution>
-						</executions>
-					</plugin>
-
-					<plugin>
-						<groupId>org.apache.maven.plugins</groupId>
-						<artifactId>maven-javadoc-plugin</artifactId>
-						<version>3.0.1</version>
-						<executions>
-							<execution>
-								<id>attach-javadocs</id>
-								<goals>
-									<goal>jar</goal>
-								</goals>
-								<configuration>
-									<additionalparam>${javadoc.opts}</additionalparam>
-								</configuration>
-							</execution>
-						</executions>
-					</plugin>
-
-					<plugin>
-						<groupId>org.apache.maven.plugins</groupId>
-						<artifactId>maven-gpg-plugin</artifactId>
-						<version>1.5</version>
-						<executions>
-							<execution>
-								<id>sign-artifacts</id>
-								<phase>verify</phase>
-								<goals>
-									<goal>sign</goal>
-								</goals>
-							</execution>
-						</executions>
-					</plugin>
-				</plugins>
-			</build>
-		</profile>
-
-	</profiles>
-
-	<build>
-		<plugins>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-assembly-plugin</artifactId>
-				<version>3.1.0</version>
-				<executions>
-					<execution>
-						<id>assembly</id>
-						<phase>package</phase>
-						<goals>
-							<goal>single</goal>
-						</goals>
-					</execution>
-				</executions>
-				<configuration>
-					<finalName>
-						${project.artifactId}-${project.version}-standalone
-					</finalName>
-					<attach>false</attach>
-					<appendAssemblyId>false</appendAssemblyId>
-					<descriptorRefs>
-						<descriptorRef>jar-with-dependencies</descriptorRef>
-					</descriptorRefs>
-				</configuration>
-			</plugin>
-
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.8.0</version>
-				<configuration>
-					<source>1.8</source>
-					<target>1.8</target>
-					<compilerArgument />
-				</configuration>
-			</plugin>
-
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-resources-plugin</artifactId>
-				<version>2.7</version>
-				<configuration>
-					<encoding>UTF-8</encoding>
-				</configuration>
-			</plugin>
-
-
-
-			<plugin>
-				<artifactId>maven-deploy-plugin</artifactId>
-				<version>2.8.2</version>
-				<configuration>
-					<uniqueVersion>false</uniqueVersion>
-					<retryFailedDeploymentCount>10</retryFailedDeploymentCount>
-					<skip>true</skip>
-				</configuration>
-			</plugin>
-
-
-
-			<plugin>
-				<artifactId>maven-scm-plugin</artifactId>
-				<version>1.8.1</version>
-				<configuration>
-					<tag>${project.artifactId}-${project.version}</tag>
-				</configuration>
-			</plugin>
-
-			<plugin>
-				<groupId>org.sonatype.plugins</groupId>
-				<artifactId>nexus-staging-maven-plugin</artifactId>
-				<version>1.6.7</version>
-				<extensions>true</extensions>
-				<configuration>
-					<serverId>ossrh</serverId>
-					<nexusUrl>https://oss.sonatype.org/</nexusUrl>
-					<autoReleaseAfterClose>true</autoReleaseAfterClose>
-				</configuration>
-			</plugin>
-		</plugins>
-	</build>
-
-
-
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -264,6 +90,91 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
+
+
+	<developers>
+		<developer>
+			<id>gschwab</id>
+			<name>gschwab</name>
+			<url>https://github.com/gschwab</url>
+		</developer>
+		<developer>
+			<id>scottashton</id>
+			<name>scottashton</name>
+			<url>https://github.com/scottashton</url>
+		</developer>
+		<developer>
+			<id>a-brandt</id>
+			<name>a-brandt</name>
+			<url>https://github.com/a-brandt</url>
+		</developer>
+		<developer>
+			<id>arcanefoam</id>
+			<name>Horacio Hoyos Rodriguez</name>
+			<url>https://github.com/arcanefoam</url>
+		</developer>
+	</developers>
+
+	<profiles>
+		<profile>
+			<id>doclint-java8-disable</id>
+			<activation>
+				<jdk>[1.8,)</jdk>
+			</activation>
+			<properties>
+				<javadoc.opts>-Xdoclint:none</javadoc.opts>
+			</properties>
+		</profile>
+	</profiles>
+
+	<build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <version>3.0.0-M3</version>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.8.0</version>
+				<configuration>
+					<source>1.8</source>
+					<target>1.8</target>
+					<compilerArgument />
+				</configuration>
+			</plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.0.0-M3</version>
+        <configuration>
+          <environmentVariables>
+            <GREMLIN_TESTS>org.apache.tinkerpop.gremlin.algorithm.generator.CommunityGeneratorTest,
+              org.apache.tinkerpop.gremlin.algorithm.generator.DistributionGeneratorTest,
+              org.apache.tinkerpop.gremlin.structure.EdgeTest,
+              org.apache.tinkerpop.gremlin.structure.FeatureSupportTest,
+              org.apache.tinkerpop.gremlin.structure.GraphConstructionTest,
+              org.apache.tinkerpop.gremlin.structure.GraphTest,
+              org.apache.tinkerpop.gremlin.structure.io.IoCustomTest,
+              org.apache.tinkerpop.gremlin.structure.io.IoGraphTest,
+              org.apache.tinkerpop.gremlin.structure.io.IoPropertyTest,
+              org.apache.tinkerpop.gremlin.structure.io.IoTest,
+              org.apache.tinkerpop.gremlin.structure.io.IoVertexTest,
+              org.apache.tinkerpop.gremlin.structure.PropertyTest,
+              org.apache.tinkerpop.gremlin.structure.VariablesTest,
+              org.apache.tinkerpop.gremlin.structure.VertexPropertyTest</GREMLIN_TESTS>
+          </environmentVariables>
+        </configuration>
+      </plugin>
+
+		</plugins>
+	</build>
 
 	<scm>
 		<url>https://github.com/ArangoDB-Community/arangodb-tinkerpop-provider</url>
