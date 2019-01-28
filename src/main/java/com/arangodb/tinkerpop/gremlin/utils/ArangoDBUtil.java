@@ -431,9 +431,9 @@ public class ArangoDBUtil {
         p = new ArangoDBEdgeProperty<>(key, value, edge);
         ArangoDBGraph g = edge.graph();
         ArangoDBGraphClient c = g.getClient();
-        c.insertDocument(p);
+        c.insertDocument(p, true);
         ElementHasProperty e = p.assignToElement(edge);
-        c.insertEdge(e);
+        c.insertEdge(e, true);
         return p;
     }
 
@@ -452,9 +452,9 @@ public class ArangoDBUtil {
         p = new ArangoDBVertexProperty<>(key, value, vertex);
         ArangoDBGraph g = vertex.graph();
         ArangoDBGraphClient c = g.getClient();
-        c.insertDocument(p);
+        c.insertDocument(p, true);
         ElementHasProperty e = p.assignToElement(vertex);
-        c.insertEdge(e);
+        c.insertEdge(e, true);
         return p;
     }
 
@@ -497,9 +497,9 @@ public class ArangoDBUtil {
         p = new ArangoDBPropertyProperty<>(key, value, vertexProperty);
         ArangoDBGraph g = vertexProperty.graph();
         ArangoDBGraphClient c = g.getClient();
-        c.insertDocument(p);
+        c.insertDocument(p, true);
         ElementHasProperty e = p.assignToElement(vertexProperty);
-        c.insertEdge(e);
+        c.insertEdge(e, true);
         return p;
     }
 
