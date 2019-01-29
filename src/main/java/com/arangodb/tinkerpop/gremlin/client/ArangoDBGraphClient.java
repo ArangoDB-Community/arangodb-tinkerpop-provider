@@ -440,7 +440,10 @@ public class ArangoDBGraphClient {
 		}
 		document.setPaired(false);
 	}
-	
+	public void updateDocument(
+			ArangoDBBaseDocument document) {
+		updateDocument(document, shouldPrefixCollectionWithGraphName);
+	}
 	/**
 	 * Update the document in the graph.
 	 * @param document 					the document
@@ -449,7 +452,8 @@ public class ArangoDBGraphClient {
 	 */
 	
 	public void updateDocument(
-		ArangoDBBaseDocument document) {
+		ArangoDBBaseDocument document,
+			boolean shouldPrefixCollectionWithGraphName) {
 		String graphName;
 		try {
 			graphName = document.graph().name();
