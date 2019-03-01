@@ -405,7 +405,7 @@ public class ArangoDBGraphClient {
 			throw new ArangoDBGraphException("Document does not have a graph. Can only delete paired documents.");
 		}
 
-		logger.debug("Insert document {} in {}", document, graphName);
+		logger.debug("Insert document {} in {} (prefix will be added: {})", document, graphName, shouldPrefixCollectionNames);
 		VertexEntity vertexEntity;
 		try {
 			vertexEntity = db.graph(graphName)
@@ -466,7 +466,10 @@ public class ArangoDBGraphClient {
 		}
 		document.setPaired(false);
 	}
-	
+	public void updateDocument(
+			ArangoDBBaseDocument document) {
+		updateDocument(document, shouldPrefixCollectionWithGraphName);
+	}
 	/**
 	 * Update the document in the graph.
 	 * @param document 					the document
@@ -475,7 +478,8 @@ public class ArangoDBGraphClient {
 	 */
 	
 	public void updateDocument(
-		ArangoDBBaseDocument document) {
+		ArangoDBBaseDocument document,
+			boolean shouldPrefixCollectionWithGraphName) {
 		String graphName;
 		try {
 			graphName = document.graph().name();
@@ -544,7 +548,7 @@ public class ArangoDBGraphClient {
 			logger.error("Edge not paired: {}", edge);
 			throw new ArangoDBGraphException("Edge does not have a graph. Can only delete paired edges.");
 		}
-		logger.debug("Insert edge {} in {}", edge, graphName);
+		logger.debug("Insert edge {} in {} (prefix will be added: {})", edge, graphName, shouldPrefixCollectionWithGraphName);
 		try {
 			db.graph(graphName)
 					.edgeCollection(ArangoDBUtil.getCollectioName(graphName, edge.collection(), shouldPrefixCollectionWithGraphName))
@@ -734,7 +738,7 @@ public class ArangoDBGraphClient {
         Class<T> propertyType) {
 		logger.debug("Get Vertex's {}:{} Neighbors, in {}, from collections {}", document, graphName, edgeLabelsFilter);
 		Map<String, Object> bindVars = new HashMap<>();
-		ArangoDBQueryBuilder queryBuilder = new ArangoDBQueryBuilder(shouldPrefixCollectionWithGraphName);
+		ArangoDBQueryBuilder queryBuilder = new ArangoDBQueryBuilder(true);
 		logger.debug("Creating query");
 		queryBuilder.iterateGraph(graphName, "v", Optional.of("e"),
 				Optional.empty(), Optional.empty(), Optional.empty(),

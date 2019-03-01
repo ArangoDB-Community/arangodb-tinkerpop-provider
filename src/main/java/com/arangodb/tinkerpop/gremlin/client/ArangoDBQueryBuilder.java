@@ -446,7 +446,14 @@ public class ArangoDBQueryBuilder {
 		logger.debug("graphOptions", queryBuilder.toString());
 		return this;
 	}
-	
+
+	public ArangoDBQueryBuilder filterSameCollections(
+			String graphName,
+			String filterVariable,
+			List<String> collections, Map<String, Object> bindVars) {
+		return filterSameCollections(graphName, filterVariable, collections, bindVars, this.shouldPrefixWithGraphName);
+	}
+
 	/**
 	 * Add a filter same collections segment, i.e. element represented by variable must be in any
 	 * of the provided collections.
@@ -461,7 +468,7 @@ public class ArangoDBQueryBuilder {
 	public ArangoDBQueryBuilder filterSameCollections(
 		String graphName,
 		String filterVariable,
-		List<String> collections, Map<String, Object> bindVars) {
+		List<String> collections, Map<String, Object> bindVars, boolean shouldPrefixWithGraphName) {
 		if (!collections.isEmpty()) {
 			queryBuilder.append(" FILTER (IS_SAME_COLLECTION(");
 			String separator = "";

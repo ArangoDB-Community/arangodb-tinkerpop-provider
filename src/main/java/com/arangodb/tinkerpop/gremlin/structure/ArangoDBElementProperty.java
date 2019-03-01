@@ -171,7 +171,7 @@ public abstract class ArangoDBElementProperty<V> extends ArangoDBBaseDocument im
     
     public void save() {
         if (paired) {
-            graph.getClient().updateDocument(this);
+            graph.getClient().updateDocument(this, true);
         }
     }
 }

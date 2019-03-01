@@ -431,9 +431,9 @@ public class ArangoDBUtil {
         p = new ArangoDBEdgeProperty<>(key, value, edge);
         ArangoDBGraph g = edge.graph();
         ArangoDBGraphClient c = g.getClient();
-        c.insertDocument(p);
+        c.insertDocument(p, true);
         ElementHasProperty e = p.assignToElement(edge);
-        c.insertEdge(e);
+        c.insertEdge(e, true);
         return p;
     }
 
@@ -452,9 +452,9 @@ public class ArangoDBUtil {
         p = new ArangoDBVertexProperty<>(key, value, vertex);
         ArangoDBGraph g = vertex.graph();
         ArangoDBGraphClient c = g.getClient();
-        c.insertDocument(p);
+        c.insertDocument(p, true);
         ElementHasProperty e = p.assignToElement(vertex);
-        c.insertEdge(e);
+        c.insertEdge(e, true);
         return p;
     }
 
@@ -497,9 +497,9 @@ public class ArangoDBUtil {
         p = new ArangoDBPropertyProperty<>(key, value, vertexProperty);
         ArangoDBGraph g = vertexProperty.graph();
         ArangoDBGraphClient c = g.getClient();
-        c.insertDocument(p);
+        c.insertDocument(p, true);
         ElementHasProperty e = p.assignToElement(vertexProperty);
-        c.insertEdge(e);
+        c.insertEdge(e, true);
         return p;
     }
 
@@ -525,7 +525,7 @@ public class ArangoDBUtil {
 	    				return ((Long) value) * 1.0f;
 	    			}
 	    			else {
-	    				System.out.println("Add conversion for " + value.getClass().getName() + " to " + valueClass);
+	    				logger.debug("Add conversion for " + value.getClass().getName() + " to " + valueClass);
 	    			}
 	    			break;
 	    		}
@@ -538,7 +538,7 @@ public class ArangoDBUtil {
     				return ((Long) value) * 1.0;
     			}
     			else {
-    				System.out.println("Add conversion for " + value.getClass().getName() + " to " + valueClass);
+    				logger.debug("Add conversion for " + value.getClass().getName() + " to " + valueClass);
     			}
     			break;
     		}
@@ -551,7 +551,7 @@ public class ArangoDBUtil {
     				return ((Double)value).longValue();
     			}
     			else {
-    				System.out.println("Add conversion for " + value.getClass().getName() + " to " + valueClass);
+    				logger.debug("Add conversion for " + value.getClass().getName() + " to " + valueClass);
     			}
     			break;
     		}
@@ -568,8 +568,8 @@ public class ArangoDBUtil {
     		case "":
     			return value;
     		case "java.util.HashMap":
-    			//System.out.println(((Map<?,?>)value).keySet().stream().map(Object::getClass).collect(Collectors.toList()));
-    			//System.out.println("Add conversion for map values to " + valueClass);
+    			//logger.debug(((Map<?,?>)value).keySet().stream().map(Object::getClass).collect(Collectors.toList()));
+    			//logger.debug("Add conversion for map values to " + valueClass);
     			// Maps are handled by ArangoOK, but we have an extra field, remove it
 				Map<String, ?> valueMap = (Map<String,?>)value;
 				for (String key : valueMap.keySet()) {
@@ -628,7 +628,7 @@ public class ArangoDBUtil {
 					result = vpack.deserialize(slice, Class.forName(valueClass));
 					return result;
 				} catch (VPackParserException | ClassNotFoundException e1) {
-					logger.debug("Type not deserializable using VPack", e1);
+					logger.warn("Type not deserializable using VPack", e1);
 				}
 				logger.debug("Add conversion for " + value.getClass().getName() + " to " + valueClass);
     	}
