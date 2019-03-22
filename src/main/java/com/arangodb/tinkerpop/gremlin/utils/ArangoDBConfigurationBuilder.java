@@ -494,10 +494,10 @@ public class ArangoDBConfigurationBuilder {
 	}
 
 	/**
-	 * In case of colliding collection names in Graph, these names can be prefixed with Graph Name. <br/>
+	 * In case of colliding collection names in Graph, these names can be prefixed with Graph Name.
 	 * If set to true collection names are in {@code %s_%s} format (where first %s is graph name, second %s is collection name).
-	 * <br/>If set to false, collection names are without any prefix.
-	 * <br/>Default set to <b>true</b>.
+	 * If set to false, collection names are without any prefix.
+	 * Default set to <b>true</b>.
 	 * @param shouldPrefixCollectionNames whether it should prefixed or not.
 	 * @return a reference to this object.
 	 */
