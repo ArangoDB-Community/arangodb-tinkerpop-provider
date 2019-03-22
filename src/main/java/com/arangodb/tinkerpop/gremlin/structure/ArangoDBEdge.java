@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////////
 //
-// Implementation of the TinkerPop-Enabled Providers OLTP for ArangoDB
+// Implementation of the TinkerPop OLTP Provider API for ArangoDB
 //
 // Copyright triAGENS GmbH Cologne and The University of York
 //
@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import com.arangodb.tinkerpop.gremlin.client.*;
 import org.apache.tinkerpop.gremlin.structure.Direction;
 import org.apache.tinkerpop.gremlin.structure.Edge;
 import org.apache.tinkerpop.gremlin.structure.Property;
@@ -22,10 +23,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.arangodb.ArangoCursor;
-import com.arangodb.tinkerpop.gremlin.client.ArangoDBBaseEdge;
-import com.arangodb.tinkerpop.gremlin.client.ArangoDBIterator;
-import com.arangodb.tinkerpop.gremlin.client.ArangoDBPropertyFilter;
-import com.arangodb.tinkerpop.gremlin.client.ArangoDBPropertyIterator;
 import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
 
 
@@ -35,61 +32,52 @@ import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
  * @author Achim Brandt (http://www.triagens.de)
  * @author Johannes Gocke (http://www.triagens.de)
  * @author Guido Schwab (http://www.triagens.de)
- * @author Horacio Hoyos Rodriguez (@horaciohoyosr)
+ * @author Horacio Hoyos Rodriguez (https://www.york.ac.uk)
  */
 
 public class ArangoDBEdge extends ArangoDBBaseEdge implements Edge {
 
-
-	/** The Logger. */
 	private static final Logger logger = LoggerFactory.getLogger(ArangoDBEdge.class);
 
-
     /**
-     * Constructor used for ArabgoDB JavaBeans serialisation.
+     * Constructor used for ArabgoDB JavaBeans de-/serialisation.
      */
 
-	public ArangoDBEdge() {
-        super();
-
-    }
+	public ArangoDBEdge() { super(); }
 
     /**
-     * Create a new ArangoDBEdge that connects the given vertices.
-     *
-     * @param graph         the graph in which the edge is created
-     * @param collection    the collection into with the edge is created
-     * @param from          the source vertex
-     * @param to            the target vertex
-     * @param key           the edge key
-     */
+     * Create a new ArangoDBEdge that connects the given vertices. The edge name can be provided.
+     * @param key           		the edge name
+	 * @param label            		the edge label
+	 * @param from         		 	the source vertex
+	 * @param to            		the target vertex
+	 * @param graph         		the graph in which the edge is created
+	 */
 
 	public ArangoDBEdge(
-	    ArangoDBGraph graph,
-        String collection,
-        ArangoDBVertex from,
-        ArangoDBVertex to,
-        String key) {
-		super(from._id(), to._id(), key, graph, collection);
-        this.graph = graph;
-        this.collection = collection;
+		String key,
+		String label,
+		ArangoDBVertex from,
+		ArangoDBVertex to,
+		ArangoDBGraph graph) {
+		super(key, label, from._id(), to._id(), graph);
 	}
 
     /**
      * Create a new ArangoDBEdge that connects the given vertices.
      *
-     * @param graph         the graph in which the edge is created
-     * @param collection    the collection into with the edge is created
-     * @param from          the source vertex
-     * @param to            the target vertex
+     * @param graph         		the graph in which the edge is created
+     * @param label    				the label into with the edge is created
+     * @param from          		the source vertex
+     * @param to            		the target vertex
      */
 
 	public ArangoDBEdge(
 	    ArangoDBGraph graph,
-        String collection,
+        String label,
         ArangoDBVertex from,
         ArangoDBVertex to) {
-		this(graph, collection, from, to, null);
+		this(null, label, from, to, graph);
 	}
 
     @Override
@@ -99,7 +87,7 @@ public class ArangoDBEdge extends ArangoDBBaseEdge implements Edge {
 
     @Override
     public String label() {
-        return collection();
+        return label;
     }
 
 
@@ -122,7 +110,13 @@ public class ArangoDBEdge extends ArangoDBBaseEdge implements Edge {
 	@Override
 	public void remove() {
 		logger.info("removing {} from graph {}.", this._key(), graph.name());
-		graph.getClient().deleteEdge(this);
+		if (paired) {
+			try {
+				graph.getClient().deleteEdge(this);
+			} catch (ArangoDBGraphException ex) {
+
+			}
+		}
 	}
 
 	@Override
@@ -133,30 +127,27 @@ public class ArangoDBEdge extends ArangoDBBaseEdge implements Edge {
 		case BOTH:
 			break;
 		case IN:
-			from = true;
+			from = false;
 			break;
 		case OUT:
-			to = true;
+			to = false;
 			break;
 		}
-		return new ArangoDBIterator<>(graph, graph.getClient().getEdgeVertices(graph.name(), _id(), label(), from, to));
+		String edgeCollection = isPaired() ? label() : graph.getPrefixedCollectioName(label());
+		return new ArangoDBIterator<>(graph, graph.getClient().getEdgeVertices(_id(), edgeCollection, from, to));
 	}
-
-	/*
-	 * Removing a property while iterating will throw ConcurrentModificationException
-	 */
 
 	@SuppressWarnings("unchecked")
 	@Override
 	public <V> Iterator<Property<V>> properties(String... propertyKeys) {
         List<String> labels = new ArrayList<>();
-        labels.add(ArangoDBUtil.ELEMENT_PROPERTIES_EDGE);
+		labels.add(graph.getPrefixedCollectioName(ArangoDBGraph.ELEMENT_PROPERTIES_EDGE_COLLECTION));
         ArangoDBPropertyFilter filter = new ArangoDBPropertyFilter();
         for (String pk : propertyKeys) {
-            filter.has("key", pk, ArangoDBPropertyFilter.Compare.EQUAL);
+            filter.has("name", pk, ArangoDBPropertyFilter.Compare.EQUAL);
         }
-        ArangoCursor<?> documentNeighbors = graph.getClient().getElementProperties(graph.name(), this, labels, filter, ArangoDBEdgeProperty.class);
-		return new ArangoDBPropertyIterator<V, Property<V>>(graph, (ArangoCursor<ArangoDBEdgeProperty<V>>) documentNeighbors);
+        ArangoCursor<?> documentNeighbors = graph.getClient().getElementProperties(this, labels, filter, ArangoDBEdgeProperty.class);
+		return new ArangoDBPropertyIterator<>(graph, (ArangoCursor<ArangoDBEdgeProperty<V>>) documentNeighbors);
 	}
 
 	@Override

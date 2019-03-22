@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////////
 //
-// Implementation of a simple graph client for the ArangoDB.
+// Implementation of the TinkerPop OLTP Provider API for ArangoDB
 //
 // Copyright triAGENS GmbH Cologne and The University of York
 //
@@ -18,55 +18,23 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
 
 /**
- * The ArangoDB Query Util class provides static methods for building AQL fragments that can be
- * concatenated to build complete AQL queries.
+ * The ArangoDB Query Builder class provides static methods for building AQL fragments that can be concatenated to build
+ * complete AQL queries. Note that all parameters used to create query fragments are used as is, hence, all
+ * pre-processing (e.g. prefix collection names) must be done in the callee.
  *
- * @author Achim Brandt (http://www.triagens.de)
- * @author Johannes Gocke (http://www.triagens.de)
- * @author Guido Schwab (http://www.triagens.de)
- * @author Jan Steemann (http://www.triagens.de)
- * @author Horacio Hoyos Rodriguez (@horaciohoyosr)
+ * @author Horacio Hoyos Rodriguez (https://www.york.ac.uk)
  */
 public class ArangoDBQueryBuilder {
 	
-	/** The Logger. */
-	
 	private static final Logger logger = LoggerFactory.getLogger(ArangoDBQueryBuilder.class);
-
-	/**
-	 * The Enum QueryType.
-	 */
-	
-	public enum QueryType {
-		
-		/** The graph vertices. */
-		GRAPH_VERTICES,
-		
-		/** The graph edges. */
-		GRAPH_EDGES,
-		
-		/** The graph neighbors. */
-		GRAPH_NEIGHBORS
-	}
-	
-	
-	/** The query builder. */
 	
 	private StringBuilder queryBuilder;
 	
-	/** The iterate counter. */
-	
 	private int iterateCnt = 1;
 
-	/** The filtered flag. */
-	
 	private boolean filtered = false;
-
-	/** Whether the builder should prefix collection names with grpah name. */
-	private Boolean shouldPrefixWithGraphName;
 
 	/**
 	 * Direction to navigate for vertex paths.
@@ -104,7 +72,7 @@ public class ArangoDBQueryBuilder {
 			return aqlName;
 		}
 		
-	};
+	}
 	
 	/**
 	 * Options for vertices in Graph Traversals.
@@ -186,24 +154,20 @@ public class ArangoDBQueryBuilder {
 	/**
 	 * Create a new QueryBuilder with config of whether Collection Names should be prefixed with Graph name or not.
 	 */
-	public ArangoDBQueryBuilder( boolean shouldPrefixCollectionWithGraphName) {
-		this.shouldPrefixWithGraphName = shouldPrefixCollectionWithGraphName;
+	public ArangoDBQueryBuilder() {
 		this.queryBuilder = new StringBuilder();
 	}
 
 	/**
 	 * Append a WITH statement to the query builder for the given collections. The required bindVars are
 	 * added to the bindVars map.
-	 * @param graphName 			the graph name
 	 * @param collections 			the list of Collections to use in the statement
 	 * @param bindVars 				the map of bind parameters
 	 *
 	 * @return a reference to this object.
 	 */
 	
-	public ArangoDBQueryBuilder with(
-		String graphName,
-		List<String> collections, Map<String, Object> bindVars) {
+	public ArangoDBQueryBuilder with(List<String> collections, Map<String, Object> bindVars) {
 		queryBuilder.append("WITH ");
 		String separator = "";
 		int colId = 1;
@@ -212,7 +176,7 @@ public class ArangoDBQueryBuilder {
 			separator = ",";
 			String varName = String.format("@with%s", colId);
 			queryBuilder.append("@").append(varName);
-			bindVars.put(varName, ArangoDBUtil.getCollectioName(graphName, c, this.shouldPrefixWithGraphName));
+			bindVars.put(varName, c);
 		}
 		queryBuilder.append("\n");
 		logger.debug("with", queryBuilder.toString());
@@ -222,7 +186,7 @@ public class ArangoDBQueryBuilder {
 	/**
 	 * Append a Document and FILTER statements to the query builder. Use this to find a single or
 	 * group of elements in the graph. This segment should be used in conjunction with the 
-	 * {@link #with(String, List, Map)} segment.
+	 * {@link #with(List, Map)} segment.
 	 *
 	 * @param ids 					the id(s) to look for
 	 * @param loopVariable 			the loop variable name
@@ -244,7 +208,7 @@ public class ArangoDBQueryBuilder {
 	
 	/**
 	 * Append a Document statement to find a single element in the graph. This segment should be
-	 * used in conjunction with the {@link #with(String, List, Map)} segment.
+	 * used in conjunction with the {@link #with(List, Map)} segment.
 	 *
 	 * @param id 					the id to look for
 	 * @param loopVariable 			the loop variable name
@@ -264,7 +228,6 @@ public class ArangoDBQueryBuilder {
 	
 	/**
 	 * Append an union segment.
-	 * @param graphName 			the graph name
 	 * @param collections 			the collections that participate in the union
 	 * @param loopVariable 			the loop variable
 	 * @param bindVars 				the map of bind parameters
@@ -273,7 +236,6 @@ public class ArangoDBQueryBuilder {
 	 */
 	
 	public ArangoDBQueryBuilder union(
-		String graphName,
 		List<String> collections,
 		String loopVariable,
 		Map<String, Object> bindVars) {
@@ -285,7 +247,7 @@ public class ArangoDBQueryBuilder {
 			queryBuilder.append(separator);
 			separator = "),\n  (";
 			queryBuilder.append(String.format("FOR x%1$s IN @@col%1$s RETURN x%1$s", count));
-			bindVars.put(String.format("@col%s", count++), ArangoDBUtil.getCollectioName(graphName, c, shouldPrefixWithGraphName));
+			bindVars.put(String.format("@col%s", count++), c);
 		}
 		queryBuilder.append("  )\n");
 		queryBuilder.append(")\n");
@@ -296,7 +258,6 @@ public class ArangoDBQueryBuilder {
 	/**
 	 * Add a FOR x IN y iteration to the query. A global collection counter is used so this operation
 	 * can be used to created nested loops.
-	 * @param graphName 			the graph name
 	 * @param loopVariable 			the loop variable
 	 * @param collectionName 		the collection name
 	 * @param bindVars 				the map of bind parameters
@@ -305,11 +266,10 @@ public class ArangoDBQueryBuilder {
 	 */
 	
 	public ArangoDBQueryBuilder iterateCollection(
-		String graphName,
 		String loopVariable,
 		String collectionName, Map<String, Object> bindVars) {
 		queryBuilder.append(String.format("FOR %1$s IN @@col%2$s", loopVariable, iterateCnt)).append("\n");
-		bindVars.put(String.format("@col%s", iterateCnt++), ArangoDBUtil.getCollectioName(graphName, collectionName, shouldPrefixWithGraphName));
+		bindVars.put(String.format("@col%s", iterateCnt++), collectionName);
 		logger.debug("iterateCollection", queryBuilder.toString());
 		return this;
 	}
@@ -388,26 +348,18 @@ public class ArangoDBQueryBuilder {
 		List<String> edgeCollections,
 		String startVertex, Map<String, Object> bindVars) {
 		queryBuilder.append(String.format("FOR %s", vertexVariable));
-		if (edgeVariable.isPresent()) {
-			queryBuilder.append(String.format(", %s", edgeVariable.get()));
-		}
-		if (pathVariable.isPresent()) {
-			queryBuilder.append(String.format(", %s", pathVariable.get()));
-		}
+		edgeVariable.ifPresent(ev -> queryBuilder.append(String.format(", %s", ev)));
+		pathVariable.ifPresent(pv -> queryBuilder.append(String.format(", %s", pv)));
 		queryBuilder.append("\n  IN ");
-		if (min.isPresent()) {
-			queryBuilder.append(min.get());
-		}
-		if (max.isPresent()) {
-			queryBuilder.append(String.format("..%s", max.get()));
-		}
+		min.ifPresent(queryBuilder::append);
+		max.ifPresent(m -> queryBuilder.append(String.format("..%s", m)));
 		queryBuilder.append(direction.getAqlName()).append(" @startVertex\n");
 		String separator = "";
 		for (String c : edgeCollections) {
 			queryBuilder.append(separator);
 			separator = ", ";
 			queryBuilder.append(String.format("@@col%s", iterateCnt));
-			bindVars.put(String.format("@col%s", iterateCnt++), ArangoDBUtil.getCollectioName(graphName, c, shouldPrefixWithGraphName));
+			bindVars.put(String.format("@col%s", iterateCnt++), c);
 		}
 		bindVars.put("@startVertex", startVertex);
 		logger.debug("iterateGraph", queryBuilder.toString());
@@ -447,17 +399,9 @@ public class ArangoDBQueryBuilder {
 		return this;
 	}
 
-	public ArangoDBQueryBuilder filterSameCollections(
-			String graphName,
-			String filterVariable,
-			List<String> collections, Map<String, Object> bindVars) {
-		return filterSameCollections(graphName, filterVariable, collections, bindVars, this.shouldPrefixWithGraphName);
-	}
-
 	/**
 	 * Add a filter same collections segment, i.e. element represented by variable must be in any
 	 * of the provided collections.
-	 * @param graphName 			the graph name
 	 * @param filterVariable 		the filter variable
 	 * @param collections 			the collections to filter by
 	 * @param bindVars 				the map of bind parameters
@@ -466,9 +410,9 @@ public class ArangoDBQueryBuilder {
 	 */
 	
 	public ArangoDBQueryBuilder filterSameCollections(
-		String graphName,
 		String filterVariable,
-		List<String> collections, Map<String, Object> bindVars, boolean shouldPrefixWithGraphName) {
+		List<String> collections,
+		Map<String, Object> bindVars) {
 		if (!collections.isEmpty()) {
 			queryBuilder.append(" FILTER (IS_SAME_COLLECTION(");
 			String separator = "";
@@ -476,7 +420,7 @@ public class ArangoDBQueryBuilder {
 				queryBuilder.append(separator);
 				separator = String.format(", %s) OR IS_SAME_COLLECTION(", filterVariable);
 				queryBuilder.append(String.format("@@col%s", iterateCnt));
-				bindVars.put(String.format("@col%s", iterateCnt++), ArangoDBUtil.getCollectioName(graphName, c, shouldPrefixWithGraphName));
+				bindVars.put(String.format("@col%s", iterateCnt++), c);
 			}
 			queryBuilder.append(String.format(", %s))\n", filterVariable));
 		}

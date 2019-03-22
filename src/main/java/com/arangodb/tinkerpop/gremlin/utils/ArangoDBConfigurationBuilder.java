@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////////
 //
-// Implementation of a simple graph client for the ArangoDB.
+// Implementation of the TinkerPop OLTP Provider API for ArangoDB
 //
 // Copyright triAGENS GmbH Cologne and The University of York
 //
@@ -42,11 +42,10 @@ import com.arangodb.tinkerpop.gremlin.structure.ArangoDBGraph;
  * <li>other db settings: (default ArangoDB Java driver settings).
  * <li>collectionNames: prefixed with graphName</li>
  * </ul>
+ * @author Horacio Hoyos Rodriguez (https://www.york.ac.uk)
  */
 public class ArangoDBConfigurationBuilder {
 	
-	/** The Logger. */
-    
 	private static final Logger logger = LoggerFactory.getLogger(ArangoDBConfigurationBuilder.class);
 	
 	private static final String PROPERTY_KEY_HOSTS = "arangodb.hosts";

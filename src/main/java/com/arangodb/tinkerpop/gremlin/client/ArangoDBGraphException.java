@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////////
 //
-// Implementation of a simple graph client for the ArangoDB.
+// Implementation of the TinkerPop OLTP Provider API for ArangoDB
 //
 // Copyright triAGENS GmbH Cologne and The University of York
 //
@@ -11,7 +11,7 @@ package com.arangodb.tinkerpop.gremlin.client;
 /**
  * The ArangoDBGraphException is used to signal all exceptions related to the graph operations.
  * 
- * @author Horacio Hoyos Rodriguez (@horaciohoyosr)
+ * @author Horacio Hoyos Rodriguez (https://www.york.ac.uk)
  */
 
 public class ArangoDBGraphException extends RuntimeException {
@@ -20,19 +20,19 @@ public class ArangoDBGraphException extends RuntimeException {
 	
     private static final long serialVersionUID = -8478050406116402002L;
     
-    private int code;
+    private int errorCode;
     
     /**
      * Instantiates a new Arango DB graph exception.
      *
-     * @param code 		the ArangoDB error code
-     * @param message 	the message
-     * @param cause 	the cause
+     * @param errorCode             the ArangoDB error errorCode
+     * @param message 	            the exception message
+     * @param cause 	            the exception cause
      */
     
-    public ArangoDBGraphException(int code, String message, Throwable cause) {
+    public ArangoDBGraphException(int errorCode, String message, Throwable cause) {
         super(message, cause);
-        this.code = code;
+        this.errorCode = errorCode;
     }
 
     /**
@@ -49,11 +49,11 @@ public class ArangoDBGraphException extends RuntimeException {
     /**
      * Instantiates a new Arango DB graph exception.
      *
-     * @param code 		the ArangoDB error code
-     * @param message 	the message
+     * @param errorCode 		    the ArangoDB error errorCode
+     * @param message 	            the exception message
      */
     
-    public ArangoDBGraphException(int code, String message) {
+    public ArangoDBGraphException(int errorCode, String message) {
         super(message);
     }
 
@@ -77,8 +77,8 @@ public class ArangoDBGraphException extends RuntimeException {
         super(cause);
     }
 
-	public int getCode() {
-		return code;
+	public int getErrorCode() {
+		return errorCode;
 	}
 
 }

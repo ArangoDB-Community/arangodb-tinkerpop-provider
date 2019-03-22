@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////////
 //
-// Implementation of a simple graph client for the ArangoDB.
+// Implementation of the TinkerPop OLTP Provider API for ArangoDB
 //
 // Copyright triAGENS GmbH Cologne and The University of York
 //
@@ -15,7 +15,7 @@ import com.arangodb.tinkerpop.gremlin.structure.ArangoDBGraph;
  * The ArangoDB BaseEdge provides the internal fields required for the driver to correctly 
  * serialize and deserialize edges.
  * 
- * @author Horacio Hoyos Rodriguez (@horaciohoyosr)
+ * @author Horacio Hoyos Rodriguez (https://www.york.ac.uk)
  */
 
 public abstract class ArangoDBBaseEdge extends ArangoDBBaseDocument {
@@ -32,7 +32,7 @@ public abstract class ArangoDBBaseEdge extends ArangoDBBaseDocument {
     private String _to;
 
     /**
-     * Constructor used for ArabgoDB JavaBeans serialisation.
+     * Constructor used for ArabgoDB JavaBeans de-/serialisation.
      */
 
     public ArangoDBBaseEdge() {
@@ -42,30 +42,28 @@ public abstract class ArangoDBBaseEdge extends ArangoDBBaseDocument {
     /**
      * Instantiates a new Arango DB base edge.
      *
-     * @param from 			the from/source vertex id
-     * @param to 			the to/target vertex id
-     * @param graph 		the graph
-     * @param collection 	the collection where the edge should be added
+     * @param label                 the edge label
+     * @param from_id               the from/source vertex id
+     * @param to_id                 the to/target vertex id
+     * @param graph                 the graph
      */
-    public ArangoDBBaseEdge(String from, String to, ArangoDBGraph graph, String collection) {
-        this(from, to, null, graph, collection);
+    public ArangoDBBaseEdge(String label, String from_id, String to_id, ArangoDBGraph graph) {
+        this(null, label, from_id, to_id, graph);
     }
 
     /**
-     * Instantiates a new Arango DB base edge.
+     * Instantiates a new Arango DB base edge with a predefined name.
      *
-     * @param from 			the from/source vertex id
-     * @param to 			the to/target vertex id
-     * @param key 			the key to assing to the edge
-     * @param graph 		the graph
-     * @param collection 	the collection where the edge should be added
+     * @param key                   the name to assign to the edge
+     * @param label                 the edge label
+     * @param from_id               the from/source vertex id
+     * @param to_id                 the to/target vertex id
+     * @param graph                 the graph
      */
-    public ArangoDBBaseEdge(String from, String to, String key, ArangoDBGraph graph, String collection) {
-        super(key);
-        this._from = from;
-        this._to = to;
-        this.graph = graph;
-        this.collection = collection;
+    public ArangoDBBaseEdge(String key, String label, String from_id, String to_id, ArangoDBGraph graph) {
+        super(key, label, graph);
+        this._from = from_id;
+        this._to = to_id;
     }
 
     /**
@@ -80,7 +78,7 @@ public abstract class ArangoDBBaseEdge extends ArangoDBBaseDocument {
     /**
      * Change the from/source vertex.
      *
-     * @param from 			the from/source vertex id
+     * @param from 			        the from/source vertex id
      */
     public void _from(String from) {
         this._from = from;
@@ -98,7 +96,7 @@ public abstract class ArangoDBBaseEdge extends ArangoDBBaseDocument {
     /**
      * Change the to/target vertex.
      *
-     * @param to 			the to/target vertex id
+     * @param to 			        the to/target vertex id
      */
     public void _to(String to) {
         this._to = to;

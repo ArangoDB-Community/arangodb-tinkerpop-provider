@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////////
 //
-// Implementation of a simple graph client for the ArangoDB.
+// Implementation of the TinkerPop OLTP Provider API for ArangoDB
 //
 // Copyright triAGENS GmbH Cologne and The University of York
 //
@@ -25,7 +25,7 @@ import org.slf4j.LoggerFactory;
  * @author Johannes Gocke (http://www.triagens.de)
  * @author Guido Schwab (http://www.triagens.de)
  * @author Jan Steemann (http://www.triagens.de)
- * @author Horacio Hoyos Rodriguez (@horaciohoyosr)
+ * @author Horacio Hoyos Rodriguez (https://www.york.ac.uk)
  */
 
 public class ArangoDBPropertyFilter {
@@ -103,12 +103,12 @@ public class ArangoDBPropertyFilter {
 	}
 
 	/**
-	 * Constructs the the AQL segment for each property filter and adds the required key-value
+	 * Constructs the the AQL segment for each property filter and adds the required name-value
 	 * entries to the bind parameters map.
 	 *
 	 * @param prefix 			the iterator/variable to which the property filter will be applied
 	 * @param filterSegments 	the list to populate with the AQL segments
-	 * @param bindVars 			the map to populate with the key-value bindings
+	 * @param bindVars 			the map to populate with the name-value bindings
 	 */
 	
 	public void addAqlSegments(
@@ -194,9 +194,9 @@ public class ArangoDBPropertyFilter {
 	}
 
 	/**
-	 * Escape key.
+	 * Escape name.
 	 *
-	 * @param key the key
+	 * @param key the name
 	 * @return the string
 	 */
 	private String escapeKey(String key) {
@@ -209,7 +209,7 @@ public class ArangoDBPropertyFilter {
 	
 	private class PropertyContainer {
 		
-		/** The key. */
+		/** The name. */
 		
 		public final String key;
 		
@@ -224,7 +224,7 @@ public class ArangoDBPropertyFilter {
 		/**
 		 * Instantiates a new property container.
 		 *
-		 * @param key the key
+		 * @param key the name
 		 * @param value the value
 		 * @param compare the compare
 		 */

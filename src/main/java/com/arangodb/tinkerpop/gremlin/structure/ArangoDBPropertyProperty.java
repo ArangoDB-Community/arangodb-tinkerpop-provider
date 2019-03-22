@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////////
 //
-// Implementation of the TinkerPop-Enabled Providers OLTP for ArangoDB
+// Implementation of the TinkerPop OLTP Provider API for ArangoDB
 //
 // Copyright triAGENS GmbH Cologne and The University of York
 //
@@ -25,7 +25,7 @@ import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
  *
  * @param <U> the type of the property value
  * 
- * @author Horacio Hoyos Rodriguez (@horaciohoyosr)
+ * @author Horacio Hoyos Rodriguez (https://www.york.ac.uk)
  */
 public class ArangoDBPropertyProperty<U> extends ArangoDBElementProperty<U> {
     /**
@@ -37,24 +37,24 @@ public class ArangoDBPropertyProperty<U> extends ArangoDBElementProperty<U> {
     }
 
     /**
-     * Instantiates a new arango DB property property.
+     * Instantiates a new ArangoDB property property.
      *
-     * @param key the key
-     * @param value the value
-     * @param owner the owner
+     * @param name                  the name of the property
+     * @param value                 the value of the property
+     * @param owner                 the owner of the property
      */
     
-    public ArangoDBPropertyProperty(String key, U value, ArangoDBBaseDocument owner) {
-        super(key, value, owner, ArangoDBUtil.ELEMENT_PROPERTIES_COLLECTION);
+    public ArangoDBPropertyProperty(String name, U value, ArangoDBBaseDocument owner) {
+        super(name, value, owner, ArangoDBGraph.ELEMENT_PROPERTIES_COLLECTION);
     }
     
     @SuppressWarnings("rawtypes")
 	@Override
     public Element element() {
         ArangoCursor<ArangoDBVertexProperty> q = graph.getClient()
-        		.getDocumentNeighbors(graph.name(), this, Collections.emptyList(), Direction.IN, ArangoDBPropertyFilter.empty(), ArangoDBVertexProperty.class);
+        		.getDocumentNeighbors(this, Collections.emptyList(), Direction.IN, ArangoDBPropertyFilter.empty(), ArangoDBVertexProperty.class);
 		ArangoDBIterator<ArangoDBVertexProperty> iterator = new ArangoDBIterator<ArangoDBVertexProperty>(graph, q);
-        return iterator.hasNext() ? (Element) iterator.next() : null;
+        return iterator.hasNext() ? iterator.next() : null;
     }
     
     @Override

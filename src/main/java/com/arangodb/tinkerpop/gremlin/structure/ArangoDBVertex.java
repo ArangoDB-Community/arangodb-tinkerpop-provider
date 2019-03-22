@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////////
 //
-// Implementation of the TinkerPop-Enabled Providers OLTP for ArangoDB
+// Implementation of the TinkerPop OLTP Provider API for ArangoDB
 //
 // Copyright triAGENS GmbH Cologne and The University of York
 //
@@ -48,12 +48,10 @@ import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
  * @author Achim Brandt (http://www.triagens.de)
  * @author Johannes Gocke (http://www.triagens.de)
  * @author Guido Schwab (http://www.triagens.de)
- * @author Horacio Hoyos Rodriguez (@horaciohoyosr)
+ * @author Horacio Hoyos Rodriguez (https://www.york.ac.uk)
  */
 
 public class ArangoDBVertex extends ArangoDBBaseDocument implements Vertex {
-
-	/** The Logger. */
 
 	private static final Logger logger = LoggerFactory.getLogger(ArangoDBVertex.class);
 
@@ -66,26 +64,26 @@ public class ArangoDBVertex extends ArangoDBBaseDocument implements Vertex {
 	}
 
 	/**
-	 * Instantiates a new arango DB vertex.
+	 * Instantiates a new ArangoDB vertex with he given key.
 	 *
-	 * @param graph the graph
-	 * @param collection the collection
-	 * @param key the key
+	 * @param key 					the key to assign to the vertex
+	 * @param label                	the label of the vertex
+	 * @param graph                	the graph that owns the vertex
 	 */
-	public ArangoDBVertex(ArangoDBGraph graph, String collection, String key) {
-		super(key);
-        this.graph = graph;
-        this.collection = collection;
+
+	public ArangoDBVertex(String key, String label, ArangoDBGraph graph) {
+		super(key, label, graph);
 	}
 
 	/**
-	 * Instantiates a new arango DB vertex.
+	 * Instantiates a new ArangoDB vertex.
 	 *
-	 * @param graph the graph
-	 * @param collection the collection
+	 * @param graph 				the graph
+	 * @param collection 			the collection
 	 */
+
 	public ArangoDBVertex(ArangoDBGraph graph, String collection) {
-		this(graph, collection, null);
+		this(null, collection, graph);
 	}
 
     @Override
@@ -95,30 +93,24 @@ public class ArangoDBVertex extends ArangoDBBaseDocument implements Vertex {
 
     @Override
     public String label() {
-        return collection();
+        return label;
     }
 
 	@Override
 	public void remove() {
 		logger.info("remove {}", this._id());
-		Map<String, Object> bindVars = new HashMap<>();
-		//Remove 1.. OUT v and e.
-		ArangoDBQueryBuilder queryBuilder = new ArangoDBQueryBuilder(true);
-		queryBuilder.iterateGraph(graph.name(), "v", Optional.of("e"), Optional.empty(),
-				Optional.of(1), Optional.empty(), ArangoDBQueryBuilder.Direction.OUT,
-				this._id(), bindVars)
-			.append(String.format("    REMOVE v IN '%s'\n", ArangoDBUtil.getCollectioName(graph.name(), ArangoDBUtil.ELEMENT_PROPERTIES_COLLECTION, true)))
-			.append(String.format("    REMOVE e IN '%s'\n", ArangoDBUtil.getCollectioName(graph.name(), ArangoDBUtil.ELEMENT_PROPERTIES_EDGE, true)));
-		String query = queryBuilder.toString();
-		logger.debug("AQL {}", query);
-		graph.getClient().executeAqlQuery(query , bindVars, null, this.getClass());
-
-		//Remove vertex
-		queryBuilder = new ArangoDBQueryBuilder(false)// the false here is never used, because querybuilder is just appending direct AQL query.
-			.append(String.format("REMOVE Document(@startVertex) IN %s", graph.getCollectioName(graph.name(), label())));
-		query = queryBuilder.toString();
-		logger.debug("AQL {}", query);
-		graph.getClient().executeAqlQuery(query , bindVars, null, this.getClass());
+		if (paired) {
+			Map<String, Object> bindVars = new HashMap<>();
+			// Delete properties
+			properties().forEachRemaining(VertexProperty::remove);
+			//Remove vertex
+			try {
+				graph.getClient().deleteDocument(this);
+				// Need to delete incoming edges too
+			} catch (ArangoDBGraphException ex) {
+				// Pass Removing a property that does not exists should not throw an exception.
+			}
+		}
 	}
 
 	@Override
@@ -150,7 +142,7 @@ public class ArangoDBVertex extends ArangoDBBaseDocument implements Vertex {
 	        	}
         		Matcher m = ArangoDBUtil.DOCUMENT_KEY.matcher((String)id);
         		if (m.matches()) {
-        			edge = new ArangoDBEdge(graph, label, this, ((ArangoDBVertex) inVertex), id.toString());
+        			edge = new ArangoDBEdge(id.toString(), label, this, ((ArangoDBVertex) inVertex), graph);
         		}
         		else {
             		throw new ArangoDBGraphException(String.format("Given id (%s) has unsupported characters.", id));
@@ -190,7 +182,7 @@ public class ArangoDBVertex extends ArangoDBBaseDocument implements Vertex {
 	        		// The collection name is the last part of the full name
 	        		String[] collectionParts = parts[0].split("_");
 					String collectionName = collectionParts[collectionParts.length-1];
-					if (collectionName.contains(ArangoDBUtil.ELEMENT_PROPERTIES_COLLECTION)) {
+					if (collectionName.contains(ArangoDBGraph.ELEMENT_PROPERTIES_COLLECTION)) {
 	        			id = parts[1];
 	        			
 	        		}
@@ -224,46 +216,27 @@ public class ArangoDBVertex extends ArangoDBBaseDocument implements Vertex {
 
 
 	@Override
-	public Iterator<Edge> edges(
-	    Direction direction,
-		String... edgeLabels) {
-	    List<String> edgeCollections;
-        if (edgeLabels.length == 0) {
-            edgeCollections = graph.edgeCollections();
-        }
-        else {
-            edgeCollections = Arrays.stream(edgeLabels)
-                    .filter(el -> graph.edgeCollections().contains(el))
-                    .collect(Collectors.toList());
-            if (edgeCollections.isEmpty()) {
-                return Collections.emptyIterator();
-            }
-        }
-		return new ArangoDBIterator<Edge>(graph, graph.getClient().getVertexEdges(graph.name(), this, edgeCollections, direction));
+	public Iterator<Edge> edges(Direction direction, String... edgeLabels) {
+		List<String> edgeCollections = getQueryEdgeCollections(edgeLabels);
+		// If edgeLabels was not empty but all were discarded, this means that we should
+		// return an empty iterator, i.e. no edges for that edgeLabels exist.
+		if (edgeCollections.isEmpty()) {
+			return Collections.emptyIterator();
+		}
+		return new ArangoDBIterator<>(graph, graph.getClient().getVertexEdges(this, edgeCollections, direction));
 	}
 
 
 	@Override
-	public Iterator<Vertex> vertices(Direction direction,
-		String... edgeLabels) {
-		// Query will raise an exception if the edge_collection name is not in the graph, so we need
-		// to filter out edgeLabels not in the graph.
-		List<String> edgeCollections;
-		if (edgeLabels.length == 0) {
-			edgeCollections = graph.edgeCollections();
+	public Iterator<Vertex> vertices(Direction direction, String... edgeLabels) {
+		List<String> edgeCollections = getQueryEdgeCollections(edgeLabels);
+		// If edgeLabels was not empty but all were discarded, this means that we should
+		// return an empty iterator, i.e. no edges for that edgeLabels exist.
+		if (edgeCollections.isEmpty()) {
+			return Collections.emptyIterator();
 		}
-		else {
-			edgeCollections = Arrays.stream(edgeLabels)
-				.filter(el -> graph.edgeCollections().contains(el))
-				.collect(Collectors.toList());
-			// If edgeLabels was not empty but all were discarded, this means that we should
-			// return an empty iterator, i.e. no edges for that edgeLabels exist.
-			if (edgeCollections.isEmpty()) {
-				return Collections.emptyIterator();
-			}
-		}
-		ArangoCursor<ArangoDBVertex> documentNeighbors = graph.getClient().getDocumentNeighbors(graph.name(), this, edgeCollections, direction, ArangoDBPropertyFilter.empty(), ArangoDBVertex.class);
-		return new ArangoDBIterator<Vertex>(graph, documentNeighbors);
+		ArangoCursor<ArangoDBVertex> documentNeighbors = graph.getClient().getDocumentNeighbors(this, edgeCollections, direction, ArangoDBPropertyFilter.empty(), ArangoDBVertex.class);
+		return new ArangoDBIterator<>(graph, documentNeighbors);
 	}
 
 
@@ -272,13 +245,13 @@ public class ArangoDBVertex extends ArangoDBBaseDocument implements Vertex {
 	public <V> Iterator<VertexProperty<V>> properties(String... propertyKeys) {
 		logger.debug("Get properties {}", (Object[])propertyKeys);
         List<String> labels = new ArrayList<>();
-        labels.add(ArangoDBUtil.ELEMENT_PROPERTIES_EDGE);
+        labels.add(graph.getPrefixedCollectioName(ArangoDBGraph.ELEMENT_PROPERTIES_EDGE_COLLECTION));
         ArangoDBPropertyFilter filter = new ArangoDBPropertyFilter();
         for (String pk : propertyKeys) {
-            filter.has("key", pk, ArangoDBPropertyFilter.Compare.EQUAL);
+            filter.has("name", pk, ArangoDBPropertyFilter.Compare.EQUAL);
         }
-        ArangoCursor<?> query = graph.getClient().getElementProperties(graph.name(), this, labels, filter, ArangoDBVertexProperty.class);
-        return (Iterator<VertexProperty<V>>) new ArangoDBPropertyIterator<V, VertexProperty<V>>(graph, (ArangoCursor<ArangoDBVertexProperty<V>>) query);
+        ArangoCursor<?> query = graph.getClient().getElementProperties(this, labels, filter, ArangoDBVertexProperty.class);
+        return new ArangoDBPropertyIterator<>(graph, (ArangoCursor<ArangoDBVertexProperty<V>>) query);
     }
 
 
@@ -294,6 +267,28 @@ public class ArangoDBVertex extends ArangoDBBaseDocument implements Vertex {
 		if (paired) {
 			graph.getClient().updateDocument(this);
 		}
+	}
+
+	/**
+	 * Query will raise an exception if the edge_collection name is not in the graph, so we need to filter out
+	 * edgeLabels not in the graph.
+	 *
+	 * @param edgeLabels
+	 * @return
+	 */
+	private List<String> getQueryEdgeCollections(String... edgeLabels) {
+		List<String> vertexCollections;
+		if (edgeLabels.length == 0) {
+			vertexCollections = graph.edgeCollections().stream().map(graph::getPrefixedCollectioName).collect(Collectors.toList());
+		}
+		else {
+			vertexCollections = Arrays.stream(edgeLabels)
+					.filter(el -> graph.edgeCollections().contains(el))
+					.map(graph::getPrefixedCollectioName)
+					.collect(Collectors.toList());
+
+		}
+		return vertexCollections;
 	}
 	
     @Override

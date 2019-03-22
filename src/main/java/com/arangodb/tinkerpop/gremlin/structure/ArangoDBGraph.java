@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////////
 //
-// Implementation of the TinkerPop-Enabled Providers OLTP for ArangoDB
+// Implementation of the TinkerPop OLTP Provider API for ArangoDB
 //
 // Copyright triAGENS GmbH Cologne and The University of York
 //
@@ -8,23 +8,17 @@
 
 package com.arangodb.tinkerpop.gremlin.structure;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 
+import com.arangodb.entity.EdgeDefinition;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationConverter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.tinkerpop.gremlin.process.computer.GraphComputer;
 import org.apache.tinkerpop.gremlin.structure.Edge;
-import org.apache.tinkerpop.gremlin.structure.Element;
 import org.apache.tinkerpop.gremlin.structure.Graph;
 import org.apache.tinkerpop.gremlin.structure.Transaction;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
@@ -33,7 +27,6 @@ import org.apache.tinkerpop.gremlin.structure.util.StringFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.arangodb.ArangoCursor;
 import com.arangodb.ArangoGraph;
 import com.arangodb.model.GraphCreateOptions;
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBGraphClient;
@@ -51,7 +44,7 @@ import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
  * <b>ArangoDB and TinkerPop Ids.</b>
  * <p>
  * In TinkerPop, graph elements are expected to have a unique Id within the graph; in ArangoDB the
- * Id (document handle) consists of the collection's name and the document key (_key attribute)
+ * Id (document handle) consists of the collection's name and the document name (_key attribute)
  * separated by /, hence the only way to hint at ids is by providing a _key during construction.
  * Hence, ArangoDBGraph elements do not strictly support <i>User Supplied Ids</i>. We allow
  * ids to be supplied during vertex creation: {@code graph.addVertex(id,x)}, but this id actually
@@ -111,13 +104,20 @@ import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
  *gremlin.arangodb.conf.graph.relation = relation:male,female-&gt;male,female
  *  </pre>
  * </ul>
+ * <p>
+ * In order to allow multiple graphs in the same database, vertex and edge collections can be prefixed with the
+ * graph name in order to avoid collection clashes. To enable this function the graph.shouldPrefixCollectionNames
+ * property should be set to <code>true</code>. If you have an existing graph/collections and want to reuse those,
+ * the flag should be set to <code>false</code>. The default value is <code>true</code>.
+ * <p>
  * The list of allowed settings is:
  * <ul>
- *   <li>  graph.db: 		The name of the database
- *   <li>  graph.name: 		The name of the graph
- *   <li>  graph.vertex: 	The name of a vertices collection
- *   <li>  graph.edge: 		The name of an edges collection
- *   <li>  graph.relation: 	The allowed from/to relations for edges
+ *   <li>  graph.db 								// The name of the database
+ *   <li>  graph.name 								// The name of the graph
+ *   <li>  graph.vertex 							// The name of a vertices collection
+ *   <li>  graph.edge 								// The name of an edges collection
+ *   <li>  graph.relation 							// The allowed from/to relations for edges
+ *   <li>  graph.shouldPrefixCollectionNames 		// Boolean flag, true if Vertex and Edge collections will be prefixed with graph name
  *   <li>  arangodb.hosts
  *   <li>  arangodb.timeout
  *   <li>  arangodb.user
@@ -133,7 +133,7 @@ import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
  * @author Achim Brandt (http://www.triagens.de)
  * @author Johannes Gocke (http://www.triagens.de)
  * @author Guido Schwab (http://www.triagens.de)
- * @author Horacio Hoyos Rodriguez (@horaciohoyosr)
+ * @author Horacio Hoyos Rodriguez (https://www.york.ac.uk)
  *
  */
 
@@ -231,11 +231,6 @@ Graph.OptOut(
 		reason = "Double/Float serialize/deserialize discrepancies.")
 		*/
 public class ArangoDBGraph implements Graph {
-
-
-	public String getCollectioName(String graphName, String collectionName) {
-		return ArangoDBUtil.getCollectioName(graphName, collectionName, shouldPrefixCollectionNames);
-	}
 
 	/**
      * The Class ArangoDBGraphFeatures.
@@ -450,33 +445,33 @@ public class ArangoDBGraph implements Graph {
 
 	private static final Logger logger = LoggerFactory.getLogger(ArangoDBGraph.class);
 
-    /** The properties key CONFIG_CONF. */
+    /** The properties name CONFIG_CONF. */
 
     public static final String PROPERTY_KEY_PREFIX = "gremlin.arangodb.conf";
 
-    /** The properties key  CONFIG_DB. */
+    /** The properties name  CONFIG_DB. */
 
     public static final String PROPERTY_KEY_DB_NAME = "graph.db";
 
-    /** The properties key  CONFIG_NAME. */
+    /** The properties name  CONFIG_NAME. */
 
     public static final String PROPERTY_KEY_GRAPH_NAME = "graph.name";
 
-    /** The properties key CONFIG_VERTICES. */
+    /** The properties name CONFIG_VERTICES. */
 
     public static final String PROPERTY_KEY_VERTICES = "graph.vertex";
 
-    /** The properties key CONFIG_EDGES. */
+    /** The properties name CONFIG_EDGES. */
 
     public static final String PROPERTY_KEY_EDGES = "graph.edge";
 
-    /** The properties key CONFIG_RELATIONS. */
+    /** The properties name CONFIG_RELATIONS. */
 
     public static final String PROPERTY_KEY_RELATIONS = "graph.relation";
 
-	/** The properties key CONFIG_SHOULD_PREFIX_COLLECTION_NAMES **/
+	/** The properties name CONFIG_SHOULD_PREFIX_COLLECTION_NAMES **/
 
-	public static final String PROPERTY_KEY_SHOULD_PREFIX_COLLECTION_NAMES = "arangodb.shouldPrefixCollectionNames";
+	public static final String PROPERTY_KEY_SHOULD_PREFIX_COLLECTION_NAMES = "graph.shouldPrefixCollectionNames";
 
 	/** The Constant DEFAULT_VERTEX_COLLECTION. */
 
@@ -485,6 +480,20 @@ public class ArangoDBGraph implements Graph {
 	/** The Constant DEFAULT_VERTEX_COLLECTION. */
 
 	public static final String DEFAULT_EDGE_COLLECTION = "edge";
+
+	/** The Constant GRAPH_VARIABLES_COLLECTION. */
+
+	public static final String GRAPH_VARIABLES_COLLECTION = "TINKERPOP-GRAPH-VARIABLES";
+
+	/** The Constant ELEMENT_PROPERTIES_COLLECTION. */
+
+	public static final String ELEMENT_PROPERTIES_COLLECTION = "ELEMENT-PROPERTIES";
+
+	/** The Constant ELEMENT_PROPERTIES_EDGE_COLLECTION. */
+
+	public static final String ELEMENT_PROPERTIES_EDGE_COLLECTION = "ELEMENT-HAS-PROPERTIES";
+
+	public static Set<String> GRAPH_COLLECTIONS = new HashSet<>(Arrays.asList(ELEMENT_PROPERTIES_EDGE_COLLECTION, ELEMENT_PROPERTIES_COLLECTION));
 
 	/** The features. */
 
@@ -518,9 +527,6 @@ public class ArangoDBGraph implements Graph {
 
 	private Configuration configuration;
 
-	/** The variables id. */
-
-	private String variables_id;
 
 	/** If collection names should be prefixed with graph name */
 	private final boolean shouldPrefixCollectionNames;
@@ -556,9 +562,8 @@ public class ArangoDBGraph implements Graph {
 		relations = arangoConfig.getList(PROPERTY_KEY_RELATIONS).stream()
 				.map(String.class::cast)
 				.collect(Collectors.toList());
-		String graphName = arangoConfig.getString(PROPERTY_KEY_GRAPH_NAME);
-		checkValues(arangoConfig.getString(PROPERTY_KEY_DB_NAME), graphName,	vertexCollections,
-				edgeCollections, relations);
+		name = arangoConfig.getString(PROPERTY_KEY_GRAPH_NAME);
+		checkValues(arangoConfig.getString(PROPERTY_KEY_DB_NAME), name, vertexCollections, edgeCollections, relations);
 		if (CollectionUtils.isEmpty(vertexCollections)) {
 			schemaless = true;
 			vertexCollections.add(DEFAULT_VERTEX_COLLECTION);
@@ -566,33 +571,43 @@ public class ArangoDBGraph implements Graph {
 		if (CollectionUtils.isEmpty(edgeCollections)) {
 			edgeCollections.add(DEFAULT_EDGE_COLLECTION);
 		}
-
-		shouldPrefixCollectionNames = arangoConfig.getBoolean(PROPERTY_KEY_SHOULD_PREFIX_COLLECTION_NAMES);
+		shouldPrefixCollectionNames = arangoConfig.getBoolean(PROPERTY_KEY_SHOULD_PREFIX_COLLECTION_NAMES, true);
 
 		Properties arangoProperties = ConfigurationConverter.getProperties(arangoConfig);
 		int batchSize = 0;
-		client = new ArangoDBGraphClient(arangoProperties, arangoConfig.getString(PROPERTY_KEY_DB_NAME), batchSize, shouldPrefixCollectionNames);
-        ArangoGraph graph = client.getGraph(graphName);
+		client = new ArangoDBGraphClient(this, arangoProperties, arangoConfig.getString(PROPERTY_KEY_DB_NAME),
+				batchSize, shouldPrefixCollectionNames);
+
+		ArangoGraph graph = client.getArangoGraph();
         GraphCreateOptions options = new  GraphCreateOptions();
-        options.orphanCollections(ArangoDBUtil.getCollectioName(graphName, ArangoDBUtil.GRAPH_VARIABLES_COLLECTION, true)); // Graph Variables is a collection specific for given Graph.
+        // FIXME Cant be in orphan collections because it will be deleted with graph?
+        // options.orphanCollections(GRAPH_VARIABLES_COLLECTION);
+		final List<String> prefVCols = vertexCollections.stream().map(this::getPrefixedCollectioName).collect(Collectors.toList());
+		final List<String> prefECols = edgeCollections.stream().map(this::getPrefixedCollectioName).collect(Collectors.toList());
+		final List<EdgeDefinition> edgeDefinitions = new ArrayList<>();
+		if (relations.isEmpty()) {
+			logger.info("No relations, creating default ones.");
+			edgeDefinitions.addAll(ArangoDBUtil.createDefaultEdgeDefinitions(prefVCols, prefECols));
+		} else {
+			for (String value : relations) {
+				EdgeDefinition ed = ArangoDBUtil.relationPropertyToEdgeDefinition(this, value);
+				edgeDefinitions.add(ed);
+			}
+		}
+		edgeDefinitions.add(ArangoDBUtil.createPropertyEdgeDefinitions(this, prefVCols, prefECols));
+
         if (graph.exists()) {
-    		this.name = graph.name();
-            ArangoDBUtil.checkGraphForErrors(vertexCollections, edgeCollections, relations, graph, options, shouldPrefixCollectionNames);
-            ArangoCursor<String> iter = client.getGraphVariablesId(this.name);
-            if (iter.hasNext()) {
-            	this.variables_id = iter.next();
-            }
-            else {
+            ArangoDBUtil.checkGraphForErrors(prefVCols, prefECols, edgeDefinitions, graph, options);
+            ArangoDBGraphVariables iter = client.getGraphVariables();
+            if (iter == null) {
             	throw new ArangoDBGraphException("Existing graph does not have a Variables collection");
             }
         }
         else {
-        	graph = client.createGraph(graphName, vertexCollections,
-            		edgeCollections, relations, options);
+        	graph = client.createGraph(name, edgeDefinitions, options);
         	this.name = graph.name();
-			ArangoDBGraphVariables variables = new ArangoDBGraphVariables(this, ArangoDBUtil.GRAPH_VARIABLES_COLLECTION);
-			client.insertDocument(variables, true);
-			this.variables_id = variables._id();
+			ArangoDBGraphVariables variables = new ArangoDBGraphVariables(name, GRAPH_VARIABLES_COLLECTION, this);
+			client.insertGraphVariables(variables);
 		}
 		this.configuration = configuration;
 	}
@@ -629,7 +644,7 @@ public class ArangoDBGraph implements Graph {
 	        	}
         		Matcher m = ArangoDBUtil.DOCUMENT_KEY.matcher((String)id);
         		if (m.matches()) {
-        			vertex = new ArangoDBVertex(this, collection, id.toString());
+        			vertex = new ArangoDBVertex(id.toString(), collection, this);
         		}
         		else {
             		throw new ArangoDBGraphException(String.format("Given id (%s) has unsupported characters.", id));
@@ -716,9 +731,15 @@ public class ArangoDBGraph implements Graph {
 		List<String> edgeCollections = new ArrayList<>();
     	List<String> ids = Arrays.stream(edgeIds)
         		.map(id -> {
-        			if (id instanceof Element) {
-        				edgeCollections.add(((Element)id).label());
-        				return ((Element)id).id();
+        			if (id instanceof ArangoDBEdge) {
+						ArangoDBEdge edge = (ArangoDBEdge) id;
+        				if (edge.isPaired()) {
+							edgeCollections.add(edge.label());
+						}
+        				else {
+							edgeCollections.add(getPrefixedCollectioName(edge.label()));
+						}
+        				return edge.id();
         			}
         			else {
         				// We only support String ids
@@ -727,7 +748,7 @@ public class ArangoDBGraph implements Graph {
         			})
         		.map(id -> id == null ? (String)id : id.toString())
         		.collect(Collectors.toList());
-		return new ArangoDBIterator<Edge>(this, getClient().getGraphEdges(this, ids, edgeCollections));
+		return new ArangoDBIterator<Edge>(this, getClient().getGraphEdges(ids, edgeCollections));
 	}
 
 	@Override
@@ -752,7 +773,7 @@ public class ArangoDBGraph implements Graph {
 	 */
 
 	public String getId() {
-		ArangoGraph graph = client.getGraph(name);
+		ArangoGraph graph = client.getArangoGraph();
 		return graph.getInfo().getName();
 	}
 
@@ -773,9 +794,8 @@ public class ArangoDBGraph implements Graph {
 
 	@Override
 	public Variables variables() {
-		ArangoCursor<ArangoDBGraphVariables> iter = client.getGraphVariables(this.name, variables_id);
-		if (iter.hasNext()) {
-			ArangoDBGraphVariables v = iter.next();
+		ArangoDBGraphVariables v = client.getGraphVariables();
+		if (v != null) {
 			v.graph(this);
 			return v;
         }
@@ -809,7 +829,26 @@ public class ArangoDBGraph implements Graph {
         			})
         		.map(id -> id == null ? (String)id : id.toString())
         		.collect(Collectors.toList());
-		return new ArangoDBIterator<Vertex>(this, getClient().getGraphVertices(this, ids, vertexCollections));
+		return new ArangoDBIterator<>(this, getClient().getGraphVertices(ids, vertexCollections));
+	}
+
+	/**
+	 * Return the collection name correctly prefixed according to the shouldPrefixCollectionNames flag
+	 * @param collectionName
+	 * @return
+	 */
+	public String getPrefixedCollectioName(String collectionName) {
+		if (GRAPH_VARIABLES_COLLECTION.equals(collectionName)) {
+			return collectionName;
+		}
+		if (GRAPH_COLLECTIONS.contains(collectionName)) {
+			return String.format("%s_%s", name, collectionName);
+		}
+		if(shouldPrefixCollectionNames) {
+			return String.format("%s_%s", name, collectionName);
+		}else{
+			return collectionName;
+		}
 	}
 
 	@Override
@@ -844,7 +883,7 @@ public class ArangoDBGraph implements Graph {
    // TODO Decide which of these methods we want to keep
 
 //	@Override
-//	public <T extends Element> void dropKeyIndex(String key, Class<T> elementClass) {
+//	public <T extends Element> void dropKeyIndex(String name, Class<T> elementClass) {
 //
 //		List<ArangoDBIndex> indices = null;
 //		try {
@@ -857,7 +896,7 @@ public class ArangoDBGraph implements Graph {
 //			logger.warn("error while reading an index", e);
 //		}
 //
-//		String normalizedKey = ArangoDBUtil.normalizeKey(key);
+//		String normalizedKey = ArangoDBUtil.normalizeKey(name);
 //
 //		if (indices != null) {
 //			for (ArangoDBIndex index : indices) {
@@ -883,13 +922,13 @@ public class ArangoDBGraph implements Graph {
 //
 //	@SuppressWarnings("rawtypes")
 //	@Override
-//	public <T extends Element> void createKeyIndex(String key, Class<T> elementClass, Parameter... indexParameters) {
+//	public <T extends Element> void createKeyIndex(String name, Class<T> elementClass, Parameter... indexParameters) {
 //
 //		IndexType type = IndexType.SKIPLIST;
 //		boolean unique = false;
 //		List<String> fields = new ArrayList<String>();
 //
-//		String n = ArangoDBUtil.normalizeKey(key);
+//		String n = ArangoDBUtil.normalizeKey(name);
 //		fields.add(n);
 //
 //		for (Parameter p : indexParameters) {

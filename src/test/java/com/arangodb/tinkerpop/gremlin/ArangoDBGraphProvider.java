@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
+import com.arangodb.tinkerpop.gremlin.structure.*;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationConverter;
 import org.apache.tinkerpop.gremlin.AbstractGraphProvider;
@@ -14,13 +15,6 @@ import org.apache.tinkerpop.gremlin.structure.Element;
 import org.apache.tinkerpop.gremlin.structure.Graph;
 
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBGraphClient;
-import com.arangodb.tinkerpop.gremlin.structure.AbstractArangoDBElement;
-import com.arangodb.tinkerpop.gremlin.structure.ArangoDBEdge;
-import com.arangodb.tinkerpop.gremlin.structure.ArangoDBElementProperty;
-import com.arangodb.tinkerpop.gremlin.structure.ArangoDBGraph;
-import com.arangodb.tinkerpop.gremlin.structure.ArangoDBGraphVariables;
-import com.arangodb.tinkerpop.gremlin.structure.ArangoDBVertex;
-import com.arangodb.tinkerpop.gremlin.structure.ArangoDBVertexProperty;
 import com.arangodb.tinkerpop.gremlin.utils.ArangoDBConfigurationBuilder;
 
 /**
@@ -34,10 +28,11 @@ public class ArangoDBGraphProvider extends AbstractGraphProvider {
 	/** The Constant IMPLEMENTATIONS. */
 	private static final Set<Class> IMPLEMENTATIONS = new HashSet<Class>() {{
         add(ArangoDBEdge.class);
-        add(AbstractArangoDBElement.class);
         add(ArangoDBGraph.class);
         add(ArangoDBGraphVariables.class);
+		add(ArangoDBEdgeProperty.class);
         add(ArangoDBElementProperty.class);
+		add(ArangoDBPropertyProperty.class);
         add(ArangoDBVertex.class);
         add(ArangoDBVertexProperty.class);
     }};
@@ -214,7 +209,7 @@ public class ArangoDBGraphProvider extends AbstractGraphProvider {
 		if (graph ==null) {
 			Configuration arangoConfig = configuration.subset(ArangoDBGraph.PROPERTY_KEY_PREFIX);
 			Properties arangoProperties = ConfigurationConverter.getProperties(arangoConfig);
-			client = new ArangoDBGraphClient(arangoProperties, "tinkerpop", 0, true);
+			client = new ArangoDBGraphClient(null, arangoProperties, "tinkerpop", 0, true);
 			client.deleteGraph(arangoConfig.getString(ArangoDBGraph.PROPERTY_KEY_GRAPH_NAME));
 		}
 		else {
