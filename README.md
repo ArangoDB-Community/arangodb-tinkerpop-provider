@@ -108,14 +108,14 @@ Vertex v1 = g.addV("person").property(T.id, "1");
 ```
 
 
-will create a vertex with id "1". However, implementation wise, in ArangoDB we are only allowed to manipulate the documents `key`, not its `id`. For this reason, providing a TinkerPop vertex id (`T.id`) actually sets the vertex's ArangoDB `key`. As a result, retrieving the vertex by the given id will fail:
+will create a vertex with id "1". However, implementation wise, in ArangoDB we are only allowed to manipulate the documents `name`, not its `id`. For this reason, providing a TinkerPop vertex id (`T.id`) actually sets the vertex's ArangoDB `name`. As a result, retrieving the vertex by the given id will fail:
 
 ```
 Vertex v2 = g.V("1");
 assert v2 == null;
 ```
 
-Since we know that documents IDs are created by concatenating (with a slash) the document's collection and its key, then we can find the vertex like so:
+Since we know that documents IDs are created by concatenating (with a slash) the document's collection and its name, then we can find the vertex like so:
 
 ```
 Vertex v2 = g.V("person/1");

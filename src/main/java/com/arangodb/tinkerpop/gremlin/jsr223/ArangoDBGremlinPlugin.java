@@ -1,10 +1,11 @@
 //////////////////////////////////////////////////////////////////////////////////////////
 //
-// Implementation of a simple graph client for the ArangoDB.
+// Implementation of the TinkerPop OLTP Provider API for ArangoDB
 //
 // Copyright triAGENS GmbH Cologne and The University of York
 //
 //////////////////////////////////////////////////////////////////////////////////////////
+
 package com.arangodb.tinkerpop.gremlin.jsr223;
 
 import org.apache.tinkerpop.gremlin.jsr223.AbstractGremlinPlugin;
@@ -17,6 +18,7 @@ import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
 
 /**
  * The Class ArangoDBGremlinPlugin.
+ * @author Horacio Hoyos Rodriguez (https://www.york.ac.uk)
  */
 public class ArangoDBGremlinPlugin extends AbstractGremlinPlugin {
 
@@ -33,15 +35,15 @@ public class ArangoDBGremlinPlugin extends AbstractGremlinPlugin {
                     ArangoDBBaseEdge.class,
                     ArangoDBGraphClient.class,
                     ArangoDBGraphException.class,
+                    ArangoDBIterator.class,
                     ArangoDBPropertyFilter.class,
+                    ArangoDBPropertyIterator.class,
                     ArangoDBQueryBuilder.class,
-            		ArangoDBEdge.class,
+                    ArangoDBEdge.class,
             		ArangoDBEdgeProperty.class,
-            		ArangoDBElement.class,
             		ArangoDBElementProperty.class,
                     ArangoDBGraph.class,
                     ArangoDBGraphVariables.class,
-                    ArangoDBIterator.class,
                     ArangoDBPropertyProperty.class,
                     ArangoDBVertex.class,
                     ArangoDBVertexProperty.class,

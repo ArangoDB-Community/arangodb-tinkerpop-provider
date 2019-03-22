@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////////
 //
-// Implementation of the TinkerPop-Enabled Providers OLTP for ArangoDB
+// Implementation of the TinkerPop OLTP Provider API for ArangoDB
 //
 // Copyright triAGENS GmbH Cologne and The University of York
 //
@@ -24,7 +24,7 @@ import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
  *
  * @param <V> the generic type
  * 
- * @author Horacio Hoyos Rodriguez (@horaciohoyosr)
+ * @author Horacio Hoyos Rodriguez (https://www.york.ac.uk)
  */
 public class ArangoDBEdgeProperty<V> extends ArangoDBElementProperty<V> {
 
@@ -39,18 +39,18 @@ public class ArangoDBEdgeProperty<V> extends ArangoDBElementProperty<V> {
     /**
      * Instantiates a new Arango DB edge property.
      *
-     * @param key the key
-     * @param value the value
-     * @param owner the owner
+     * @param key                   the name of the property
+     * @param value                 the value of the property
+     * @param owner                 the owner of the property
      */
     
     public ArangoDBEdgeProperty(String key, V value, ArangoDBBaseDocument owner) {
-        super(key, value, owner, ArangoDBUtil.ELEMENT_PROPERTIES_COLLECTION);
+        super(key, value, owner, ArangoDBGraph.ELEMENT_PROPERTIES_COLLECTION);
     }
     
     @Override
     public Element element() {
-        ArangoCursor<ArangoDBEdge> q = graph.getClient().getDocumentNeighbors(graph.name(), this, Collections.emptyList(), Direction.IN, ArangoDBPropertyFilter.empty(), ArangoDBEdge.class);
+        ArangoCursor<ArangoDBEdge> q = graph.getClient().getDocumentNeighbors( this, Collections.emptyList(), Direction.IN, ArangoDBPropertyFilter.empty(), ArangoDBEdge.class);
 		ArangoDBIterator<ArangoDBEdge> iterator = new ArangoDBIterator<ArangoDBEdge>(graph, q);
         return iterator.hasNext() ? iterator.next() : null;
     }

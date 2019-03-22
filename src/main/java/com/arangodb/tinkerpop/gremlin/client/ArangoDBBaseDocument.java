@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////////
 //
-// Implementation of a simple graph client for the ArangoDB.
+// Implementation of the TinkerPop OLTP Provider API for ArangoDB
 //
 // Copyright triAGENS GmbH Cologne and The University of York
 //
@@ -11,36 +11,35 @@ package com.arangodb.tinkerpop.gremlin.client;
 import com.arangodb.entity.DocumentField;
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBGraph;
 import com.arangodb.velocypack.annotations.Expose;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * The ArangoDB BaseBaseDocument provides the internal fields required for the driver to correctly
- * serialize and deserialize edges.
+ * serialize and deserialize vertices and edges.
  *
- * @author Horacio Hoyos Rodriguez (@horaciohoyosr)
+ * @author Horacio Hoyos Rodriguez (https://www.york.ac.uk)
  */
 
 public abstract class ArangoDBBaseDocument {
 
-    /** The Logger. */
-
-    private static final Logger logger = LoggerFactory.getLogger(ArangoDBBaseDocument.class);
-
     /** ArangoDB internal id. */
 
     @DocumentField(DocumentField.Type.ID)
-    private String _id;
+    protected String _id;
 
     /** ArangoDB internal revision. */
 
     @DocumentField(DocumentField.Type.REV)
-    private String _rev;
+    protected String _rev;
 
-    /** ArangoDB internal key - mapped to TinkerPop's ID. */
+    /** ArangoDB internal name - mapped to TinkerPop's ID. */
 
     @DocumentField(DocumentField.Type.KEY)
     protected String _key;
+
+    /** The label of the document */
+
+    @Expose
+    protected String label;
 
     /** The collection in which the element is placed. */
 
@@ -58,20 +57,26 @@ public abstract class ArangoDBBaseDocument {
     protected boolean paired = false;
 
     /**
-     * Constructor used for Arango DB JavaBeans serialisation.
+     * Constructor used for Arango DB JavaBeans de-/serialisation..
      */
     public ArangoDBBaseDocument() {
         super();
     }
 
     /**
-     * Instantiates a new Arango DB base document.
+     * Instantiates a new Arango DB base document. The document's collection is assigned by requesting the graph to
+     * prefix the collection.
      *
-     * @param key 			the key to assign to the docuement
+     * @param key 			        the key to assign to the docuement
+     * @param label                 the document label
+     * @param graph                 the graph that contains the document
      */
 
-    public ArangoDBBaseDocument(String key) {
+    public ArangoDBBaseDocument(String key, String label, ArangoDBGraph graph) {
         this._key = key;
+        this.label = label;
+        this.graph = graph;
+        this.collection = graph.getPrefixedCollectioName(label);
     }
 
     /**
@@ -86,10 +91,10 @@ public abstract class ArangoDBBaseDocument {
 
     /**
      * Set the Document's ArangoDB Id.
-     * This method is not for public use as ids must be final. It is only provided to allow the
-     * deserialization to assign the value.
+     * This method is not for public use as ids must be final. It is only provided to allow the deserialization to
+     * assign the value.
      *
-     * @param id the id
+     * @param id                    the id
      */
 
     public void _id(String id) {
@@ -99,7 +104,7 @@ public abstract class ArangoDBBaseDocument {
     /**
      * Get the Document's ArangoDB Key.
      *
-     * @return the key
+     * @return the name
      */
 
     public String _key() {
@@ -108,11 +113,12 @@ public abstract class ArangoDBBaseDocument {
 
     /**
      * Set the Document's ArangoDB Key.
+     * This method is only provided to allow the deserialization to assign the value.
      *
-     * @param key the key
+     * @param key                   the key
      */
 
-    public void _key(String key) {
+    protected void _key(String key) {
         this._key = key;
     }
 
@@ -128,49 +134,42 @@ public abstract class ArangoDBBaseDocument {
 
     /**
      * Set the Document's ArangoDB Revision.
+     * This method is only provided to allow the deserialization to assign the value.
      *
-     * @param rev the revision
+     * @param revision              the revision
      */
 
-    public void _rev(String rev) {
-        this._rev = rev;
+    protected void _rev(String revision) {
+        this._rev = revision;
     }
 
     /**
-     * Collection. If the collection is null (i.e from DB deserialization) the value is recomputed
-     * from the element's id.
+     * Get the document's collection.
      *
      * @return the collection
      */
 
     public String collection() {
-        if (collection == null) {
-            if (_id != null) {
-                logger.debug("Extracting collection name form id.");
-                collection = _id.split("/")[0];
-                int graphLoc = collection.indexOf('_');
-                collection = collection.substring(graphLoc+1);
-            }
-        }
         return collection;
     }
 
     /**
-     * Collection.
+     * Set the Documents collection.
+     * This method is only provided to allow the deserialization to assign the value.
      *
-     * @param collection the collection
+     * @param collection            the collection
      */
 
-    public void collection(String collection) {
+    protected void collection(String collection) {
         this.collection = collection;
     }
-
 
     /**
      * The graph in which the document is contained.
      *
      * @return the Arango DB graph
      */
+
     public ArangoDBGraph graph() {
 	    return graph;
 	}
@@ -199,7 +198,7 @@ public abstract class ArangoDBBaseDocument {
     /**
      * Sets the paired value of the document.
      *
-     * @param paired the new paired
+     * @param paired                the new paired status
      */
 
     public void setPaired(boolean paired) {

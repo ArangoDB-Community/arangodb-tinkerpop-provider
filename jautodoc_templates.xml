@@ -187,7 +187,7 @@
 #if(${e.g(1)} == 'E')
  * @param ${e} the element type
 #elseif(${e.g(1)} == 'K')
- * @param ${e} the key type
+ * @param ${e} the name type
 #elseif(${e.g(1)} == 'N')
  * @param ${e} the number type
 #elseif(${e.g(1)} == 'V')

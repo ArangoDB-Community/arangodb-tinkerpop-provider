@@ -25,7 +25,7 @@ public abstract class BaseTestCase {
 		configuration.setProperty("arangodb.password", "gremlin");
 		Properties arangoProperties = ConfigurationConverter.getProperties(configuration);
 		
-		client = new ArangoDBGraphClient(arangoProperties, "tinkerpop", 30000);
+		client = new ArangoDBGraphClient(null, arangoProperties, "tinkerpop", 30000, true);
 		
 		client.deleteGraph(graphName);
 		client.deleteCollection(vertices);

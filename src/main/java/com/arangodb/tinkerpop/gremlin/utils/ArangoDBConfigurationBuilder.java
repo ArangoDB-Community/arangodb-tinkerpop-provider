@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////////
 //
-// Implementation of a simple graph client for the ArangoDB.
+// Implementation of the TinkerPop OLTP Provider API for ArangoDB
 //
 // Copyright triAGENS GmbH Cologne and The University of York
 //
@@ -40,12 +40,12 @@ import com.arangodb.tinkerpop.gremlin.structure.ArangoDBGraph;
  * <li>user: gremlin
  * <li>password: gremlin
  * <li>other db settings: (default ArangoDB Java driver settings).
+ * <li>collectionNames: prefixed with graphName</li>
  * </ul>
+ * @author Horacio Hoyos Rodriguez (https://www.york.ac.uk)
  */
 public class ArangoDBConfigurationBuilder {
 	
-	/** The Logger. */
-    
 	private static final Logger logger = LoggerFactory.getLogger(ArangoDBConfigurationBuilder.class);
 	
 	private static final String PROPERTY_KEY_HOSTS = "arangodb.hosts";
@@ -59,7 +59,8 @@ public class ArangoDBConfigurationBuilder {
 	private static final String PROPERTY_KEY_ACQUIRE_HOST_LIST = "arangodb.acquireHostList";
 	private static final String PROPERTY_KEY_LOAD_BALANCING_STRATEGY = "arangodb.loadBalancingStrategy";
 	private static final String PROPERTY_KEY_PROTOCOL = "arangodb.protocol";
-	
+	private static final String PROPERTY_KEY_SHOULD_PREFIX_COLLECTION_NAMES = "arangodb.shouldPrefixCollectionNames";
+
 	/** The db name. */
 	private String dbName = "tinkerpop";
 	
@@ -107,7 +108,10 @@ public class ArangoDBConfigurationBuilder {
 	
 	/** The hosts. */
 	private Set<String> hosts = new HashSet<>();
-	
+
+	/** If Collection Names should be prefixed with Graph name. **/
+	private Boolean shouldPrefixCollectionNames = true;
+
 	/**
 	 * Instantiates a new arango DB configuration builder.
 	 */
@@ -190,6 +194,10 @@ public class ArangoDBConfigurationBuilder {
 		if (!hosts.isEmpty()) {
 			config.addProperty(fullPropertyKey(PROPERTY_KEY_HOSTS), hosts.stream().collect(Collectors.joining(",")));
 		}
+		if(shouldPrefixCollectionNames != null){
+			config.addProperty(fullPropertyKey(PROPERTY_KEY_SHOULD_PREFIX_COLLECTION_NAMES), shouldPrefixCollectionNames);
+		}
+
 		config.addProperty(Graph.GRAPH, ArangoDBGraph.class.getName());
 		return config;
 	}
@@ -484,6 +492,18 @@ public class ArangoDBConfigurationBuilder {
 		this.hostList = hostList;
 		return this;
 	}
-	
+
+	/**
+	 * In case of colliding collection names in Graph, these names can be prefixed with Graph Name.
+	 * If set to true collection names are in {@code %s_%s} format (where first %s is graph name, second %s is collection name).
+	 * If set to false, collection names are without any prefix.
+	 * Default set to <b>true</b>.
+	 * @param shouldPrefixCollectionNames whether it should prefixed or not.
+	 * @return a reference to this object.
+	 */
+	public ArangoDBConfigurationBuilder shouldPrefixCollectionNamesWithGraphName(boolean shouldPrefixCollectionNames){
+		this.shouldPrefixCollectionNames = shouldPrefixCollectionNames;
+		return this;
+	}
 
 }

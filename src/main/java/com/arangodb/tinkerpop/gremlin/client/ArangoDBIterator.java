@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////////
 //
-// Implementation of the TinkerPop-Enabled Providers OLTP for ArangoDB
+// Implementation of the TinkerPop OLTP Provider API for ArangoDB
 //
 // Copyright triAGENS GmbH Cologne and The University of York
 //
@@ -14,26 +14,22 @@ import com.arangodb.ArangoCursor;
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBGraph;
 
 /**
- * The ArangoDBIterator is used to wrap Arango DB documents from a query iterator into Graph
- * elements: Vertex, Edge, Property.
+ * The ArangoDBIterator is used to wrap ArangoDB documents from a query iterator into Graph elements: Vertex, Edge,
+ * and Property.
  *
  * @param <IType> the Graph Element type returned at each iteration
  * 
- * @author Horacio Hoyos Rodriguez (@horaciohoyosr)
+ * @author Horacio Hoyos Rodriguez (https://www.york.ac.uk)
  */
 
 public class ArangoDBIterator<IType> implements Iterator<IType> {
 	
-	/** The delegate. */
-	
 	private final ArangoCursor<? extends IType> delegate;
-	
-	/** The graph. */
 	
 	private final ArangoDBGraph graph;
 	
 	/**
-	 * Instantiates a new arango DB iterator.
+	 * Instantiates a new ArangoDB iterator.
 	 *
 	 * @param graph the graph
 	 * @param delegate the delegate
@@ -55,6 +51,7 @@ public class ArangoDBIterator<IType> implements Iterator<IType> {
 		ArangoDBBaseDocument next = null;
 		next = (ArangoDBBaseDocument) delegate.next();
 		next.graph(graph);
+		next.collection(graph.getPrefixedCollectioName(next.label));
 		next.setPaired(true);
 		return (IType) next;
 	}
