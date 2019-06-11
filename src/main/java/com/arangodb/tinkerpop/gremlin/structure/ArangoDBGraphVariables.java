@@ -97,7 +97,7 @@ public class ArangoDBGraphVariables extends ArangoDBBaseDocument implements Grap
 	public int hashCode() {
 		final int prime = 31;
 		int result = super.hashCode();
-		result = prime * result + ((store == null) ? 0 : store.hashCode());
+		result = prime * result + ((store.isEmpty()) ? 0 : store.hashCode());
 		return result;
 	}
 
@@ -110,8 +110,8 @@ public class ArangoDBGraphVariables extends ArangoDBBaseDocument implements Grap
 		if (getClass() != obj.getClass())
 			return false;
 		ArangoDBGraphVariables other = (ArangoDBGraphVariables) obj;
-		if (store == null) {
-			if (other.store != null)
+		if (store.isEmpty()) {
+			if (!other.store.isEmpty())
 				return false;
 		} else if (!store.equals(other.store))
 			return false;

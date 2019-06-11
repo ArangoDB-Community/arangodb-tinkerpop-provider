@@ -9,19 +9,22 @@
 package com.arangodb.tinkerpop.gremlin.structure;
 
 import java.util.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 
 import com.arangodb.entity.EdgeDefinition;
-import org.apache.commons.collections4.CollectionUtils;
+import com.arangodb.tinkerpop.gremlin.cache.EdgeLoader;
+import com.arangodb.tinkerpop.gremlin.cache.VertexLoader;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.LoadingCache;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationConverter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.tinkerpop.gremlin.process.computer.GraphComputer;
-import org.apache.tinkerpop.gremlin.structure.Edge;
-import org.apache.tinkerpop.gremlin.structure.Graph;
-import org.apache.tinkerpop.gremlin.structure.Transaction;
-import org.apache.tinkerpop.gremlin.structure.Vertex;
+import org.apache.tinkerpop.gremlin.structure.*;
+
 import org.apache.tinkerpop.gremlin.structure.util.ElementHelper;
 import org.apache.tinkerpop.gremlin.structure.util.StringFactory;
 import org.slf4j.Logger;
@@ -531,6 +534,10 @@ public class ArangoDBGraph implements Graph {
 	/** If collection names should be prefixed with graph name */
 	private final boolean shouldPrefixCollectionNames;
 
+	// FIXME Cache time expire should be configurable
+	LoadingCache<String, Vertex> vertices;
+
+	LoadingCache<String, Edge> edges;
 
     /**
      * Create a new ArangoDBGraph from the provided configuration.
@@ -564,19 +571,20 @@ public class ArangoDBGraph implements Graph {
 				.collect(Collectors.toList());
 		name = arangoConfig.getString(PROPERTY_KEY_GRAPH_NAME);
 		checkValues(arangoConfig.getString(PROPERTY_KEY_DB_NAME), name, vertexCollections, edgeCollections, relations);
-		if (CollectionUtils.isEmpty(vertexCollections)) {
+		if (vertexCollections.isEmpty()) {
 			schemaless = true;
 			vertexCollections.add(DEFAULT_VERTEX_COLLECTION);
 		}
-		if (CollectionUtils.isEmpty(edgeCollections)) {
+		if (edgeCollections.isEmpty()) {
+			schemaless = true;
 			edgeCollections.add(DEFAULT_EDGE_COLLECTION);
 		}
 		shouldPrefixCollectionNames = arangoConfig.getBoolean(PROPERTY_KEY_SHOULD_PREFIX_COLLECTION_NAMES, true);
 
 		Properties arangoProperties = ConfigurationConverter.getProperties(arangoConfig);
 		int batchSize = 0;
-		client = new ArangoDBGraphClient(this, arangoProperties, arangoConfig.getString(PROPERTY_KEY_DB_NAME),
-				batchSize, shouldPrefixCollectionNames);
+		client = new ArangoDBGraphClient(arangoProperties, arangoConfig.getString(PROPERTY_KEY_DB_NAME), batchSize, shouldPrefixCollectionNames, this
+        );
 
 		ArangoGraph graph = client.getArangoGraph();
         GraphCreateOptions options = new  GraphCreateOptions();
@@ -610,10 +618,18 @@ public class ArangoDBGraph implements Graph {
 			client.insertGraphVariables(variables);
 		}
 		this.configuration = configuration;
+		// FIXME Cache time expire should be configurable
+		vertices = CacheBuilder.newBuilder()
+				.expireAfterAccess(10, TimeUnit.SECONDS)
+				.build(new VertexLoader(this));
+		edges = CacheBuilder.newBuilder()
+				.expireAfterAccess(10, TimeUnit.SECONDS)
+				.build(new EdgeLoader(this));
 	}
 
     @Override
 	public Vertex addVertex(Object... keyValues) {
+		logger.info("Creating vertex in graph with keyValues: {}", keyValues);
         ElementHelper.legalPropertyKeyValueArray(keyValues);
         Object id;
         String collection;
@@ -656,11 +672,12 @@ public class ArangoDBGraph implements Graph {
 
         }
         else {
-        	vertex = new ArangoDBVertex(this, collection);
+        	vertex = new ArangoDBVertex(collection, this);
         }
         // The vertex needs to exist before we can attach properties
-        client.insertDocument(vertex);
+        client.insertVertex(vertex);
         ElementHelper.attachProperties(vertex, keyValues);
+		vertices.put((String) vertex.id(), vertex);
         return vertex;
 	}
 
@@ -687,10 +704,10 @@ public class ArangoDBGraph implements Graph {
 		if (StringUtils.isBlank(name)) {
             throw new ArangoDBGraphException(String.format("The provided argument can not be empty/null: %s", name));
 		}
-		if (CollectionUtils.isEmpty(edges)) {
+		if (edges.isEmpty()) {
 			logger.warn("Empty edges collection(s), the default 'edge' collection will be used.");
 		}
-		if ((vertices.size() > 1) && (edges.size() > 1) && CollectionUtils.isEmpty(relations)) {
+		if ((vertices.size() > 1) && (edges.size() > 1) && relations.isEmpty()) {
 			throw new ArangoDBGraphException("If more than one vertex/edge collection is provided, relations must be defined");
 		}
 	}
@@ -804,6 +821,17 @@ public class ArangoDBGraph implements Graph {
         }
 	}
 
+	public void removeVertex(ArangoDBVertex vertex) {
+		getClient().deleteVertex(vertex);
+		vertices.invalidate(vertex.id());
+	}
+
+	public void removeEdge(ArangoDBEdge edge) {
+		Iterator<Vertex> verticesIt = edge.vertices(Direction.BOTH);
+		getClient().deleteEdge(edge);
+		edges.invalidate(edge.id());
+	}
+
 	/**
 	 * Vertex collections.
 	 *
@@ -813,14 +841,24 @@ public class ArangoDBGraph implements Graph {
 		return Collections.unmodifiableList(vertexCollections);
 	}
 
+	//FIXME Implement an Iterator that exploits the cache, we probably want to do an AQL to get all ids, create the
+	// iterator with those and populate the cache... maybe load in chunks of 100 elements or something, the idea
+	// is to avoid loading the complete graph into memory
+
 	@Override
 	public Iterator<Vertex> vertices(Object... vertexIds) {
     	List<String> vertexCollections = new ArrayList<>();
     	List<String> ids = Arrays.stream(vertexIds)
         		.map(id -> {
-        			if (id instanceof Vertex) {
-        				vertexCollections.add(((Vertex)id).label());
-        				return ((Vertex)id).id();
+					if (id instanceof ArangoDBVertex) {
+						ArangoDBVertex vertex = (ArangoDBVertex) id;
+						if (vertex.isPaired()) {
+							vertexCollections.add(vertex.label());
+						}
+						else {
+							vertexCollections.add(getPrefixedCollectioName(vertex.label()));
+						}
+						return vertex.id();
         			}
         			else {
         				// We only support String ids
@@ -829,7 +867,18 @@ public class ArangoDBGraph implements Graph {
         			})
         		.map(id -> id == null ? (String)id : id.toString())
         		.collect(Collectors.toList());
-		return new ArangoDBIterator<>(this, getClient().getGraphVertices(ids, vertexCollections));
+		try {
+			if (ids.isEmpty()) {
+
+			}
+			else {
+				return vertices.getAll(ids).values().iterator();
+			}
+		} catch (ExecutionException e) {
+			logger.error("Error computing vertices", e);
+			throw new IllegalStateException(e);
+		}
+		//return new ArangoDBIterator<Vertex>(this, getClient().getGraphVertices(ids, vertexCollections));
 	}
 
 	/**

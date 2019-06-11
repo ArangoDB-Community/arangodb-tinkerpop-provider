@@ -8,9 +8,7 @@
 
 package com.arangodb.tinkerpop.gremlin.structure;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 import com.arangodb.tinkerpop.gremlin.client.*;
 import org.apache.tinkerpop.gremlin.structure.Direction;
@@ -22,9 +20,6 @@ import org.apache.tinkerpop.gremlin.structure.util.StringFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.arangodb.ArangoCursor;
-import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
-
 
 /**
  * The ArangoDB Edge class.
@@ -35,49 +30,60 @@ import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
  * @author Horacio Hoyos Rodriguez (https://www.york.ac.uk)
  */
 
-public class ArangoDBEdge extends ArangoDBBaseEdge implements Edge {
+public class ArangoDBEdge extends ArangoDBBaseEdge implements Edge, ArangoDBElement {
 
 	private static final Logger logger = LoggerFactory.getLogger(ArangoDBEdge.class);
+
+	/** All property access is delegated to the property manager */
+
+	protected ArangoDBPropertyManager pManager;
 
     /**
      * Constructor used for ArabgoDB JavaBeans de-/serialisation.
      */
 
-	public ArangoDBEdge() { super(); }
+	public ArangoDBEdge() {
+		super();
+		pManager = new ArangoDBPropertyManager(this);
+	}
 
-    /**
-     * Create a new ArangoDBEdge that connects the given vertices. The edge name can be provided.
-     * @param key           		the edge name
-	 * @param label            		the edge label
-	 * @param from         		 	the source vertex
-	 * @param to            		the target vertex
-	 * @param graph         		the graph in which the edge is created
+	/**
+	 * Create a new ArangoDBEdge that connects the given vertices.
+	 *  @param collection    the collection into with the edge is created
+	 * @param from          the source vertex
+	 * @param to            the target vertex
+	 * @param graph         the graph in which the edge is created
+	 */
+
+	public ArangoDBEdge(
+		String collection,
+		ArangoDBVertex from,
+		ArangoDBVertex to,
+		ArangoDBGraph graph) {
+		this(null, collection, from, to, graph);
+	}
+
+
+	/**
+	 * Create a new ArangoDBEdge that connects the given vertices.
+	 *
+	 * @param key           the edge key
+	 * @param collection    the collection into with the edge is created
+	 * @param from          the source vertex
+	 * @param to            the target vertex
+	 * @param graph         the graph in which the edge is created
 	 */
 
 	public ArangoDBEdge(
 		String key,
-		String label,
+		String collection,
 		ArangoDBVertex from,
 		ArangoDBVertex to,
 		ArangoDBGraph graph) {
-		super(key, label, from._id(), to._id(), graph);
-	}
-
-    /**
-     * Create a new ArangoDBEdge that connects the given vertices.
-     *
-     * @param graph         		the graph in which the edge is created
-     * @param label    				the label into with the edge is created
-     * @param from          		the source vertex
-     * @param to            		the target vertex
-     */
-
-	public ArangoDBEdge(
-	    ArangoDBGraph graph,
-        String label,
-        ArangoDBVertex from,
-        ArangoDBVertex to) {
-		this(null, label, from, to, graph);
+		super(key, collection, from._id(), to._id(), graph);
+		this.graph = graph;
+		this.collection = collection;
+		pManager = new ArangoDBPropertyManager(this);
 	}
 
     @Override
@@ -89,23 +95,6 @@ public class ArangoDBEdge extends ArangoDBBaseEdge implements Edge {
     public String label() {
         return label;
     }
-
-
-	@Override
-	public <V> Property<V> property(
-		String key,
-		V value) {
-		logger.info("set property {} = {}", key, value);
-		ElementHelper.validateProperty(key, value);
-		Property<V> p = property(key);
-		if (!p.isPresent()) {
-            p = ArangoDBUtil.createArangoDBEdgeProperty(key, value, this);
-        }
-		else {
-			((ArangoDBEdgeProperty<V>) p).value(value);
-		}
-		return p;
-	}
 
 	@Override
 	public void remove() {
@@ -137,17 +126,52 @@ public class ArangoDBEdge extends ArangoDBBaseEdge implements Edge {
 		return new ArangoDBIterator<>(graph, graph.getClient().getEdgeVertices(_id(), edgeCollection, from, to));
 	}
 
-	@SuppressWarnings("unchecked")
+	@Override
+	public void removeProperty(ArangoDBElementProperty<?> property) {
+		pManager.removeProperty(property);
+	}
+
+	@Override
+	public <V> Property<V> property(final String key) {
+		logger.debug("Get property {}", key);
+		return pManager.property(key);
+	}
+
 	@Override
 	public <V> Iterator<Property<V>> properties(String... propertyKeys) {
-        List<String> labels = new ArrayList<>();
-		labels.add(graph.getPrefixedCollectioName(ArangoDBGraph.ELEMENT_PROPERTIES_EDGE_COLLECTION));
-        ArangoDBPropertyFilter filter = new ArangoDBPropertyFilter();
-        for (String pk : propertyKeys) {
-            filter.has("name", pk, ArangoDBPropertyFilter.Compare.EQUAL);
-        }
-        ArangoCursor<?> documentNeighbors = graph.getClient().getElementProperties(this, labels, filter, ArangoDBEdgeProperty.class);
-		return new ArangoDBPropertyIterator<>(graph, (ArangoCursor<ArangoDBEdgeProperty<V>>) documentNeighbors);
+		logger.debug("Get Properties {}", (Object[])propertyKeys);
+		return pManager.properties(propertyKeys);
+	}
+
+	@Override
+	public <V> Iterator<V> values(String... propertyKeys) {
+		logger.debug("Get Values {}", (Object[])propertyKeys);
+		return pManager.values(propertyKeys);
+	}
+
+	@Override
+	public <V> Property<V> property(final String key, final V value) {
+		return pManager.property(key, value);
+	}
+
+	@Override
+	public void save() {
+		if (paired) {
+			graph.getClient().updateEdge(this);
+		}
+	}
+
+	@Override
+	public Set<String> keys() {
+		return pManager.keys();
+	}
+
+	/**
+	 * This method is intended for rapid deserialization
+	 * @return
+	 */
+	public void attachProperties(Collection<ArangoDBElementProperty> properties) {
+		this.pManager.attachProperties(properties);
 	}
 
 	@Override

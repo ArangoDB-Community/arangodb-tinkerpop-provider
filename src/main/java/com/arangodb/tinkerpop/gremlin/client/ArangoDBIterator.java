@@ -48,8 +48,7 @@ public class ArangoDBIterator<IType> implements Iterator<IType> {
 	@SuppressWarnings("unchecked")
 	@Override
 	public IType next() {
-		ArangoDBBaseDocument next = null;
-		next = (ArangoDBBaseDocument) delegate.next();
+		ArangoDBBaseDocument next = (ArangoDBBaseDocument) delegate.next();
 		next.graph(graph);
 		next.collection(graph.getPrefixedCollectioName(next.label));
 		next.setPaired(true);

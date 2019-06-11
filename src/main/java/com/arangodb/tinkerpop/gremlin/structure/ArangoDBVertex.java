@@ -8,14 +8,7 @@
 
 package com.arangodb.tinkerpop.gremlin.structure;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 
@@ -37,8 +30,6 @@ import com.arangodb.tinkerpop.gremlin.client.ArangoDBBaseDocument;
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBGraphException;
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBIterator;
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBPropertyFilter;
-import com.arangodb.tinkerpop.gremlin.client.ArangoDBPropertyIterator;
-import com.arangodb.tinkerpop.gremlin.client.ArangoDBQueryBuilder;
 import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
 
 
@@ -51,39 +42,48 @@ import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
  * @author Horacio Hoyos Rodriguez (https://www.york.ac.uk)
  */
 
-public class ArangoDBVertex extends ArangoDBBaseDocument implements Vertex {
+public class ArangoDBVertex extends ArangoDBBaseDocument implements Vertex, ArangoDBElement {
 
 	private static final Logger logger = LoggerFactory.getLogger(ArangoDBVertex.class);
 
-    /**
-     * Constructor used for ArabgoDB JavaBeans serialisation.
-     */
+	/** All property access is delegated to the property manager */
+
+	protected ArangoDBPropertyManager pManager;
+
+	/**
+	 * Constructor used for ArabgoDB JavaBeans serialisation.
+	 */
 
 	public ArangoDBVertex() {
 		super();
+		pManager = new ArangoDBPropertyManager(this);
 	}
 
 	/**
-	 * Instantiates a new ArangoDB vertex with he given key.
+	 * Instantiates a new arango DB vertex.
 	 *
-	 * @param key 					the key to assign to the vertex
-	 * @param label                	the label of the vertex
-	 * @param graph                	the graph that owns the vertex
+	 * @param collection the collection
+	 * @param graph the graph
 	 */
-
-	public ArangoDBVertex(String key, String label, ArangoDBGraph graph) {
-		super(key, label, graph);
-	}
-
-	/**
-	 * Instantiates a new ArangoDB vertex.
-	 *
-	 * @param graph 				the graph
-	 * @param collection 			the collection
-	 */
-
-	public ArangoDBVertex(ArangoDBGraph graph, String collection) {
+	public ArangoDBVertex(
+		String collection,
+		ArangoDBGraph graph) {
 		this(null, collection, graph);
+	}
+
+	/**
+	 * Instantiates a new arango DB vertex.
+	 *
+	 * @param key the key
+	 * @param collection the collection
+	 * @param graph the graph
+	 */
+	public ArangoDBVertex(
+		String key,
+		String collection,
+		ArangoDBGraph graph) {
+		super(key, collection, graph);
+		pManager = new ArangoDBPropertyManager(this);
 	}
 
     @Override
@@ -153,7 +153,7 @@ public class ArangoDBVertex extends ArangoDBBaseDocument implements Vertex {
         	}
         }
 		else {
-			edge = new ArangoDBEdge(graph, label, this, ((ArangoDBVertex) inVertex));
+			edge = new ArangoDBEdge(label, this, ((ArangoDBVertex) inVertex), graph);
 		}
         // The vertex needs to exist before we can attach properties
 		graph.getClient().insertEdge(edge);
@@ -161,6 +161,10 @@ public class ArangoDBVertex extends ArangoDBBaseDocument implements Vertex {
 		return edge;
 	}
 
+	@Override
+	public <V> VertexProperty<V> property(final String key) {
+		return pManager.vertexProperty(key);
+	}
 
 	@Override
 	public <V> VertexProperty<V> property(
@@ -205,12 +209,26 @@ public class ArangoDBVertex extends ArangoDBBaseDocument implements Vertex {
             keyValues = ArrayUtils.remove(keyValues, idIndex);
             keyValues = ArrayUtils.remove(keyValues, idIndex);
 		}
-        final Optional<VertexProperty<V>> optionalVertexProperty = ElementHelper.stageVertexProperty(this, cardinality, key, value, keyValues);
-        if (optionalVertexProperty.isPresent()) return optionalVertexProperty.get();
-        
-
-        ArangoDBVertexProperty<V> p = ArangoDBUtil.createArangoDBVertexProperty(id, key, value, this);
-        ElementHelper.attachProperties(p, keyValues);
+		VertexProperty<V> p = null;
+		if (cardinality.equals(VertexProperty.Cardinality.single)) {
+			p = pManager.vertexProperty(key, value);
+			addNestedProperties(p, keyValues);
+			ElementHelper.attachProperties(p, keyValues);
+		}
+		// FIXME This assumes Cardinality is not changed from set to list (and viceversa)
+		else {
+			p = pManager.vertexProperty(key, value, cardinality);
+			Collection<VertexProperty<V>> matches = pManager.propertiesForValue(key, value);
+			if (matches.isEmpty()) {
+				ElementHelper.attachProperties(p, keyValues);
+			}
+			else {
+				for (VertexProperty<V> m : matches) {
+					p = m;
+					ElementHelper.attachProperties(m, keyValues);
+				}
+			}
+		}
 		return p;
 	}
 
@@ -243,22 +261,46 @@ public class ArangoDBVertex extends ArangoDBBaseDocument implements Vertex {
 	@SuppressWarnings("unchecked")
 	@Override
 	public <V> Iterator<VertexProperty<V>> properties(String... propertyKeys) {
-		logger.debug("Get properties {}", (Object[])propertyKeys);
-        List<String> labels = new ArrayList<>();
-        labels.add(graph.getPrefixedCollectioName(ArangoDBGraph.ELEMENT_PROPERTIES_EDGE_COLLECTION));
-        ArangoDBPropertyFilter filter = new ArangoDBPropertyFilter();
-        for (String pk : propertyKeys) {
-            filter.has("name", pk, ArangoDBPropertyFilter.Compare.EQUAL);
-        }
-        ArangoCursor<?> query = graph.getClient().getElementProperties(this, labels, filter, ArangoDBVertexProperty.class);
-        return new ArangoDBPropertyIterator<>(graph, (ArangoCursor<ArangoDBVertexProperty<V>>) query);
-    }
-
+		logger.debug("Get Properties {}", (Object[])propertyKeys);
+		return pManager.vertexProperties(propertyKeys);
+	}
 
 	@Override
-    public String toString() {
-    	return StringFactory.vertexString(this);
-    }
+	public <V> Iterator<V> values(String... propertyKeys) {
+		logger.debug("Get Values {}", (Object[])propertyKeys);
+		return pManager.values(propertyKeys);
+	}
+
+	@Override
+	public Set<String> keys() {
+		return pManager.keys();
+	}
+
+	@Override
+	public void removeProperty(ArangoDBElementProperty<?> property) {
+		this.pManager.removeProperty(property);
+	}
+
+	/**
+	 * This method is intended for rapid deserialization
+	 * @return
+	 */
+	public void attachProperties(String key, Collection<ArangoDBVertexProperty> properties) {
+		this.pManager.attachVertexProperties(key, properties);
+	}
+
+	/**
+	 * Add the nested vertexProperties to the vertex property
+	 * @param p             the VertexProperty
+	 * @param keyValues     the pairs of nested key:value to add
+	 */
+	private void addNestedProperties(VertexProperty<?> p, Object[] keyValues) {
+		for (int i = 0; i < keyValues.length; i = i + 2) {
+			if (!keyValues[i].equals(T.id) && !keyValues[i].equals(T.label)) {
+				p.property((String)keyValues[i], keyValues[i + 1]);
+			}
+		}
+	}
 
 	/**
 	 * Save.
@@ -290,8 +332,14 @@ public class ArangoDBVertex extends ArangoDBBaseDocument implements Vertex {
 		}
 		return vertexCollections;
 	}
-	
-    @Override
+
+	@Override
+	public String toString() {
+		return StringFactory.vertexString(this);
+	}
+
+
+	@Override
     public boolean equals(final Object object) {
         return ElementHelper.areEqual(this, object);
     }

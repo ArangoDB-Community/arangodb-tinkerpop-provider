@@ -14,12 +14,8 @@ import com.arangodb.ArangoGraph;
 import com.arangodb.entity.EdgeDefinition;
 import com.arangodb.entity.GraphEntity;
 import com.arangodb.model.GraphCreateOptions;
-import com.arangodb.tinkerpop.gremlin.client.ArangoDBBaseDocument;
-import com.arangodb.tinkerpop.gremlin.client.ArangoDBGraphClient;
-import com.arangodb.tinkerpop.gremlin.client.ArangoDBGraphException;
-import com.arangodb.tinkerpop.gremlin.client.ArangoDBQueryBuilder;
+import com.arangodb.tinkerpop.gremlin.client.*;
 import com.arangodb.tinkerpop.gremlin.structure.*;
-import com.arangodb.tinkerpop.gremlin.structure.ArangoDBElementProperty.ElementHasProperty;
 import com.arangodb.velocypack.VPack;
 import com.arangodb.velocypack.VPackSlice;
 import com.arangodb.velocypack.exception.VPackParserException;
@@ -35,7 +31,6 @@ import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.tinkerpop.gremlin.structure.Direction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,6 +44,7 @@ import org.slf4j.LoggerFactory;
  * @author Horacio Hoyos Rodriguez (https://www.york.ac.uk)
  */
 //FIXME We should add more util methods to validate attribute names, e.g. scape ".".
+@Deprecated
 public class ArangoDBUtil {
 	
 	/** The Logger. */
@@ -121,7 +117,7 @@ public class ArangoDBUtil {
 	public static String normalizeCollection(String key) {
 		String nname = isHidden(key) ? key : HIDDEN_PREFIX.concat(key);
 		if (!NamingConventions.COLLECTION.hasValidNameSize(nname)) {
-			throw ArangoDBGraphClient.ArangoDBExceptions.getNamingConventionError(ArangoDBGraphClient.ArangoDBExceptions.NAME_TO_LONG, key);
+			throw ArangoDBExceptions.getNamingConventionError(ArangoDBExceptions.NAME_TO_LONG, key);
 		}
 		return nname;
 	}
@@ -293,7 +289,7 @@ public class ArangoDBUtil {
 
 		GraphEntity ge = graph.getInfo();
         Collection<EdgeDefinition> graphEdgeDefinitions = ge.getEdgeDefinitions();
-        if (CollectionUtils.isEmpty(requiredDefinitions)) {
+        if (requiredDefinitions.isEmpty()) {
         	// If no relations are defined, vertices and edges can only have one value
         	if ((verticesCollectionNames.size() != 1) || (edgesCollectionNames.size() != 1)) {
         		throw new ArangoDBGraphException("No relations where specified but more than one vertex/edge where defined.");
@@ -386,14 +382,14 @@ public class ArangoDBUtil {
      * @return the created Arango DB edge property
      */
     
-    public static <U> ArangoDBEdgeProperty<U> createArangoDBEdgeProperty(
-    	String key,
-    	U value,
-    	ArangoDBEdge edge) {
-        ArangoDBEdgeProperty<U> p = new ArangoDBEdgeProperty<>(key, value, edge);
-        insertElementAndProperty(edge, p);
-        return p;
-    }
+//    public static <U> ArangoDBEdgeProperty<U> createArangoDBEdgeProperty(
+//    	String key,
+//    	U value,
+//    	ArangoDBEdge edge) {
+//        ArangoDBEdgeProperty<U> p = new ArangoDBEdgeProperty<>(key, value, edge);
+//        insertElementAndProperty(edge, p);
+//        return p;
+//    }
 
     /**
      * Creates an Arango DB vertex property.
@@ -405,11 +401,11 @@ public class ArangoDBUtil {
      * @return the created Arango DB vertex property
      */
     
-    public static <U> ArangoDBVertexProperty<U> createArangoDBVertexProperty(String propertyName, U propertyValue, ArangoDBVertex vertex) {
-        ArangoDBVertexProperty<U> p = new ArangoDBVertexProperty<>(propertyName, propertyValue, vertex);
-		insertElementAndProperty(vertex, p);
-        return p;
-    }
+//    public static <U> ArangoDBVertexProperty<U> createArangoDBVertexProperty(String propertyName, U propertyValue, ArangoDBVertex vertex) {
+//        ArangoDBVertexProperty<U> p = new ArangoDBVertexProperty<>(propertyName, propertyValue, vertex);
+//		insertElementAndProperty(vertex, p);
+//        return p;
+//    }
 
     /**
      * Creates an Arango DB vertex property.
@@ -422,12 +418,12 @@ public class ArangoDBUtil {
      * @return the created Arango DB vertex property
      */
     
-    public static <U> ArangoDBVertexProperty<U> createArangoDBVertexProperty(String id, String propertyName, U propertyValue, ArangoDBVertex vertex) {
-        ArangoDBVertexProperty<U> p;
-        p = new ArangoDBVertexProperty<>(id, propertyName, propertyValue, vertex);
-		insertElementAndProperty(vertex, p);
-        return p;
-    }
+//    public static <U> ArangoDBVertexProperty<U> createArangoDBVertexProperty(String id, String propertyName, U propertyValue, ArangoDBVertex vertex) {
+//        ArangoDBVertexProperty<U> p;
+//        p = new ArangoDBVertexProperty<>(id, propertyName, propertyValue, vertex);
+//		insertElementAndProperty(vertex, p);
+//        return p;
+//    }
 
     /**
      * Creates an Arango DB property property.
@@ -439,12 +435,12 @@ public class ArangoDBUtil {
      * @return the created Arango DB property property
      */
     
-    public static <U> ArangoDBPropertyProperty<U> createArangoDBPropertyProperty(String key, U value, ArangoDBVertexProperty<?> vertexProperty) {
-        ArangoDBPropertyProperty<U> p;
-        p = new ArangoDBPropertyProperty<>(key, value, vertexProperty);
-		insertElementAndProperty(vertexProperty, p);
-        return p;
-    }
+//    public static <U> ArangoDBPropertyProperty<U> createArangoDBPropertyProperty(String key, U value, ArangoDBVertexProperty<?> vertexProperty) {
+//        ArangoDBPropertyProperty<U> p;
+//        p = new ArangoDBPropertyProperty<>(key, value, vertexProperty);
+//		insertElementAndProperty(vertexProperty, p);
+//        return p;
+//    }
 
     /**
      * Gets the correct primitive.
@@ -595,11 +591,11 @@ public class ArangoDBUtil {
 		return null;
 	}
 
-	private static void insertElementAndProperty(ArangoDBBaseDocument element, ArangoDBElementProperty p) {
-		ArangoDBGraph g = element.graph();
-		ArangoDBGraphClient c = g.getClient();
-		c.insertDocument(p);
-		ElementHasProperty e = p.assignToElement(element);
-		c.insertEdge(e);
-	}
+//	private static void insertElementAndProperty(ArangoDBBaseDocument element, ArangoDBElementProperty p) {
+//		ArangoDBGraph g = element.graph();
+//		ArangoDBGraphClient c = g.getClient();
+//		c.insertDocument(p);
+//		ElementHasProperty e = p.assignToElement(element);
+//		c.insertEdge(e);
+//	}
 }

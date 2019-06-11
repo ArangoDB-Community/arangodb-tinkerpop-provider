@@ -8,12 +8,8 @@
 
 package com.arangodb.tinkerpop.gremlin.client;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -195,7 +191,7 @@ public class ArangoDBQueryBuilder {
 	 */
 	
 	public ArangoDBQueryBuilder documentsById(
-		List<String> ids,
+		Collection<String> ids,
 		String loopVariable,
 		Map<String, Object> bindVars) {
 		queryBuilder.append("LET docs = FLATTEN(RETURN Document(@ids))\n");
@@ -445,7 +441,7 @@ public class ArangoDBQueryBuilder {
 		Map<String, Object> bindVars) {
 		List<String> filterSegments = new ArrayList<String>();
 		propertyFilter.addAqlSegments(String.format("%s.", filterVariable), filterSegments, bindVars);
-		if (CollectionUtils.isNotEmpty(filterSegments)) {
+		if (!filterSegments.isEmpty()) {
 			if (filtered) {
 				queryBuilder.append(" AND ");
 			} else {
