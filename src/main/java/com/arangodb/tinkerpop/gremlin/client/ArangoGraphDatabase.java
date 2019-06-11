@@ -22,18 +22,14 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
+import com.arangodb.*;
 import com.arangodb.entity.*;
 import org.apache.tinkerpop.gremlin.structure.Direction;
 import org.apache.tinkerpop.gremlin.structure.Graph;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.arangodb.ArangoCollection;
-import com.arangodb.ArangoCursor;
-import com.arangodb.ArangoDB;
-import com.arangodb.ArangoDBException;
-import com.arangodb.ArangoDatabase;
-import com.arangodb.ArangoGraph;
+// import com.arangodb.ArangoDatabase;
 import com.arangodb.model.AqlQueryOptions;
 import com.arangodb.model.GraphCreateOptions;
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBQueryBuilder.UniqueVertices;
@@ -53,35 +49,32 @@ import com.arangodb.tinkerpop.gremlin.structure.ArangoDBVertex;
  * @author Horacio Hoyos Rodriguez (https://www.york.ac.uk)
  */
 // FIXME this needs an interface
-public class ArangoDBGraphClient {
+public class ArangoGraphDatabase implements GraphDatabase {
 
-	private static final Logger logger = LoggerFactory.getLogger(ArangoDBGraphClient.class);
+	private static final Logger logger = LoggerFactory.getLogger(ArangoGraphDatabase.class);
 
-	private final ArangoDB driver;
-	
+	private ArangoDB driver;
 	private final ArangoDatabase db;
-
-	private final int batchSize;
-
 	private final ArangoDBGraph graph;
+	private final Properties properties;
+	private final String dbName;
+	private final boolean create;
 
-    /**
+	/**
      * Create a simple graph client and connect to the provided db. If the DB does not exist, the driver will try to
 	 * create one.
      *
 	 * @param properties            the ArangoDB configuration properties
 	 * @param dbname                the ArangoDB database name to connect to or create
-	 * @param batchSize             the size of the batch mode chunks
 	 * @param graph                 the ArangoDB graph that uses this client
 	 * @throws ArangoDBGraphException 	If the db does not exist and cannot be created
      */
 
-    public ArangoDBGraphClient(
-    	Properties properties,
+    public ArangoGraphDatabase(
+		Properties properties,
 		String dbname,
-		int batchSize,
 		ArangoDBGraph graph) throws ArangoDBGraphException {
-        this(properties, dbname, batchSize, false, graph);
+        this(properties, dbname, false, graph);
     }
 	
 	/**
@@ -90,20 +83,22 @@ public class ArangoDBGraphClient {
 	 *
 	 * @param properties            the ArangoDB configuration properties
 	 * @param dbname                the ArangoDB name to connect to or create
-	 * @param batchSize             the size of the batch mode chunks
 	 * @param createDatabase        if true, the driver will attempt to crate the DB if it does not exist
      * @param graph                 the ArangoDB graph that uses this client
 	 * @throws ArangoDBGraphException 	If the db does not exist and cannot be created
 	 */
 	
-	public ArangoDBGraphClient(
+	public ArangoGraphDatabase(
 		Properties properties,
 		String dbname,
-		int batchSize,
 		boolean createDatabase,
 		ArangoDBGraph graph)
 		throws ArangoDBGraphException {
-		logger.info("Initiating the ArangoDb Client");
+		logger.info("Initiating the ArangoGraphDatabase");
+		this.properties = properties;
+		this.graph = graph;
+		this.dbName = dbname;
+		this.create = createDatabase;
 		ByteArrayOutputStream os = new ByteArrayOutputStream();
 		try {
 			properties.store(os, null);
@@ -119,6 +114,10 @@ public class ArangoDBGraphClient {
 		} catch (IOException e) {
 			throw new ArangoDBGraphException("Unable to read properties", e);
 		}
+	}
+
+	public void setup() {
+
 		db = driver.db(dbname);
 		if (createDatabase) {
 			if (!db.exists()) {
@@ -146,14 +145,14 @@ public class ArangoDBGraphClient {
 						properties.getProperty("arangodb.user"), dbname));
 			}
 		}
-		this.batchSize = batchSize;
-		this.graph = graph;
+
 	}
 
 	/**
 	 * Shutdown the client and free resources.
 	 */
 	
+	@Override
 	public void shutdown() {
 		logger.debug("Shutdown");
 		if (db != null) {
@@ -171,6 +170,7 @@ public class ArangoDBGraphClient {
 	 * @throws ArangoDBGraphException	if there was an error dropping the graph and its collections
 	 */
 	
+	@Override
 	public void clear(ArangoDBGraph graph) throws ArangoDBGraphException {
 		logger.info("Clear {}", graph.name());
 		deleteGraph(graph.name());
@@ -183,6 +183,7 @@ public class ArangoDBGraphClient {
 	 * @throws ArangoDBGraphException if user has no access to the db
 	 */
 	
+	@Override
 	public String getVersion() throws ArangoDBGraphException {
 		try {
 			return db.getVersion().getVersion();
@@ -190,16 +191,7 @@ public class ArangoDBGraphClient {
             throw ArangoDBExceptions.getArangoDBException(ex);
         }
 	}
-	
-	/**
-	 * Gets the database.
-	 *
-	 * @return the ArangoDB
-	 */
-	
-	public ArangoDatabase getDB() {
-		return db;
-	}
+
 
 	/**
 	 * Test if the db exists.
@@ -227,7 +219,10 @@ public class ArangoDBGraphClient {
 			}
 		}
 	}
-	
+
+
+	//------------------
+
 	/**
 	 * Get a document from the database. The method is generic so we it can be used to retrieve
 	 * vertices, properties or variables.
@@ -1163,7 +1158,7 @@ public class ArangoDBGraphClient {
 //	 * @return the configuration
 //	 * @throws ArangoDBException the arango DB exception
 //	 */
-////	public ArangoDBConfiguration getConfiguration() {
+////	public PlainArangoDBConfiguration getConfiguration() {
 ////		return configuration;
 ////	}
 //

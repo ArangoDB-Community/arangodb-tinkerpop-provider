@@ -17,11 +17,10 @@ import java.util.stream.Collectors;
 import com.arangodb.entity.EdgeDefinition;
 import com.arangodb.tinkerpop.gremlin.cache.EdgeLoader;
 import com.arangodb.tinkerpop.gremlin.cache.VertexLoader;
+import com.arangodb.tinkerpop.gremlin.client.*;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.LoadingCache;
 import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.ConfigurationConverter;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.tinkerpop.gremlin.process.computer.GraphComputer;
 import org.apache.tinkerpop.gremlin.structure.*;
 
@@ -32,9 +31,6 @@ import org.slf4j.LoggerFactory;
 
 import com.arangodb.ArangoGraph;
 import com.arangodb.model.GraphCreateOptions;
-import com.arangodb.tinkerpop.gremlin.client.ArangoDBGraphClient;
-import com.arangodb.tinkerpop.gremlin.client.ArangoDBGraphException;
-import com.arangodb.tinkerpop.gremlin.client.ArangoDBIterator;
 import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
 
 /**
@@ -448,33 +444,7 @@ public class ArangoDBGraph implements Graph {
 
 	private static final Logger logger = LoggerFactory.getLogger(ArangoDBGraph.class);
 
-    /** The properties name CONFIG_CONF. */
 
-    public static final String PROPERTY_KEY_PREFIX = "gremlin.arangodb.conf";
-
-    /** The properties name  CONFIG_DB. */
-
-    public static final String PROPERTY_KEY_DB_NAME = "graph.db";
-
-    /** The properties name  CONFIG_NAME. */
-
-    public static final String PROPERTY_KEY_GRAPH_NAME = "graph.name";
-
-    /** The properties name CONFIG_VERTICES. */
-
-    public static final String PROPERTY_KEY_VERTICES = "graph.vertex";
-
-    /** The properties name CONFIG_EDGES. */
-
-    public static final String PROPERTY_KEY_EDGES = "graph.edge";
-
-    /** The properties name CONFIG_RELATIONS. */
-
-    public static final String PROPERTY_KEY_RELATIONS = "graph.relation";
-
-	/** The properties name CONFIG_SHOULD_PREFIX_COLLECTION_NAMES **/
-
-	public static final String PROPERTY_KEY_SHOULD_PREFIX_COLLECTION_NAMES = "graph.shouldPrefixCollectionNames";
 
 	/** The Constant DEFAULT_VERTEX_COLLECTION. */
 
@@ -502,9 +472,9 @@ public class ArangoDBGraph implements Graph {
 
 	private final Features FEATURES = new ArangoDBGraphFeatures();
 
-	/** A ArangoDBGraphClient to handle the connection to the Database. */
+	/** A ArangoGraphDatabase to handle the connection to the Database. */
 
-	private ArangoDBGraphClient client = null;
+	private ArangoGraphDatabase client = null;
 
 	/** The name. */
 
@@ -512,15 +482,15 @@ public class ArangoDBGraph implements Graph {
 
 	/** The vertex collections. */
 
-	private final List<String> vertexCollections;
+	private final Collection<String> vertexCollections;
 
 	/** The edge collections. */
 
-	private final List<String> edgeCollections;
+	private final Collection<String> edgeCollections;
 
 	/** The relations. */
 
-	private final List<String> relations;
+	private final Collection<String> relations;
 
 	/**  Flat to indicate that the graph has no schema. */
 
@@ -559,18 +529,18 @@ public class ArangoDBGraph implements Graph {
 	public ArangoDBGraph(Configuration configuration) {
 
 		logger.info("Creating new ArangoDB Graph from configuration");
-		Configuration arangoConfig = configuration.subset(PROPERTY_KEY_PREFIX);
-		vertexCollections = arangoConfig.getList(PROPERTY_KEY_VERTICES).stream()
-				.map(String.class::cast)
-				.collect(Collectors.toList());
-		edgeCollections = arangoConfig.getList(PROPERTY_KEY_EDGES).stream()
-				.map(String.class::cast)
-				.collect(Collectors.toList());
-		relations = arangoConfig.getList(PROPERTY_KEY_RELATIONS).stream()
-				.map(String.class::cast)
-				.collect(Collectors.toList());
-		name = arangoConfig.getString(PROPERTY_KEY_GRAPH_NAME);
-		checkValues(arangoConfig.getString(PROPERTY_KEY_DB_NAME), name, vertexCollections, edgeCollections, relations);
+		ArangoDBConfiguration arangoConfig = new PlainArangoDBConfiguration(configuration);
+		name = arangoConfig.graphName()
+				.orElseThrow(() -> new IllegalStateException("Graph name property missing from configuration."));
+		String dbname = arangoConfig.databaseName()
+				.orElseThrow(() -> new IllegalStateException("Database name property missing from configuration."));
+		vertexCollections = arangoConfig.vertexCollections();
+		edgeCollections = arangoConfig.edgeCollections();
+		relations = arangoConfig.relations();
+		if ((vertices.size() > 1) && (edges.size() > 1) && relations.isEmpty()) {
+			throw new IllegalStateException("If two or more vertex and two or more edge collections are defined, then " +
+					"at least one relation must be defined too.");
+		}
 		if (vertexCollections.isEmpty()) {
 			schemaless = true;
 			vertexCollections.add(DEFAULT_VERTEX_COLLECTION);
@@ -579,45 +549,46 @@ public class ArangoDBGraph implements Graph {
 			schemaless = true;
 			edgeCollections.add(DEFAULT_EDGE_COLLECTION);
 		}
-		shouldPrefixCollectionNames = arangoConfig.getBoolean(PROPERTY_KEY_SHOULD_PREFIX_COLLECTION_NAMES, true);
-
-		Properties arangoProperties = ConfigurationConverter.getProperties(arangoConfig);
-		int batchSize = 0;
-		client = new ArangoDBGraphClient(arangoProperties, arangoConfig.getString(PROPERTY_KEY_DB_NAME), batchSize, shouldPrefixCollectionNames, this
-        );
-
-		ArangoGraph graph = client.getArangoGraph();
-        GraphCreateOptions options = new  GraphCreateOptions();
-        // FIXME Cant be in orphan collections because it will be deleted with graph?
-        // options.orphanCollections(GRAPH_VARIABLES_COLLECTION);
-		final List<String> prefVCols = vertexCollections.stream().map(this::getPrefixedCollectioName).collect(Collectors.toList());
-		final List<String> prefECols = edgeCollections.stream().map(this::getPrefixedCollectioName).collect(Collectors.toList());
-		final List<EdgeDefinition> edgeDefinitions = new ArrayList<>();
-		if (relations.isEmpty()) {
-			logger.info("No relations, creating default ones.");
-			edgeDefinitions.addAll(ArangoDBUtil.createDefaultEdgeDefinitions(prefVCols, prefECols));
-		} else {
-			for (String value : relations) {
-				EdgeDefinition ed = ArangoDBUtil.relationPropertyToEdgeDefinition(this, value);
-				edgeDefinitions.add(ed);
-			}
-		}
-		edgeDefinitions.add(ArangoDBUtil.createPropertyEdgeDefinitions(this, prefVCols, prefECols));
-
-        if (graph.exists()) {
-            ArangoDBUtil.checkGraphForErrors(prefVCols, prefECols, edgeDefinitions, graph, options);
-            ArangoDBGraphVariables iter = client.getGraphVariables();
-            if (iter == null) {
-            	throw new ArangoDBGraphException("Existing graph does not have a Variables collection");
-            }
-        }
-        else {
-        	graph = client.createGraph(name, edgeDefinitions, options);
-        	this.name = graph.name();
-			ArangoDBGraphVariables variables = new ArangoDBGraphVariables(name, GRAPH_VARIABLES_COLLECTION, this);
-			client.insertGraphVariables(variables);
-		}
+		shouldPrefixCollectionNames = arangoConfig.shouldPrefixCollectionNames();
 		this.configuration = configuration;
+
+//		client = new ArangoGraphDatabase(arangoProperties, arangoConfig.getString(PROPERTY_KEY_DB_NAME), shouldPrefixCollectionNames, this
+//        );
+//
+//		ArangoGraph graph = client.getArangoGraph();
+//        GraphCreateOptions options = new  GraphCreateOptions();
+//        // FIXME Cant be in orphan collections because it will be deleted with graph?
+//        // options.orphanCollections(GRAPH_VARIABLES_COLLECTION);
+//		final List<String> prefVCols = vertexCollections.stream().map(this::getPrefixedCollectioName).collect(Collectors.toList());
+//		final List<String> prefECols = edgeCollections.stream().map(this::getPrefixedCollectioName).collect(Collectors.toList());
+//		final List<EdgeDefinition> edgeDefinitions = new ArrayList<>();
+//		if (relations.isEmpty()) {
+//			logger.info("No relations, creating default ones.");
+//			edgeDefinitions.addAll(ArangoDBUtil.createDefaultEdgeDefinitions(prefVCols, prefECols));
+//		} else {
+//			for (String value : relations) {
+//				EdgeDefinition ed = ArangoDBUtil.relationPropertyToEdgeDefinition(this, value);
+//				edgeDefinitions.add(ed);
+//			}
+//		}
+//		edgeDefinitions.add(ArangoDBUtil.createPropertyEdgeDefinitions(this, prefVCols, prefECols));
+//
+//        if (graph.exists()) {
+//            ArangoDBUtil.checkGraphForErrors(prefVCols, prefECols, edgeDefinitions, graph, options);
+//            ArangoDBGraphVariables iter = client.getGraphVariables();
+//            if (iter == null) {
+//            	throw new ArangoDBGraphException("Existing graph does not have a Variables collection");
+//            }
+//        }
+//        else {
+//        	graph = client.createGraph(name, edgeDefinitions, options);
+//        	this.name = graph.name();
+//			ArangoDBGraphVariables variables = new ArangoDBGraphVariables(name, GRAPH_VARIABLES_COLLECTION, this);
+//			client.insertGraphVariables(variables);
+//		}
+
+
+
 		// FIXME Cache time expire should be configurable
 		vertices = CacheBuilder.newBuilder()
 				.expireAfterAccess(10, TimeUnit.SECONDS)
@@ -681,36 +652,36 @@ public class ArangoDBGraph implements Graph {
         return vertex;
 	}
 
-	/**
-	 * Check that the configuration values are sound.
-	 *
-	 * @param db the db
-	 * @param name the name
-	 * @param vertices the vertices
-	 * @param edges the edges
-	 * @param relations the relations
-	 */
-
-	private void checkValues(
-	    String db,
-        String name,
-        List<String> vertices,
-        List<String> edges,
-        List<String> relations) {
-
-		if (StringUtils.isBlank(db)) {
-            throw new ArangoDBGraphException(String.format("The provided argument can not be empty/null: %s", db));
-		}
-		if (StringUtils.isBlank(name)) {
-            throw new ArangoDBGraphException(String.format("The provided argument can not be empty/null: %s", name));
-		}
-		if (edges.isEmpty()) {
-			logger.warn("Empty edges collection(s), the default 'edge' collection will be used.");
-		}
-		if ((vertices.size() > 1) && (edges.size() > 1) && relations.isEmpty()) {
-			throw new ArangoDBGraphException("If more than one vertex/edge collection is provided, relations must be defined");
-		}
-	}
+//	/**
+//	 * Check that the configuration values are sound.
+//	 *
+//	 * @param db the db
+//	 * @param name the name
+//	 * @param vertices the vertices
+//	 * @param edges the edges
+//	 * @param relations the relations
+//	 */
+//
+//	private void checkValues(
+//	    String db,
+//        String name,
+//        List<String> vertices,
+//        List<String> edges,
+//        List<String> relations) {
+//
+//		if (StringUtils.isBlank(db)) {
+//            throw new ArangoDBGraphException(String.format("The provided argument can not be empty/null: %s", db));
+//		}
+//		if (StringUtils.isBlank(name)) {
+//            throw new ArangoDBGraphException(String.format("The provided argument can not be empty/null: %s", name));
+//		}
+//		if (edges.isEmpty()) {
+//			logger.warn("Empty edges collection(s), the default 'edge' collection will be used.");
+//		}
+//		if ((vertices.size() > 1) && (edges.size() > 1) && relations.isEmpty()) {
+//			throw new ArangoDBGraphException("If more than one vertex/edge collection is provided, relations must be defined");
+//		}
+//	}
 
 	@Override
 	public void close() {
@@ -774,12 +745,12 @@ public class ArangoDBGraph implements Graph {
 	}
 
 	/**
-	 * Returns the ArangoDBGraphClient object.
+	 * Returns the ArangoGraphDatabase object.
 	 *
-	 * @return the ArangoDBGraphClient object
+	 * @return the ArangoGraphDatabase object
 	 */
 
-	public ArangoDBGraphClient getClient() {
+	public ArangoGraphDatabase getClient() {
 		return client;
 	}
 

@@ -2,7 +2,7 @@ package com.arangodb.tinkerpop.gremlin.client.test;
 
 import java.util.Properties;
 
-import com.arangodb.tinkerpop.gremlin.client.ArangoDBGraphClient;
+import com.arangodb.tinkerpop.gremlin.client.ArangoGraphDatabase;
 import org.apache.commons.configuration.ConfigurationConverter;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.junit.After;
@@ -10,7 +10,7 @@ import org.junit.Before;
 
 public abstract class BaseTestCase {
 
-	protected ArangoDBGraphClient client;
+	protected ArangoGraphDatabase client;
 	protected final String graphName = "test_graph1";
 	protected final String vertices = "test_vertices1";
 	protected final String edges = "test_edges1";
@@ -25,7 +25,7 @@ public abstract class BaseTestCase {
 		configuration.setProperty("arangodb.password", "gremlin");
 		Properties arangoProperties = ConfigurationConverter.getProperties(configuration);
 		
-		client = new ArangoDBGraphClient(arangoProperties, "tinkerpop", 30000, true, null);
+		client = new ArangoGraphDatabase(arangoProperties, "tinkerpop", true, null);
 		
 		client.deleteGraph(graphName);
 		client.deleteCollection(vertices);
