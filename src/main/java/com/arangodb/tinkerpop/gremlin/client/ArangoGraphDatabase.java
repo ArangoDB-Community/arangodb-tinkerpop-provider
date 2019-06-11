@@ -8,28 +8,8 @@
 
 package com.arangodb.tinkerpop.gremlin.client;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Properties;
-import java.util.stream.Collectors;
-
 import com.arangodb.*;
 import com.arangodb.entity.*;
-import org.apache.tinkerpop.gremlin.structure.Direction;
-import org.apache.tinkerpop.gremlin.structure.Graph;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-// import com.arangodb.ArangoDatabase;
 import com.arangodb.model.AqlQueryOptions;
 import com.arangodb.model.GraphCreateOptions;
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBQueryBuilder.UniqueVertices;
@@ -37,6 +17,16 @@ import com.arangodb.tinkerpop.gremlin.structure.ArangoDBEdge;
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBGraph;
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBGraphVariables;
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBVertex;
+import org.apache.tinkerpop.gremlin.structure.Direction;
+import org.apache.tinkerpop.gremlin.structure.Graph;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * The arangodb graph client class handles the HTTP connection to arangodb and performs database
@@ -48,77 +38,89 @@ import com.arangodb.tinkerpop.gremlin.structure.ArangoDBVertex;
  * @author Jan Steemann (http://www.triagens.de)
  * @author Horacio Hoyos Rodriguez (https://www.york.ac.uk)
  */
-// FIXME this needs an interface
 public class ArangoGraphDatabase implements GraphDatabase {
 
 	private static final Logger logger = LoggerFactory.getLogger(ArangoGraphDatabase.class);
 
-	private ArangoDB driver;
+	private final ArangoDB driver;
 	private final ArangoDatabase db;
 	private final ArangoDBGraph graph;
 	private final Properties properties;
-	private final String dbName;
-	private final boolean create;
 
 	/**
-     * Create a simple graph client and connect to the provided db. If the DB does not exist, the driver will try to
-	 * create one.
+     * Create a simple graph client and connect to the provided db.
      *
 	 * @param properties            the ArangoDB configuration properties
-	 * @param dbname                the ArangoDB database name to connect to or create
 	 * @param graph                 the ArangoDB graph that uses this client
 	 * @throws ArangoDBGraphException 	If the db does not exist and cannot be created
      */
 
-    public ArangoGraphDatabase(
-		Properties properties,
-		String dbname,
-		ArangoDBGraph graph) throws ArangoDBGraphException {
-        this(properties, dbname, false, graph);
-    }
-	
-	/**
-	 * Create a simple graph client and connect to the provided db. The create flag controls what is the
-	 * behaviour if the db is not found
-	 *
-	 * @param properties            the ArangoDB configuration properties
-	 * @param dbname                the ArangoDB name to connect to or create
-	 * @param createDatabase        if true, the driver will attempt to crate the DB if it does not exist
-     * @param graph                 the ArangoDB graph that uses this client
-	 * @throws ArangoDBGraphException 	If the db does not exist and cannot be created
-	 */
-	
 	public ArangoGraphDatabase(
 		Properties properties,
-		String dbname,
-		boolean createDatabase,
 		ArangoDBGraph graph)
 		throws ArangoDBGraphException {
-		logger.info("Initiating the ArangoGraphDatabase");
 		this.properties = properties;
 		this.graph = graph;
-		this.dbName = dbname;
-		this.create = createDatabase;
-		ByteArrayOutputStream os = new ByteArrayOutputStream();
-		try {
-			properties.store(os, null);
-			InputStream targetStream = new ByteArrayInputStream(os.toByteArray());
+		this.driver = null;
+		this.db = null;
+	}
+
+	public ArangoGraphDatabase(
+		Properties properties,
+		ArangoDBGraph graph,
+		ArangoDB driver) {
+		this.properties = properties;
+		this.graph = graph;
+		this.driver = driver;
+		this.db = null;
+
+	}
+
+	public ArangoGraphDatabase(
+		Properties properties,
+		ArangoDBGraph graph,
+		ArangoDB driver,
+		ArangoDatabase db) {
+		this.properties = properties;
+		this.graph = graph;
+		this.driver = driver;
+		this.db = db;
+	}
+
+	@Override
+	public ArangoGraphDatabase load() {
+		if (driver == null) {
+			ByteArrayInputStream targetStream = null;
+			try {
+				ByteArrayOutputStream os = new ByteArrayOutputStream();
+				properties.store(os, null);
+				targetStream = new ByteArrayInputStream(os.toByteArray());
+			} catch (IOException e) {
+				// Ignore exception as the ByteArrayOutputStream is always writable.
+			}
 			ArangoDBVertexVPack vertexVpack = new ArangoDBVertexVPack();
 			ArangoDBEdgeVPack edgeVPack = new ArangoDBEdgeVPack();
-			driver = new ArangoDB.Builder().loadProperties(targetStream)
+			ArangoDB driver = new ArangoDB.Builder().loadProperties(targetStream)
 					.registerDeserializer(ArangoDBVertex.class, vertexVpack)
 					.registerSerializer(ArangoDBVertex.class, vertexVpack)
 					.registerDeserializer(ArangoDBEdge.class, edgeVPack)
 					.registerSerializer(ArangoDBEdge.class, edgeVPack)
 					.build();
-		} catch (IOException e) {
-			throw new ArangoDBGraphException("Unable to read properties", e);
+			return new ArangoGraphDatabase(properties, graph, driver);
+		}
+		else {
+			return this;
 		}
 	}
 
-	public void setup() {
-
-		db = driver.db(dbname);
+	@Override
+	public ArangoGraphDatabase connectTo(String dbname, boolean createDatabase) {
+		if (db != null) {
+			if (db.exists()) {
+				db.clearQueryCache();
+			}
+		}
+		ArangoDatabase db = driver.db(dbname);
 		if (createDatabase) {
 			if (!db.exists()) {
 				logger.info("DB not found, attemtping to create it.");
@@ -139,13 +141,17 @@ public class ArangoGraphDatabase implements GraphDatabase {
 			} catch (ArangoDBException ex) {
 				// Pass
 			}
-			if (!exists) {
-				logger.error("Database does not exist, or the user has no access");
-				throw new ArangoDBGraphException(String.format("DB not found or user has no access: {}@{}",
-						properties.getProperty("arangodb.user"), dbname));
+			finally {
+				if (!exists) {
+					logger.error("Database does not exist, or the user has no access");
+					throw new ArangoDBGraphException(String.format("DB not found or user has no access: {}@{}. If you " +
+									"want to force craetion set the 'graph.db.create' flag to true in the " +
+									"configuration.",
+							properties.getProperty("arangodb.user"), dbname));
+				}
 			}
 		}
-
+		return new ArangoGraphDatabase(properties, graph, driver, db);
 	}
 
 	/**
@@ -192,6 +198,11 @@ public class ArangoGraphDatabase implements GraphDatabase {
         }
 	}
 
+	@Override
+	public boolean isReady() {
+		return (driver != null) && (db != null);
+	}
+
 
 	/**
 	 * Test if the db exists.
@@ -199,6 +210,7 @@ public class ArangoGraphDatabase implements GraphDatabase {
 	 * @return true if the db exists
 	 */
 	
+	@Override
 	public boolean dbExists() {
 		return db == null ? false: db.exists();
 	}
@@ -209,6 +221,7 @@ public class ArangoGraphDatabase implements GraphDatabase {
 	 * @throws ArangoDBGraphException if there was an error
 	 */
 	
+	@Override
 	public void deleteDb() throws ArangoDBGraphException {
 		logger.info("Delete current db");
 		if (db !=null) {

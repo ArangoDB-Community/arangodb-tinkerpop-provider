@@ -1,37 +1,27 @@
 package com.arangodb.tinkerpop.gremlin.client;
 
 import com.arangodb.ArangoDB;
+import org.apache.commons.configuration.Configuration;
 
 import java.util.Collection;
 import java.util.Optional;
+import java.util.Properties;
 
 public interface ArangoDBConfiguration {
 
-    /** The properties name CONFIG_CONF. */
-
     static final String PROPERTY_KEY_PREFIX = "gremlin.arangodb.conf";
-
-    /** The properties name  CONFIG_DB. */
 
     static final String PROPERTY_KEY_DB_NAME = "graph.db";
 
-    /** The properties name  CONFIG_NAME. */
+    static final String PROPERTY_KEY_DB_CREATE = "graph.db.create";
 
     static final String PROPERTY_KEY_GRAPH_NAME = "graph.name";
 
-    /** The properties name CONFIG_VERTICES. */
-
     static final String PROPERTY_KEY_VERTICES = "graph.vertex";
-
-    /** The properties name CONFIG_EDGES. */
 
     static final String PROPERTY_KEY_EDGES = "graph.edge";
 
-    /** The properties name CONFIG_RELATIONS. */
-
     static final String PROPERTY_KEY_RELATIONS = "graph.relation";
-
-    /** The properties name CONFIG_SHOULD_PREFIX_COLLECTION_NAMES **/
 
     static final String PROPERTY_KEY_SHOULD_PREFIX_COLLECTION_NAMES = "graph.shouldPrefixCollectionNames";
 
@@ -87,13 +77,32 @@ public interface ArangoDBConfiguration {
     Optional<String> databaseName();
 
     /**
-     * Get the should prefix collection names value from the configuration. If not present the default value is true.
+     * Get the should prefix collection names flag value from the configuration. If not present the default value is true.
      *
      * The shouldPrefixCollectionNames name is configured via the {@link #PROPERTY_KEY_SHOULD_PREFIX_COLLECTION_NAMES} setting.
      *
      * @return The flag value.
      */
     boolean shouldPrefixCollectionNames();
+
+    /**
+     * Get the create db flag value from the configuration. If not present the default value is false.
+     *
+     * The create db is configured via the {@link #PROPERTY_KEY_DB_CREATE} setting.
+     *
+     * @return The flag value.
+     */
+
+    boolean createDatabase();
+
+    /**
+     * Transform the configuration into a Properties representation
+     * @return A Properties version of the configuration.
+     */
+    Properties transformToProperties();
+
+
+    Configuration configuration();
 
 
 }

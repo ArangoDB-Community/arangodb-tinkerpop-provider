@@ -6,9 +6,15 @@ import com.arangodb.tinkerpop.gremlin.structure.ArangoDBGraph;
 public interface GraphDatabase {
 
     /**
-     * Setup the database to work with the specified graph.
+     * Load the database
+     * @return
      */
-    void setup();
+    ArangoGraphDatabase load();
+
+    /**
+     * Connect to a specific ArangoDB database
+     */
+    GraphDatabase connectTo(String dbname, boolean createDatabase);
 
     /**
      * Shutdown the database.
@@ -26,4 +32,14 @@ public interface GraphDatabase {
 
     String getVersion() throws ArangoDBGraphException;
 
+    /**
+     * Indicates if the GraphDatabase is ready to be used.
+     *
+     * @return true if the GraphDatabase is ready to be used.
+     */
+    boolean isReady();
+
+    boolean dbExists();
+
+    void deleteDb() throws ArangoDBGraphException;
 }
