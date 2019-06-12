@@ -53,7 +53,7 @@ public interface ArangoDBGraphClient {
      * Returns true if the specified DB that the client uses exists.
      * @see #connectTo(String, boolean)
      * @return true
-     * @throws IllegalAccessError if the client is not connected to a DB
+     * @throws ArangoDBGraphException if the client is not connected to a DB
      *
      */
     boolean dbExists();

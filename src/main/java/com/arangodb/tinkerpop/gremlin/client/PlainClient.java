@@ -212,7 +212,10 @@ public class PlainClient implements ArangoDBGraphClient {
 	
 	@Override
 	public boolean dbExists() {
-		return db == null ? false: db.exists();
+		if (db == null) {
+			throw new ArangoDBGraphException("Client is not connected to a DB");
+		}
+		return db.exists();
 	}
 	
 	/**
