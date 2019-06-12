@@ -7,7 +7,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertThat;
 
-import com.arangodb.tinkerpop.gremlin.client.ArangoGraphDatabase;
+import com.arangodb.tinkerpop.gremlin.client.PlainClient;
 
 import java.util.*;
 
@@ -49,7 +49,7 @@ public class ClientTest {
 	public ExpectedException exception = ExpectedException.none();
 	
 	private PropertiesConfiguration configuration;
-	private ArangoGraphDatabase client;
+	private PlainClient client;
 
 	@Parameterized.Parameter
 	public boolean shouldPrefixCollectionWithGraphName;
@@ -76,7 +76,7 @@ public class ClientTest {
 		Properties arangoProperties = ConfigurationConverter.getProperties(configuration);
 		ArangoDBGraph g = new ArangoDBGraph(configuration);
 		System.out.println(g.features());
-		// client = new ArangoGraphDatabase(g, arangoProperties, "tinkerpop", 30000);
+		// client = new PlainClient(g, arangoProperties, "tinkerpop", 30000);
 	}
 
 	@Test
@@ -134,7 +134,7 @@ public class ClientTest {
 //    }
 //
 //
-//	// ********* The following methods test a local ArangoGraphDatabase *********
+//	// ********* The following methods test a local PlainClient *********
 //
 //	@Test
 //	public void test_RestrictedUserNewDatabase_should_throw_ArangoDBGraphException() throws Exception {
@@ -142,7 +142,7 @@ public class ClientTest {
 //		exception.expect(ArangoDBGraphException.class);
 //		exception.expectMessage(startsWith("General ArangoDB error (unkown error code)"));
 //		ArangoDBGraph g = new ArangoDBGraph(configuration);
-//		new ArangoGraphDatabase(g, arangoProperties, "demo", 30000, true);
+//		new PlainClient(g, arangoProperties, "demo", 30000, true);
 //	}
 //
 //	@Test
@@ -153,7 +153,7 @@ public class ClientTest {
 //		configuration.setProperty("arangodb.password", pwd);
 //		Properties arangoProperties = ConfigurationConverter.getProperties(configuration);
 //		ArangoDBGraph g = new ArangoDBGraph(configuration);
-//		ArangoGraphDatabase localClient = new ArangoGraphDatabase(g, arangoProperties, "demo", 30000, true);
+//		PlainClient localClient = new PlainClient(g, arangoProperties, "demo", 30000, true);
 //		assertThat(localClient.dbExists(), is(true));
 //		localClient.deleteDb();
 //		localClient.shutdown();
@@ -166,7 +166,7 @@ public class ClientTest {
 //		Properties arangoProperties = ConfigurationConverter.getProperties(configuration);
 //		exception.expect(ArangoDBGraphException.class);
 //		exception.expectMessage(startsWith("DB not found or user has no access:"));
-//		new ArangoGraphDatabase(, arangoProperties, "tinkerpop", 30000);
+//		new PlainClient(, arangoProperties, "tinkerpop", 30000);
 //	}
 //
 //	@Test
@@ -174,7 +174,7 @@ public class ClientTest {
 //		configuration.setProperty("arangodb.user", "reader");
 //		configuration.setProperty("arangodb.password", "reader");
 //		Properties arangoProperties = ConfigurationConverter.getProperties(configuration);
-//		ArangoGraphDatabase localClient = new ArangoGraphDatabase(, arangoProperties, "tinkerpop", 30000);
+//		PlainClient localClient = new PlainClient(, arangoProperties, "tinkerpop", 30000);
 //		assertThat(localClient.dbExists(), is(true));
 //		List<String> verticesCollectionNames = new ArrayList<>();
 //		List<String> edgesCollectionNames = new ArrayList<>();
@@ -187,7 +187,7 @@ public class ClientTest {
 //		localClient.shutdown();
 //	}
 //
-//	// ********* The following tests use the ArangoGraphDatabase from @Setup *********
+//	// ********* The following tests use the PlainClient from @Setup *********
 //
 //	@Test
 //	public void test_ServerVersion() throws Exception {

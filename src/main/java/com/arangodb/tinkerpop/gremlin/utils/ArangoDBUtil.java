@@ -593,7 +593,7 @@ public class ArangoDBUtil {
 
 //	private static void insertElementAndProperty(ArangoDBBaseDocument element, ArangoDBElementProperty p) {
 //		ArangoDBGraph g = element.graph();
-//		ArangoGraphDatabase c = g.getClient();
+//		PlainClient c = g.getClient();
 //		c.insertDocument(p);
 //		ElementHasProperty e = p.assignToElement(element);
 //		c.insertEdge(e);

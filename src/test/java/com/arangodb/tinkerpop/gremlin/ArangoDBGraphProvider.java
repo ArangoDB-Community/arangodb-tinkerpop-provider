@@ -5,7 +5,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
-import com.arangodb.tinkerpop.gremlin.client.ArangoGraphDatabase;
+import com.arangodb.tinkerpop.gremlin.client.PlainClient;
 import com.arangodb.tinkerpop.gremlin.structure.*;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationConverter;
@@ -205,11 +205,11 @@ public class ArangoDBGraphProvider extends AbstractGraphProvider {
 
 	@Override
 	public void clear(Graph graph, Configuration configuration) throws Exception {
-		ArangoGraphDatabase client;
+		PlainClient client;
 		if (graph ==null) {
 			Configuration arangoConfig = configuration.subset(ArangoDBGraph.PROPERTY_KEY_PREFIX);
 			Properties arangoProperties = ConfigurationConverter.getProperties(arangoConfig);
-			client = new ArangoGraphDatabase(arangoProperties, "tinkerpop", true, null);
+			client = new PlainClient(arangoProperties, "tinkerpop", true, null);
 			client.deleteGraph(arangoConfig.getString(ArangoDBGraph.PROPERTY_KEY_GRAPH_NAME));
 		}
 		else {

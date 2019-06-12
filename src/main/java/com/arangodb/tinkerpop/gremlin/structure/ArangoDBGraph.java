@@ -475,9 +475,9 @@ public class ArangoDBGraph implements Graph {
 
 	private final Features FEATURES = new ArangoDBGraphFeatures();
 
-	/** A ArangoGraphDatabase to handle the connection to the Database. */
+	/** A PlainClient to handle the connection to the Database. */
 
-	private final ArangoGraphDatabase client;
+	private final PlainClient client;
 
 	/** The name. */
 
@@ -548,7 +548,7 @@ public class ArangoDBGraph implements Graph {
 			edgeCollections.add(DEFAULT_EDGE_COLLECTION);
 		}
 		shouldPrefixCollectionNames = arangoConfig.shouldPrefixCollectionNames();
-		client = new ArangoGraphDatabase(arangoConfig.transformToProperties(), this);
+		client = new PlainClient(arangoConfig.transformToProperties(), this);
 		// FIXME Cache time expire should be configurable
 		vertices = CacheBuilder.newBuilder()
 				.expireAfterAccess(10, TimeUnit.SECONDS)
@@ -640,12 +640,12 @@ public class ArangoDBGraph implements Graph {
 	}
 
 	/**
-	 * Returns the ArangoGraphDatabase object.
+	 * Returns the PlainClient object.
 	 *
-	 * @return the ArangoGraphDatabase object
+	 * @return the PlainClient object
 	 */
 
-	public ArangoGraphDatabase getClient() {
+	public PlainClient getClient() {
 		if (!client.isReady()) {
 			String dbname = arangoConfig.databaseName()
 					.orElseThrow(() -> new IllegalStateException("Database name property missing from configuration."));
