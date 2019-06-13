@@ -499,6 +499,41 @@ public class ArangoDBQueryBuilder {
 		queryBuilder.append(segment);
 		return this;
 	}
+
+	/**
+	 * Get a document by id/key from a collection.
+	 * Execution of this query requires a bind variable for the id/key
+	 * @param collection
+	 * @param keyVariable
+	 * @return
+	 */
+	public ArangoDBQueryBuilder document(
+			String collection,
+			String keyVariable) {
+		queryBuilder.append(String.format("WITH %1$s RETURN DOCUMENT(%1$s, %2$s)", collection, keyVariable));
+		return this;
+	}
+
+	public ArangoDBQueryBuilder insertDocument(
+		String collection,
+		String documentVariable) {
+		queryBuilder.append(String.format("INSERT %s INTO %s", documentVariable, collection));
+		return this;
+	}
+
+	public ArangoDBQueryBuilder updateDocument(
+		String collection,
+		String documentVariable) {
+		queryBuilder.append(String.format("UPDATE %s IN %s RETURN NEW", documentVariable, collection));
+		return this;
+	}
+
+	public ArangoDBQueryBuilder deleteDocument(
+			String collection,
+			String keyVariable) {
+		queryBuilder.append(String.format("REMOVE %s IN %s", keyVariable, collection));
+		return this;
+	}
 	
 	@Override
 	public String toString() {

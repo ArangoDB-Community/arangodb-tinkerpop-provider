@@ -12,6 +12,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * A CacheLoader to load Edges from an ArangoDBGraph
+ */
 public class EdgeLoader extends CacheLoader<String, Edge> {
 
 		final ArangoDBGraph graph;

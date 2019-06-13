@@ -9,28 +9,15 @@
 package com.arangodb.tinkerpop.gremlin.client;
 
 import com.arangodb.*;
-import com.arangodb.entity.*;
 import com.arangodb.model.AqlQueryOptions;
-import com.arangodb.model.GraphCreateOptions;
-import com.arangodb.tinkerpop.gremlin.client.ArangoDBQueryBuilder.UniqueVertices;
-import com.arangodb.tinkerpop.gremlin.structure.ArangoDBEdge;
-import com.arangodb.tinkerpop.gremlin.structure.ArangoDBGraph;
-import com.arangodb.tinkerpop.gremlin.structure.ArangoDBGraphVariables;
-import com.arangodb.tinkerpop.gremlin.structure.ArangoDBVertex;
-import org.apache.tinkerpop.gremlin.structure.Direction;
-import org.apache.tinkerpop.gremlin.structure.Graph;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * The arangodb graph client class handles the HTTP connection to arangodb and performs database
- * operations on the ArangoDatabase.
+ * operations on the Database.
  *
  * @author Achim Brandt (http://www.triagens.de)
  * @author Johannes Gocke (http://www.triagens.de)
@@ -38,149 +25,31 @@ import java.util.stream.Collectors;
  * @author Jan Steemann (http://www.triagens.de)
  * @author Horacio Hoyos Rodriguez (https://www.york.ac.uk)
  */
-public class PlainClient implements ArangoDBGraphClient {
+public class EssentialArangoDatabase implements Database {
 
-	private static final Logger logger = LoggerFactory.getLogger(PlainClient.class);
+	private static final Logger logger = LoggerFactory.getLogger(EssentialArangoDatabase.class);
 
-	private final ArangoDB driver;
 	private final ArangoDatabase db;
-	private final ArangoDBGraph graph;
-	private final Properties properties;
 
-	/**
-     * Create a simple graph client and connect to the provided db.
-     *
-	 * @param properties            the ArangoDB configuration properties
-	 * @param graph                 the ArangoDB graph that uses this client
-	 * @throws ArangoDBGraphException 	If the db does not exist and cannot be created
-     */
-
-	public PlainClient(
-		Properties properties,
-		ArangoDBGraph graph)
-		throws ArangoDBGraphException {
-		this.properties = properties;
-		this.graph = graph;
-		this.driver = null;
-		this.db = null;
-	}
-
-	public PlainClient(
-		Properties properties,
-		ArangoDBGraph graph,
-		ArangoDB driver) {
-		this.properties = properties;
-		this.graph = graph;
-		this.driver = driver;
-		this.db = null;
-
-	}
-
-	public PlainClient(
-		Properties properties,
-		ArangoDBGraph graph,
-		ArangoDB driver,
-		ArangoDatabase db) {
-		this.properties = properties;
-		this.graph = graph;
-		this.driver = driver;
+	public EssentialArangoDatabase(ArangoDatabase db) {
 		this.db = db;
 	}
 
-	@Override
-	public PlainClient load() {
-		if (driver == null) {
-			ByteArrayInputStream targetStream = null;
-			try {
-				ByteArrayOutputStream os = new ByteArrayOutputStream();
-				properties.store(os, null);
-				targetStream = new ByteArrayInputStream(os.toByteArray());
-			} catch (IOException e) {
-				// Ignore exception as the ByteArrayOutputStream is always writable.
-			}
-			ArangoDBVertexVPack vertexVpack = new ArangoDBVertexVPack();
-			ArangoDBEdgeVPack edgeVPack = new ArangoDBEdgeVPack();
-			ArangoDB driver = new ArangoDB.Builder().loadProperties(targetStream)
-					.registerDeserializer(ArangoDBVertex.class, vertexVpack)
-					.registerSerializer(ArangoDBVertex.class, vertexVpack)
-					.registerDeserializer(ArangoDBEdge.class, edgeVPack)
-					.registerSerializer(ArangoDBEdge.class, edgeVPack)
-					.build();
-			return new PlainClient(properties, graph, driver);
-		}
-		else {
-			return this;
-		}
-	}
-
-	@Override
-	public PlainClient connectTo(String dbname, boolean createDatabase) {
-		if (db != null) {
-			if (db.exists()) {
-				db.clearQueryCache();
-			}
-		}
-		ArangoDatabase db = driver.db(dbname);
-		if (createDatabase) {
-			if (!db.exists()) {
-				logger.info("DB not found, attemtping to create it.");
-				try {
-					if (!driver.createDatabase(dbname)) {
-						throw new ArangoDBGraphException("Unable to crate the database " + dbname);
-					}
-				}
-				catch (ArangoDBException ex) {
-					throw ArangoDBExceptions.getArangoDBException(ex);
-				}
-			}
-		}
-		else {
-			boolean exists = false;
-			try {
-				exists = db.exists();
-			} catch (ArangoDBException ex) {
-				// Pass
-			}
-			finally {
-				if (!exists) {
-					logger.error("Database does not exist, or the user has no access");
-					throw new ArangoDBGraphException(String.format("DB not found or user has no access: {}@{}. If you " +
-									"want to force craetion set the 'graph.db.create' flag to true in the " +
-									"configuration.",
-							properties.getProperty("arangodb.user"), dbname));
-				}
-			}
-		}
-		return new PlainClient(properties, graph, driver, db);
-	}
-
 	/**
-	 * Shutdown the client and free resources.
+	 * Close the database and clear any queries
 	 */
-	
+
 	@Override
-	public void shutdown() {
+	public void close() {
 		logger.debug("Shutdown");
 		if (db != null) {
 			if (db.exists()) {
 				db.clearQueryCache();
 			}
 		}
-		if (driver != null) driver.shutdown();
 	}
-	
-	/**
-	 * Drop the graph and its related collections.
-	 *
-	 * @param graph 					the graph to clear
-	 * @throws ArangoDBGraphException	if there was an error dropping the graph and its collections
-	 */
-	
-	@Override
-	public void clear(ArangoDBGraph graph) throws ArangoDBGraphException {
-		logger.info("Clear {}", graph.name());
-		deleteGraph(graph.name());
-	}
+
+
 
 	/**
 	 * Request the version of ArangoDB.
@@ -188,146 +57,177 @@ public class PlainClient implements ArangoDBGraphClient {
 	 * @return the Version number
 	 * @throws ArangoDBGraphException if user has no access to the db
 	 */
-	
+
 	@Override
 	public String getVersion() throws ArangoDBGraphException {
 		try {
 			return db.getVersion().getVersion();
 		} catch (ArangoDBException ex) {
-            throw ArangoDBExceptions.getArangoDBException(ex);
-        }
+			throw ArangoDBExceptions.getArangoDBException(ex);
+		}
 	}
-
-	@Override
-	public boolean isReady() {
-		return (driver != null) && (db != null);
-	}
-
 
 	/**
 	 * Test if the db exists.
 	 *
 	 * @return true if the db exists
 	 */
-	
+
 	@Override
-	public boolean dbExists() {
+	public boolean exists() {
 		if (db == null) {
-			throw new ArangoDBGraphException("Client is not connected to a DB");
+			throw new ArangoDBGraphException("Database is not connected to a DB");
 		}
 		return db.exists();
 	}
-	
+
 	/**
 	 * Delete the current database accessed by the driver.
 	 *
 	 * @throws ArangoDBGraphException if there was an error
 	 */
-	
+
 	@Override
-	public void deleteDb() throws ArangoDBGraphException {
+	public void delete() throws ArangoDBGraphException {
 		logger.info("Delete current db");
-		if (db !=null) {
+		if (db != null) {
 			try {
 				db.drop();
 			} catch (ArangoDBException e) {
-                throw ArangoDBExceptions.getArangoDBException(e);
+				throw ArangoDBExceptions.getArangoDBException(e);
 			}
 		}
 	}
-//
-//	@Override
-//	public ArangoDBGraphVariables getGraphVariables() {
-//		logger.debug("Get graph variables");
-//		ArangoDBGraphVariables result;
-//		try {
-//			result = db
-//					.collection(ArangoDBGraph.GRAPH_VARIABLES_COLLECTION)
-//					.getDocument(graph.name(), ArangoDBGraphVariables.class);
-//		} catch (ArangoDBException e) {
-//			logger.error("Failed to retrieve vertex: {}", e.getErrorMessage());
-//			throw new ArangoDBGraphException("Failed to retrieve vertex.", e);
+
+	/**
+	 * Execute AQL query.
+	 *
+	 * @param <T> 						the generic type of the returned values
+	 * @param query 					the query string
+	 * @param bindVars 					the value of the bind parameters
+	 * @param aqlQueryOptions 			the aql query options
+	 * @param type            			the type of the result (POJO class, VPackSlice, String for Json, or Collection/List/Map)
+	 * @return the cursor result
+	 * @throws ArangoDBGraphException	if executing the query raised an exception
+	 */
+
+	@Override
+	public <T> ArangoCursor<T> executeAqlQuery(
+			String query,
+			Map<String, Object> bindVars,
+			AqlQueryOptions aqlQueryOptions,
+			final Class<T> type)
+			throws ArangoDBGraphException {
+		logger.debug("Executing AQL query ({}) against db, with bind vars: {}", query, bindVars);
+		try {
+			return db.query(query, bindVars, aqlQueryOptions, type);
+		} catch (ArangoDBException e) {
+			logger.error("Error executing query", e);
+			throw ArangoDBExceptions.getArangoDBException(e);
+		}
+	}
+
+
+	/**
+	 //	 * Translate Tinkerpop Edge directions to ArangoDB edge directions.
+	 //	 * @param direction				The Tinkerpop direction
+	 //	 * @return
+	 //	 */
+//	private ArangoDBQueryBuilder.Direction getDirection(Direction direction) {
+//		ArangoDBQueryBuilder.Direction arangoDirection;
+//		switch (direction) {
+//			case IN:
+//				arangoDirection = ArangoDBQueryBuilder.Direction.IN;
+//				break;
+//			case OUT:
+//				arangoDirection = ArangoDBQueryBuilder.Direction.OUT;
+//				break;
+//			case BOTH:
+//			default:
+//				arangoDirection = ArangoDBQueryBuilder.Direction.ALL;
+//				break;
 //		}
-//		result.collection(result.label);
-//		return result;
+//		return arangoDirection;
 //	}
-//
+
 //	/**
-//	 * Insert a ArangoDBBaseDocument in the graph. The document is updated with the id, rev and name
-//	 * (if not * present)
-//	 * @param document 				the document
-//	 * @throws ArangoDBGraphException 	If there was an error inserting the document
-//	 */
-//
-//	@Override
-//	public void insertGraphVariables(ArangoDBGraphVariables document) {
-//		logger.debug("Insert graph variables {} in {}", document, graph.name());
-//		if (document.isPaired()) {
-//			throw new ArangoDBGraphException("Paired documents can not be inserted, only updated");
-//		}
-//		ArangoCollection gVars = db.collection(document.collection());
-//		if (!gVars.exists()) {
-//			CollectionEntity ce = db.createCollection(document.collection());
-//			System.out.println(ce.getStatus());
-//		}
-//		DocumentCreateEntity<ArangoDBGraphVariables> vertexEntity;
-//		try {
-//			vertexEntity = gVars.insertDocument(document);
-//		} catch (ArangoDBException e) {
-//			logger.error("Failed to insert document: {}", e.getMessage());
-//			ArangoDBGraphException arangoDBException = ArangoDBExceptions.getArangoDBException(e);
-//			if (arangoDBException.getErrorCode() == 1210) {
-//				throw Graph.Exceptions.vertexWithIdAlreadyExists(document._key);
-//			}
-//			throw arangoDBException;
-//		}
-//		document._id(vertexEntity.getId());
-//		document._rev(vertexEntity.getRev());
-//		if (document._key() == null) {
-//			document._key(vertexEntity.getKey());
-//		}
-//		document.setPaired(true);
-//	}
-//
-//	/**
-//	 * Delete a document from the graph.
-//	 * @param document            	the document to delete
-//	 * @throws ArangoDBGraphException 	If there was an error deleting the document
-//	 */
-//
-//	@Override
-//	public void deleteGraphVariables(ArangoDBGraphVariables document) {
-//		logger.debug("Delete variables {} in {}", document, graph.name());
-//		try {
-//			db.collection(document.collection())
-//					.deleteDocument(document._key());
-//		} catch (ArangoDBException e) {
-//			logger.error("Failed to delete document: {}", e.getErrorMessage());
-//			throw ArangoDBExceptions.getArangoDBException(e);
-//		}
-//		document.setPaired(false);
-//	}
-//
-//	/**
-//	 * Update the document in the graph.
-//	 * @param document 				the document
+//	 * Drop the graph and its related collections.
 //	 *
-//	 * @throws ArangoDBGraphException 	If there was an error updating the document
+//	 * @param graph 					the graph to clear
+//	 * @throws ArangoDBGraphException	if there was an error dropping the graph and its collections
 //	 */
 //
 //	@Override
-//	public void updateGraphVariables(ArangoDBGraphVariables document) {
-//		logger.debug("Update variables {} in {}", document, graph.name());
-//		DocumentUpdateEntity updateEntity;
-//		try {
-//			updateEntity = db.collection(document.collection())
-//					.updateDocument(document._key(), document);
-//		} catch (ArangoDBException e) {
-//			logger.error("Failed to update document: {}", e.getErrorMessage());
-//			throw ArangoDBExceptions.getArangoDBException(e);
+//	public void clear(ArangoDBGraph graph) throws ArangoDBGraphException {
+//		logger.info("Clear {}", graph.name());
+//		deleteGraph(graph.name());
+//	}
+//
+//	@Override
+//	public EssentialArangoDatabase load() {
+//		if (driver == null) {
+//			ByteArrayInputStream targetStream = null;
+//			try {
+//				ByteArrayOutputStream os = new ByteArrayOutputStream();
+//				properties.store(os, null);
+//				targetStream = new ByteArrayInputStream(os.toByteArray());
+//			} catch (IOException e) {
+//				// Ignore exception as the ByteArrayOutputStream is always writable.
+//			}
+//			ArangoDBVertexVPack vertexVpack = new ArangoDBVertexVPack();
+//			ArangoDBEdgeVPack edgeVPack = new ArangoDBEdgeVPack();
+//			ArangoDB driver = new ArangoDB.Builder().loadProperties(targetStream)
+//					.registerDeserializer(ArangoDBVertex.class, vertexVpack)
+//					.registerSerializer(ArangoDBVertex.class, vertexVpack)
+//					.registerDeserializer(ArangoDBEdge.class, edgeVPack)
+//					.registerSerializer(ArangoDBEdge.class, edgeVPack)
+//					.build();
+//			return new EssentialArangoDatabase(properties, graph, driver);
 //		}
-//		logger.info("Document updated, new rev {}", updateEntity.getRev());
-//		document._rev(updateEntity.getRev());
+//		else {
+//			return this;
+//		}
+//	}
+
+//	@Override
+//	public EssentialArangoDatabase connectTo(String dbname, boolean createDatabase) {
+//		if (db != null) {
+//			if (db.exists()) {
+//				db.clearQueryCache();
+//			}
+//		}
+//		Database db = driver.db(dbname);
+//		if (createDatabase) {
+//			if (!db.exists()) {
+//				logger.info("DB not found, attemtping to create it.");
+//				try {
+//					if (!driver.createDatabase(dbname)) {
+//						throw new ArangoDBGraphException("Unable to crate the database " + dbname);
+//					}
+//				}
+//				catch (ArangoDBException ex) {
+//					throw ArangoDBExceptions.getArangoDBException(ex);
+//				}
+//			}
+//		}
+//		else {
+//			boolean exists = false;
+//			try {
+//				exists = db.exists();
+//			} catch (ArangoDBException ex) {
+//				// Pass
+//			}
+//			finally {
+//				if (!exists) {
+//					logger.error("Database does not exist, or the user has no access");
+//					throw new ArangoDBGraphException(String.format("DB not found or user has no access: {}@{}. If you " +
+//									"want to force craetion set the 'graph.db.create' flag to true in the " +
+//									"configuration.",
+//							properties.getProperty("arangodb.user"), dbname));
+//				}
+//			}
+//		}
+//		return new EssentialArangoDatabase(properties, graph, driver, db);
 //	}
 
 
@@ -789,189 +689,144 @@ public class PlainClient implements ArangoDBGraphClient {
 //		return executeAqlQuery(query, bindVars, null, ArangoDBVertex.class);
 //	}
 //
-	/**
-	 * Delete a graph from the db, and all its collections.
-	 *
-	 * @param name 					the name of the graph to delete
-	 * @return true, if the graph was deleted
-	 */
-	
-	public boolean deleteGraph(String name) {
-		return deleteGraph(name, true);
-	}
-	
-	/**
-	 * Delete a graph from the db. If dropCollection is true, then all the graph collections are also 
-	 * dropped
-	 *
-	 * @param name 				the name
-	 * @param dropCollections 	true to drop the graph collections too
-	 * @return true if the graph was deleted
-	 */
-	
-	public boolean deleteGraph(String name, boolean dropCollections) {
-		if (db != null) {
-			ArangoGraph graph = db.graph(name);
-			if (graph.exists()) {
-				try {
-					Collection<String> edgeDefinitions = dropCollections ? graph.getEdgeDefinitions() : Collections.emptyList();
-					Collection<String> vertexCollections = dropCollections ? graph.getVertexCollections(): Collections.emptyList();
-					// Drop graph first because it will break if the graph collections do not exist
-					graph.drop();
-					for (String definitionName : edgeDefinitions) {
-						String collectioName = definitionName;
-						if (db.collection(collectioName).exists()) {
-							db.collection(collectioName).drop();
-						}
-					}
-					for (String vc : vertexCollections) {
-						String collectioName = vc;
-						if (db.collection(collectioName).exists()) {
-							db.collection(collectioName).drop();
-						}
-					}
-					// Delete the graph variables
-					db.collection(ArangoDBGraph.GRAPH_VARIABLES_COLLECTION).deleteDocument(name);
-				} catch (ArangoDBException e) {
-					System.out.println(e);
-				}
-				return true;
-			} else {
-				try {
-					graph.drop();
-				} catch (ArangoDBException e) {
-                    //throw ArangoDBExceptions.getArangoDBException(e);
-				}
-			}
-		}
-		return false;
-	}
+//	/**
+//	 * Delete a graph from the db, and all its collections.
+//	 *
+//	 * @param name 					the name of the graph to delete
+//	 * @return true, if the graph was deleted
+//	 */
+//
+//	public boolean deleteGraph(String name) {
+//		return deleteGraph(name, true);
+//	}
+//
+//	/**
+//	 * Delete a graph from the db. If dropCollection is true, then all the graph collections are also
+//	 * dropped
+//	 *
+//	 * @param name 				the name
+//	 * @param dropCollections 	true to drop the graph collections too
+//	 * @return true if the graph was deleted
+//	 */
+//
+//	public boolean deleteGraph(String name, boolean dropCollections) {
+//		if (db != null) {
+//			ArangoGraph graph = db.graph(name);
+//			if (graph.exists()) {
+//				try {
+//					Collection<String> edgeDefinitions = dropCollections ? graph.getEdgeDefinitions() : Collections.emptyList();
+//					Collection<String> vertexCollections = dropCollections ? graph.getVertexCollections(): Collections.emptyList();
+//					// Drop graph first because it will break if the graph collections do not exist
+//					graph.drop();
+//					for (String definitionName : edgeDefinitions) {
+//						String collectioName = definitionName;
+//						if (db.collection(collectioName).exists()) {
+//							db.collection(collectioName).drop();
+//						}
+//					}
+//					for (String vc : vertexCollections) {
+//						String collectioName = vc;
+//						if (db.collection(collectioName).exists()) {
+//							db.collection(collectioName).drop();
+//						}
+//					}
+//					// Delete the graph variables
+//					db.collection(ArangoDBGraph.GRAPH_VARIABLES_COLLECTION).deleteDocument(name);
+//				} catch (ArangoDBException e) {
+//					System.out.println(e);
+//				}
+//				return true;
+//			} else {
+//				try {
+//					graph.drop();
+//				} catch (ArangoDBException e) {
+//                    //throw ArangoDBExceptions.getArangoDBException(e);
+//				}
+//			}
+//		}
+//		return false;
+//	}
+//
+//	/**
+//	 * Delete collection.
+//	 *
+//	 * @param name the name
+//	 * @return true, if successful
+//	 */
+//
+//	public boolean deleteCollection(String name) {
+//		ArangoCollection collection = db.collection(name);
+//		if (collection.exists()) {
+//			collection.drop();
+//			return collection.exists();
+//		}
+//		return false;
+//	}
+//
+//	/**
+//	 * Create a new graph.
+//	 *
+//	 * @param name            			the name of the new graph
+//	 * @param edgeDefinitions 			the edge definitions for the graph
+//	 * @throws ArangoDBGraphException 	If the graph can not be created
+//	 */
+//
+//	public void createGraph(String name, List<EdgeDefinition> edgeDefinitions)
+//		throws ArangoDBGraphException {
+//		this.createGraph(name, edgeDefinitions, null);
+//	}
+//
+//	/**
+//	 * Create a new graph.
+//	 *
+//	 * @param name 						the name of the new graph
+//	 * @param edgeDefinitions			the edge definitions for the graph
+//	 * @param options 					additional graph options
+//	 * @return the arango graph
+//	 * @throws ArangoDBGraphException 	If the graph can not be created
+//	 */
+//
+//	public ArangoGraph createGraph(String name,
+//        List<EdgeDefinition> edgeDefinitions,
+//		GraphCreateOptions options)
+//		throws ArangoDBGraphException {
+//		logger.info("Creating graph {}", name);
+//		try {
+//			logger.info("Creating graph in database.");
+//			db.createGraph(name, edgeDefinitions, options);
+//		} catch (ArangoDBException e) {
+//            logger.info("Error creating graph in database.", e);
+//            throw ArangoDBExceptions.getArangoDBException(e);
+//        }
+//		ArangoGraph g = db.graph(name);
+//		return g;
+//	}
+//
+//
+//	/**
+//	 * Get the ArangoGraph that is linked to the client's graph
+//	 *
+//	 * @return the graph or null if the graph was not found
+//	 */
+//
+//	public ArangoGraph getArangoGraph() {
+//		return db.graph(graph.name());
+//	}
+//
+//
+//
+//	/**
+//	 * Validate that the document is in the same graph.
+//	 * @param document
+//	 */
+//	private void validateElementGraph(ArangoDBBaseDocument document) {
+//		ArangoDBGraph documentGraph = document.graph();
+//		if ((documentGraph != null) && (!documentGraph.equals(graph))) {
+//			throw new ArangoDBGraphException("Document belongs to another graph.");
+//		}
+//	}
 
-	/**
-	 * Delete collection.
-	 *
-	 * @param name the name
-	 * @return true, if successful
-	 */
-	
-	public boolean deleteCollection(String name) {
-		ArangoCollection collection = db.collection(name);
-		if (collection.exists()) {
-			collection.drop();
-			return collection.exists();
-		}
-		return false;
-	}
-	
-	/**
-	 * Create a new graph.
-	 *
-	 * @param name            			the name of the new graph
-	 * @param edgeDefinitions 			the edge definitions for the graph
-	 * @throws ArangoDBGraphException 	If the graph can not be created
-	 */
-	
-	public void createGraph(String name, List<EdgeDefinition> edgeDefinitions)
-		throws ArangoDBGraphException {
-		this.createGraph(name, edgeDefinitions, null);
-	}
-	
-	/**
-	 * Create a new graph.
-	 *
-	 * @param name 						the name of the new graph
-	 * @param edgeDefinitions			the edge definitions for the graph
-	 * @param options 					additional graph options
-	 * @return the arango graph
-	 * @throws ArangoDBGraphException 	If the graph can not be created
-	 */
-	
-	public ArangoGraph createGraph(String name,
-        List<EdgeDefinition> edgeDefinitions,
-		GraphCreateOptions options)
-		throws ArangoDBGraphException {
-		logger.info("Creating graph {}", name);
-		try {
-			logger.info("Creating graph in database.");
-			db.createGraph(name, edgeDefinitions, options);
-		} catch (ArangoDBException e) {
-            logger.info("Error creating graph in database.", e);
-            throw ArangoDBExceptions.getArangoDBException(e);
-        }
-		ArangoGraph g = db.graph(name);
-		return g;
-	}
 
-
-	/**
-	 * Get the ArangoGraph that is linked to the client's graph
-	 *
-	 * @return the graph or null if the graph was not found
-	 */
-	
-	public ArangoGraph getArangoGraph() {
-		return db.graph(graph.name());
-	}
-	
-	/**
-	 * Execute AQL query.
-	 *
-	 * @param <T> 						the generic type of the returned values
-	 * @param query 					the query string
-	 * @param bindVars 					the value of the bind parameters
-	 * @param aqlQueryOptions 			the aql query options
-	 * @param type            			the type of the result (POJO class, VPackSlice, String for Json, or Collection/List/Map)
-	 * @return the cursor result
-	 * @throws ArangoDBGraphException	if executing the query raised an exception
-	 */
-
-	public <T> ArangoCursor<T> executeAqlQuery(
-		String query,
-		Map<String, Object> bindVars,
-		AqlQueryOptions aqlQueryOptions,
-		final Class<T> type)
-		throws ArangoDBGraphException {
-		logger.debug("Executing AQL query ({}) against db, with bind vars: {}", query, bindVars);
-		try {
-			return db.query(query, bindVars, aqlQueryOptions, type);
-		} catch (ArangoDBException e) {
-			logger.error("Error executing query", e);
-            throw ArangoDBExceptions.getArangoDBException(e);
-		}
-	}
-
-	/**
-	 * Validate that the document is in the same graph.
-	 * @param document
-	 */
-	private void validateElementGraph(ArangoDBBaseDocument document) {
-		ArangoDBGraph documentGraph = document.graph();
-		if ((documentGraph != null) && (!documentGraph.equals(graph))) {
-			throw new ArangoDBGraphException("Document belongs to another graph.");
-		}
-	}
-
-	/**
-	 * Translate Tinkerpop Edge directions to ArangoDB edge directions.
-	 * @param direction				The Tinkerpop direction
-	 * @return
-	 */
-	private ArangoDBQueryBuilder.Direction getDirection(Direction direction) {
-		ArangoDBQueryBuilder.Direction arangoDirection;
-		switch (direction) {
-			case IN:
-				arangoDirection = ArangoDBQueryBuilder.Direction.IN;
-				break;
-			case OUT:
-				arangoDirection = ArangoDBQueryBuilder.Direction.OUT;
-				break;
-			case BOTH:
-			default:
-				arangoDirection = ArangoDBQueryBuilder.Direction.ALL;
-				break;
-		}
-		return arangoDirection;
-	}
 
 
     // TODO Decide what of these methods should be restored.

@@ -12,6 +12,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * A CacheLoader to load Vertices from an ArangoDBGraph
+ */
 public class VertexLoader extends CacheLoader<String, Vertex> {
 
 	final ArangoDBGraph graph;

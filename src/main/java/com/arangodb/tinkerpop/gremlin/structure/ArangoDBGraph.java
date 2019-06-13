@@ -8,12 +8,18 @@
 
 package com.arangodb.tinkerpop.gremlin.structure;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 
+import com.arangodb.ArangoDB;
+import com.arangodb.ArangoDBException;
+import com.arangodb.ArangoDatabase;
 import com.arangodb.entity.EdgeDefinition;
 import com.arangodb.model.GraphCreateOptions;
 import com.arangodb.tinkerpop.gremlin.cache.EdgeLoader;
@@ -235,7 +241,7 @@ public class ArangoDBGraph implements Graph {
 	private final ArangoDBConfiguration arangoConfig;
 
 	/**
-     * The Class ArangoDBGraphFeatures.
+     * The Class ArangoDBGraphFeatures defines the features supported by the ArangoDBGraph
      */
 
 	public class ArangoDBGraphFeatures implements Features {
@@ -443,10 +449,7 @@ public class ArangoDBGraph implements Graph {
 		}
     }
 
-	/** The Logger. */
-
 	private static final Logger logger = LoggerFactory.getLogger(ArangoDBGraph.class);
-
 
 
 	/** The Constant DEFAULT_VERTEX_COLLECTION. */
@@ -475,9 +478,9 @@ public class ArangoDBGraph implements Graph {
 
 	private final Features FEATURES = new ArangoDBGraphFeatures();
 
-	/** A PlainClient to handle the connection to the Database. */
+	/** A EssentialArangoDatabase to handle the connection to the Database. */
 
-	private final PlainClient client;
+	private final EssentialArangoDatabase client;
 
 	/** The name. */
 
@@ -517,7 +520,60 @@ public class ArangoDBGraph implements Graph {
      */
 
     public static ArangoDBGraph open(Configuration configuration) {
-		return new ArangoDBGraph(configuration);
+		ArangoDBConfiguration arangoConfig = new PlainArangoDBConfiguration(configuration);
+		ByteArrayInputStream targetStream = null;
+		try {
+			ByteArrayOutputStream os = new ByteArrayOutputStream();
+			arangoConfig.transformToProperties().store(os, null);
+			targetStream = new ByteArrayInputStream(os.toByteArray());
+		} catch (IOException e) {
+			// Ignore exception as the ByteArrayOutputStream is always writable.
+		}
+		ArangoDBVertexVPack vertexVpack = new ArangoDBVertexVPack();
+		ArangoDBEdgeVPack edgeVPack = new ArangoDBEdgeVPack();
+		ArangoDB driver = new ArangoDB.Builder().loadProperties(targetStream)
+				.registerDeserializer(ArangoDBVertex.class, vertexVpack)
+				.registerSerializer(ArangoDBVertex.class, vertexVpack)
+				.registerDeserializer(ArangoDBEdge.class, edgeVPack)
+				.registerSerializer(ArangoDBEdge.class, edgeVPack)
+			.build();
+		String dbname = arangoConfig.databaseName()
+				.orElseThrow(() -> new IllegalStateException("Database name property missing from configuration."));
+		return new ArangoDBGraph(arangoConfig, getDatabase(driver, dbname, arangoConfig.createDatabase()));
+	}
+
+	private static ArangoDatabase getDatabase(ArangoDB driver, String dbname, boolean createDatabase) {
+		ArangoDatabase db = driver.db(dbname);
+		if (createDatabase) {
+			if (!db.exists()) {
+				logger.info("DB not found, attemtping to create it.");
+				try {
+					if (!driver.createDatabase(dbname)) {
+						throw new ArangoDBGraphException("Unable to crate the database " + dbname);
+					}
+				}
+				catch (ArangoDBException ex) {
+					throw ArangoDBExceptions.getArangoDBException(ex);
+				}
+			}
+		}
+		else {
+			boolean exists = false;
+			try {
+				exists = db.exists();
+			} catch (ArangoDBException ex) {
+				// Pass
+			}
+			finally {
+				if (!exists) {
+					logger.error("Database does not exist, or the user has no access");
+					throw new ArangoDBGraphException("DB not found or user has no access. If you want to force creation " +
+							"set the 'graph.db.create' flag to true in the configuration and make sure the user has " +
+							"admin rights over the database.");
+				}
+			}
+		}
+		return db;
 	}
 
 	/**
@@ -526,10 +582,10 @@ public class ArangoDBGraph implements Graph {
 	 * @param configuration 	the Apache Commons configuration
 	 */
 
-	public ArangoDBGraph(Configuration configuration) {
+	public ArangoDBGraph(ArangoDBConfiguration configuration, ArangoDatabase database) {
 
 		logger.info("Creating new ArangoDB Graph from configuration");
-		arangoConfig = new PlainArangoDBConfiguration(configuration);
+		arangoConfig = configuration;
 		name = arangoConfig.graphName()
 				.orElseThrow(() -> new IllegalStateException("Graph name property missing from configuration."));
 		vertexCollections = arangoConfig.vertexCollections();
@@ -548,7 +604,7 @@ public class ArangoDBGraph implements Graph {
 			edgeCollections.add(DEFAULT_EDGE_COLLECTION);
 		}
 		shouldPrefixCollectionNames = arangoConfig.shouldPrefixCollectionNames();
-		client = new PlainClient(arangoConfig.transformToProperties(), this);
+		client = new EssentialArangoDatabase(database);
 		// FIXME Cache time expire should be configurable
 		vertices = CacheBuilder.newBuilder()
 				.expireAfterAccess(10, TimeUnit.SECONDS)
@@ -640,12 +696,12 @@ public class ArangoDBGraph implements Graph {
 	}
 
 	/**
-	 * Returns the PlainClient object.
+	 * Returns the EssentialArangoDatabase object.
 	 *
-	 * @return the PlainClient object
+	 * @return the EssentialArangoDatabase object
 	 */
 
-	public PlainClient getClient() {
+	public EssentialArangoDatabase getClient() {
 		if (!client.isReady()) {
 			String dbname = arangoConfig.databaseName()
 					.orElseThrow(() -> new IllegalStateException("Database name property missing from configuration."));
