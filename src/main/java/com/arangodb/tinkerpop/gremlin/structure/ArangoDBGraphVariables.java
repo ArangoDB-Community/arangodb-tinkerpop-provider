@@ -56,21 +56,23 @@ public class ArangoDBGraphVariables extends ArangoDBBaseDocument implements Grap
 
     /**
      * Instantiates a new Arango DB graph variables.
-     *
+     * @param graphName 			the graph name
+	 * @param client				the graph client
 	 *
 	 */
 
-    public ArangoDBGraphVariables(String key, String label, GraphClient client) {
-        this(key, label, client, false);
+    public ArangoDBGraphVariables(String graphName, GraphClient client) {
+        this(graphName, client, false);
     }
 
-	public ArangoDBGraphVariables(String key, String label, GraphClient client, boolean paired) {
-		super(key, label, client.getPrefixedCollectioName(label), paired);
+	public ArangoDBGraphVariables(String graphName, GraphClient client, boolean paired) {
+		super(graphName, client.GRAPH_VARIABLES_COLLECTION, client.GRAPH_VARIABLES_COLLECTION, paired);
 		this.client = client;
 	}
 
+	// FIXME Move to interface
     public ArangoDBGraphVariables pair(GraphClient client) {
-		return new ArangoDBGraphVariables(_key, label, client, true);
+		return new ArangoDBGraphVariables(_key, client, true);
 
 	}
 

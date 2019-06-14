@@ -39,7 +39,7 @@ public class ArngDatabaseClient implements DatabaseClient {
 	}
 
 	@Override
-	public void close() {
+	public void close() throws Exception {
 		logger.debug("Shutdown");
 		if (db != null) {
 			if (db.exists()) {

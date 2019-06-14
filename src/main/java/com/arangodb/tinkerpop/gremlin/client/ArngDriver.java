@@ -28,5 +28,6 @@ public class ArngDriver implements Driver {
         catch (ArangoDBException ex) {
             throw ArangoDBExceptions.getArangoDBException(ex);
         }
+        return getDatabase(name);
     }
 }

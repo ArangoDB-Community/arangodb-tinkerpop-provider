@@ -24,10 +24,6 @@ public class ArngGraphClient implements GraphClient {
 
     private static final Logger logger = LoggerFactory.getLogger(ArngGraphClient.class);
 
-    /** The default collection where graph variables are stored */
-
-    public static String GRAPH_VARIABLES_COLLECTION = "TINKERPOP-GRAPH-VARIABLES";
-
     private final DatabaseClient db;
     private final boolean shouldPrefixCollectionNames;
     private final String graphName;
@@ -64,7 +60,7 @@ public class ArngGraphClient implements GraphClient {
             it = new VariableIterator(
                     this,
                         db.executeAqlQuery(
-                            new ArangoDBQueryBuilder().insertDocument(GRAPH_VARIABLES_COLLECTION, "doc").toString(),
+                            new ArangoDBQueryBuilder().insertDocument(GraphClient.GRAPH_VARIABLES_COLLECTION, "doc").toString(),
                             bindVars,
                             null,
                             ArangoDBGraphVariables.class));
@@ -98,7 +94,7 @@ public class ArngGraphClient implements GraphClient {
                         bindVars.put("key", graphName);
                         it = new VariableIterator(client,
                         db.executeAqlQuery(
-                        new ArangoDBQueryBuilder().document(GRAPH_VARIABLES_COLLECTION, "key").toString(),
+                        new ArangoDBQueryBuilder().document(GraphClient.GRAPH_VARIABLES_COLLECTION, "key").toString(),
                         bindVars,
                         null,
                         ArangoDBGraphVariables.class));
@@ -136,7 +132,7 @@ public class ArngGraphClient implements GraphClient {
             bindVars.put("key", variables._key());
             it = new VariableIterator(this,
                     db.executeAqlQuery(
-                            new ArangoDBQueryBuilder().updateDocument(GRAPH_VARIABLES_COLLECTION, "key").toString(),
+                            new ArangoDBQueryBuilder().updateDocument(GraphClient.GRAPH_VARIABLES_COLLECTION, "key").toString(),
                             bindVars,
                             null,
                             ArangoDBGraphVariables.class));
@@ -160,7 +156,7 @@ public class ArngGraphClient implements GraphClient {
             bindVars.put("key", variables._key());
             new VariableIterator(this,
                 db.executeAqlQuery(
-                        new ArangoDBQueryBuilder().deleteDocument(GRAPH_VARIABLES_COLLECTION, "key").toString(),
+                        new ArangoDBQueryBuilder().deleteDocument(GraphClient.GRAPH_VARIABLES_COLLECTION, "key").toString(),
                         bindVars,
                        null,
                         ArangoDBGraphVariables.class));
@@ -183,7 +179,7 @@ public class ArngGraphClient implements GraphClient {
         }
         else {
             db.createGraph(graphName, edgeDefinitions, options);
-            ArangoDBGraphVariables variables = new ArangoDBGraphVariables(graphName, GRAPH_VARIABLES_COLLECTION, this);
+            ArangoDBGraphVariables variables = new ArangoDBGraphVariables(graphName,this);
             insertGraphVariables(variables);
         }
         return new ArngGraphClient(db, graphName, shouldPrefixCollectionNames, true);
@@ -191,7 +187,7 @@ public class ArngGraphClient implements GraphClient {
 
     @Override
     public String getPrefixedCollectioName(String collectionName) {
-        if (GRAPH_VARIABLES_COLLECTION.equals(collectionName)) {
+        if (GraphClient.GRAPH_VARIABLES_COLLECTION.equals(collectionName)) {
             return collectionName;
         }
         if(shouldPrefixCollectionNames) {

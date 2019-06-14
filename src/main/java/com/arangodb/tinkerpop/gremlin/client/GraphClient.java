@@ -11,6 +11,10 @@ import java.util.List;
  */
 public interface GraphClient {
 
+    /** The default collection where graph variables are stored */
+
+    String GRAPH_VARIABLES_COLLECTION = "TINKERPOP-GRAPH-VARIABLES";
+
     class GraphVariablesNotFoundException extends Exception {
         public GraphVariablesNotFoundException(String message) {
             super(message);

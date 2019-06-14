@@ -481,11 +481,6 @@ public class ArangoDBGraph implements Graph {
 
 	private boolean schemaless = false;
 
-	/** If collection names should be prefixed with graphClient name */
-	private final boolean shouldPrefixCollectionNames;
-
-	private boolean ready = false;
-
 	// FIXME Cache time expire should be configurable
 	LoadingCache<String, Vertex> vertices;
 
@@ -569,7 +564,6 @@ public class ArangoDBGraph implements Graph {
 			schemaless = true;
 			edgeCollections.add(DEFAULT_EDGE_COLLECTION);
 		}
-		shouldPrefixCollectionNames = arangoConfig.shouldPrefixCollectionNames();
 		this.databaseClient = databaseClient;
 		this.graphClient = graphClient;
 		// FIXME Cache time expire should be configurable
@@ -581,64 +575,9 @@ public class ArangoDBGraph implements Graph {
 				.build(new EdgeLoader(this));
 	}
 
-    @Override
-	public Vertex addVertex(Object... keyValues) {
-		logger.info("Creating vertex in graphClient with keyValues: {}", keyValues);
-        ElementHelper.legalPropertyKeyValueArray(keyValues);
-        Object id;
-        String collection;
-        if (!schemaless) {
-        	collection = ElementHelper.getLabelValue(keyValues).orElse(null);
-        	ElementHelper.validateLabel(collection);
-        }
-        else {
-        	collection = DEFAULT_VERTEX_COLLECTION;
-        }
-        if (!vertexCollections().contains(collection)) {
-			throw new IllegalArgumentException(String.format("Vertex label (%s) not in graphClient (%s) vertex collections.", collection, name));
-		}
-        ArangoDBVertex vertex = null;
-        if (ElementHelper.getIdValue(keyValues).isPresent()) {
-        	id = ElementHelper.getIdValue(keyValues).get();
-        	if (this.features().vertex().willAllowId(id)) {
-	        	if (id.toString().contains("/")) {
-	        		String fullId = id.toString();
-	        		String[] parts = fullId.split("/");
-	        		// The collection name is the last part of the full name
-	        		String[] collectionParts = parts[0].split("_");
-					String collectionName = collectionParts[collectionParts.length-1];
-					if (collectionName.contains(collection)) {
-	        			id = parts[1];
-	        			
-	        		}
-	        	}
-        		Matcher m = ArangoDBUtil.DOCUMENT_KEY.matcher((String)id);
-        		if (m.matches()) {
-        			vertex = new ArangoDBVertex(id.toString(), collection, this);
-        		}
-        		else {
-            		throw new ArangoDBGraphException(String.format("Given id (%s) has unsupported characters.", id));
-            	}
-        	}
-        	else {
-        		throw Vertex.Exceptions.userSuppliedIdsOfThisTypeNotSupported();
-        	}
-
-        }
-        else {
-        	vertex = new ArangoDBVertex(collection, this);
-        }
-        // The vertex needs to exist before we can attach properties
-        getDatabaseClient().insertVertex(vertex);
-        ElementHelper.attachProperties(vertex, keyValues);
-		vertices.put((String) vertex.id(), vertex);
-        return vertex;
-	}
-
-
 	@Override
-	public void close() {
-		getDatabaseClient().shutdown();
+	public void close() throws Exception {
+		getDatabaseClient().close();
 	}
 
 
@@ -671,14 +610,68 @@ public class ArangoDBGraph implements Graph {
 
 	@Override
 	public Variables variables() {
-		ArangoDBGraphVariables v = getDatabaseClient().getGraphVariables();
-		if (v != null) {
-			v.graph(this);
-			return v;
+		ArangoDBGraphVariables v = null;
+		try {
+			v = graphClient.getGraphVariables();
+		} catch (GraphClient.GraphVariablesNotFoundException e) {
+			v = graphClient.insertGraphVariables(new ArangoDBGraphVariables(name, graphClient));
+		}
+		return v;
+	}
+
+	@Override
+	public Vertex addVertex(Object... keyValues) {
+		logger.info("Creating vertex in graphClient with keyValues: {}", keyValues);
+		ElementHelper.legalPropertyKeyValueArray(keyValues);
+		Object id;
+		String collection;
+		if (!schemaless) {
+			collection = ElementHelper.getLabelValue(keyValues).orElse(null);
+			ElementHelper.validateLabel(collection);
 		}
 		else {
-			throw new ArangoDBGraphException("Existing graphClient does not have a Variables collection");
+			collection = DEFAULT_VERTEX_COLLECTION;
 		}
+		if (!vertexCollections().contains(collection)) {
+			throw new IllegalArgumentException(String.format("Vertex label (%s) not in graphClient (%s) vertex collections.", collection, name));
+		}
+		ArangoDBVertex vertex = null;
+		if (ElementHelper.getIdValue(keyValues).isPresent()) {
+			id = ElementHelper.getIdValue(keyValues).get();
+			if (this.features().vertex().willAllowId(id)) {
+				if (id.toString().contains("/")) {
+					String fullId = id.toString();
+					String[] parts = fullId.split("/");
+					// The collection name is the last part of the full name
+					String[] collectionParts = parts[0].split("_");
+					String collectionName = collectionParts[collectionParts.length-1];
+					if (collectionName.contains(collection)) {
+						id = parts[1];
+
+					}
+				}
+				Matcher m = ArangoDBUtil.DOCUMENT_KEY.matcher((String)id);
+				if (m.matches()) {
+					vertex = new ArangoDBVertex(id.toString(), collection, this);
+				}
+				else {
+					throw new ArangoDBGraphException(String.format("Given id (%s) has unsupported characters.", id));
+				}
+			}
+			else {
+				throw Vertex.Exceptions.userSuppliedIdsOfThisTypeNotSupported();
+			}
+
+		}
+		else {
+			vertex = new ArangoDBVertex(collection, this);
+		}
+		// The vertex needs to exist before we can attach properties, not really!!!
+		// In the new approach we should attach all properties first, then persist!
+		getDatabaseClient().insertVertex(vertex);
+		ElementHelper.attachProperties(vertex, keyValues);
+		vertices.put((String) vertex.id(), vertex);
+		return vertex;
 	}
 
 
