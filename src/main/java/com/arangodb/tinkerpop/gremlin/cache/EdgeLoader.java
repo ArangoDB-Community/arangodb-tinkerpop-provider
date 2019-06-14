@@ -1,6 +1,5 @@
 package com.arangodb.tinkerpop.gremlin.cache;
 
-import com.arangodb.tinkerpop.gremlin.client.ArangoDBGraphException;
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBIterator;
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBEdge;
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBGraph;
@@ -25,13 +24,13 @@ public class EdgeLoader extends CacheLoader<String, Edge> {
 
 		@Override
 		public Edge load(String key) {
-			return graph.getClient().getDocument(key, ArangoDBEdge.class);
+			return graph.getDatabase().getDocument(key, ArangoDBEdge.class);
 		}
 
 		@Override
 		public Map<String, Edge> loadAll(Iterable<? extends String> keys) {
 			Map<String, Edge> result = new HashMap<>();
-			ArangoDBIterator<Edge> it = new ArangoDBIterator<>(graph, graph.getClient().getGraphEdges(Lists.newArrayList(), Collections.emptyList()));
+			ArangoDBIterator<Edge> it = new ArangoDBIterator<>(graph, graph.getDatabase().getGraphEdges(Lists.newArrayList(), Collections.emptyList()));
 			it.forEachRemaining(e -> result.put((String) e.id(), e));
 			return result;
 		}

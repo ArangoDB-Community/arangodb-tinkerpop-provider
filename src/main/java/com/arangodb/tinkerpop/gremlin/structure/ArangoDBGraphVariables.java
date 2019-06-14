@@ -14,6 +14,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import com.arangodb.tinkerpop.gremlin.client.GraphClient;
+import com.arangodb.velocypack.annotations.Expose;
 import org.apache.tinkerpop.gremlin.structure.Graph;
 import org.apache.tinkerpop.gremlin.structure.util.GraphVariableHelper;
 import org.apache.tinkerpop.gremlin.structure.util.StringFactory;
@@ -40,6 +42,9 @@ public class ArangoDBGraphVariables extends ArangoDBBaseDocument implements Grap
     /** The key:value store for properties. */
     
     private final Map<String, Object> store = new HashMap<>(4);
+
+	@Expose(serialize = false, deserialize = false)
+	private GraphClient client;
     
     /**
      * Constructor used for ArabgoDB JavaBeans de-/serialisation.
@@ -52,12 +57,22 @@ public class ArangoDBGraphVariables extends ArangoDBBaseDocument implements Grap
     /**
      * Instantiates a new Arango DB graph variables.
      *
-	 * @param graph the graph
+	 *
 	 */
 
-    public ArangoDBGraphVariables(String key, String label, ArangoDBGraph graph) {
-        super(key, label, graph);
+    public ArangoDBGraphVariables(String key, String label, GraphClient client) {
+        this(key, label, client, false);
     }
+
+	public ArangoDBGraphVariables(String key, String label, GraphClient client, boolean paired) {
+		super(key, label, client.getPrefixedCollectioName(label), paired);
+		this.client = client;
+	}
+
+    public ArangoDBGraphVariables pair(GraphClient client) {
+		return new ArangoDBGraphVariables(_key, label, client, true);
+
+	}
 
     @Override
     public Set<String> keys() {
@@ -77,11 +92,11 @@ public class ArangoDBGraphVariables extends ArangoDBBaseDocument implements Grap
     	Object oldValue = this.store.put(key, value);
     	if (oldValue != null) {
     		if (!oldValue.equals(value)) {
-    			graph.getClient().updateGraphVariables(this);
+				client.updateGraphVariables(this);
     		}
     	}
     	else {
-            graph.getClient().updateGraphVariables(this);
+			client.updateGraphVariables(this);
     	}
     }
 
@@ -89,7 +104,7 @@ public class ArangoDBGraphVariables extends ArangoDBBaseDocument implements Grap
     public void remove(String key) {
     	Object oldValue = this.store.remove(key);
     	if (oldValue != null) {
-            graph.getClient().deleteGraphVariables(this);
+			client.deleteGraphVariables(this);
     	}
     }
 

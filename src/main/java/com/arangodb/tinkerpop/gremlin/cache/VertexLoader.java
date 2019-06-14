@@ -1,6 +1,5 @@
 package com.arangodb.tinkerpop.gremlin.cache;
 
-import com.arangodb.tinkerpop.gremlin.client.ArangoDBGraphException;
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBIterator;
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBGraph;
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBVertex;
@@ -25,13 +24,13 @@ public class VertexLoader extends CacheLoader<String, Vertex> {
 
 	@Override
 	public Vertex load(String key) {
-		return graph.getClient().getVertex(key, ArangoDBVertex.class);
+		return graph.getDatabase().getVertex(key, ArangoDBVertex.class);
 	}
 
 	@Override
 	public Map<String, Vertex> loadAll(Iterable<? extends String> keys) {
 		Map<String, Vertex> result = new HashMap<>();
-		ArangoDBIterator<Vertex> it = new ArangoDBIterator<>(graph, graph.getClient().getGraphVertices(Lists.newArrayList(), Collections.emptyList()));
+		ArangoDBIterator<Vertex> it = new ArangoDBIterator<>(graph, graph.getDatabase().getGraphVertices(Lists.newArrayList(), Collections.emptyList()));
 		it.forEachRemaining(v -> result.put((String) v.id(), v));
 		return result;
 	}

@@ -61,7 +61,7 @@ public abstract class ArangoDBBaseEdge extends ArangoDBBaseDocument {
      * @param graph                 the graph
      */
     public ArangoDBBaseEdge(String key, String label, String from_id, String to_id, ArangoDBGraph graph) {
-        super(key, label, graph);
+        super(key, label, graph.getPrefixedCollectioName(label));
         this._from = from_id;
         this._to = to_id;
     }

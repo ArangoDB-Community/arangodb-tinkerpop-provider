@@ -2,11 +2,24 @@ package com.arangodb.tinkerpop.gremlin.client;
 
 
 import com.arangodb.ArangoCursor;
+import com.arangodb.ArangoGraph;
+import com.arangodb.entity.EdgeDefinition;
 import com.arangodb.model.AqlQueryOptions;
+import com.arangodb.model.GraphCreateOptions;
 
+import java.util.List;
 import java.util.Map;
 
-public interface Database extends AutoCloseable {
+/**
+ * A client to interact with an ArangoDatabase
+ */
+public interface DatabaseClient extends AutoCloseable {
+
+    class GraphCreationException extends Exception {
+        public GraphCreationException(String message) {
+            super(message);
+        }
+    }
 
     /**
      * Get the version of the database
@@ -43,13 +56,34 @@ public interface Database extends AutoCloseable {
     <T> ArangoCursor<T> executeAqlQuery(String query, Map<String, Object> bindVars, AqlQueryOptions aqlQueryOptions,
             Class<T> type) throws ArangoDBGraphException;
 
+
+    /**
+     * Get the graph for the given name
+     * @return
+     */
+
+    ArangoGraph graph(String name);
+
+    /**
+     * Craete a new graph in the database with the given name, edge definitions and options.
+     *
+     * @param graphName             the graph name
+     * @param edgeDefinitions       the edge definitions
+     * @param options               the graph options
+     * @return
+     */
+    ArangoGraph createGraph(
+            String graphName,
+            List<EdgeDefinition> edgeDefinitions,
+            GraphCreateOptions options) throws GraphCreationException;
+
 //
 //    /**
 //     * Connect to a specific ArangoDB database. If the client was previously connected to a DB, all queries on the old
 //     * DB will be terminated and the client linked to the new DB.
 //     */
 //
-//    Database connectTo(String dbname, boolean createDatabase);
+//    DatabaseClient connectTo(String dbname, boolean createDatabase);
 //
 //
 //
@@ -64,10 +98,10 @@ public interface Database extends AutoCloseable {
 //
 //
 //    /**
-//     * Indicates if the Database is ready to be used. When using the Database this method should
+//     * Indicates if the DatabaseClient is ready to be used. When using the DatabaseClient this method should
 //     * be invoked before calling any API to make sure that it is ready to use the underlying DB.
 //     *
-//     * @return true if the Database is ready to be used.
+//     * @return true if the DatabaseClient is ready to be used.
 //     */
 //
 //    boolean isReady();
@@ -75,28 +109,28 @@ public interface Database extends AutoCloseable {
 
 //
 //    /**
-//     * Get the graph variables associated with the graph used by this Database. GraphVariables are stored
+//     * Get the graph variables associated with the graph used by this DatabaseClient. GraphVariables are stored
 //     * as a single document.
 //     * @return An ArangoDBGraphVariables instance that contains the graph variables.
 //     */
 //    ArangoDBGraphVariables getGraphVariables();
 //
 //    /**
-//     * Insert graph variables for the graph used by this Database.
+//     * Insert graph variables for the graph used by this DatabaseClient.
 //     * @param document
 //     * @throws ArangoDBGraphException if the variables are not for the graph.
 //     */
 //    void insertGraphVariables(ArangoDBGraphVariables document);
 //
 //    /**
-//     * Delete the graph variables for the graph used by this Database
+//     * Delete the graph variables for the graph used by this DatabaseClient
 //     * @param document
 //     * @throws ArangoDBGraphException if the variables are not for the graph.
 //     */
 //    void deleteGraphVariables(ArangoDBGraphVariables document);
 //
 //    /**
-//     * Update the graph variables for the graph used by this Database
+//     * Update the graph variables for the graph used by this DatabaseClient
 //     * @param document
 //     * @throws ArangoDBGraphException if the variables are not for the graph.
 //     */

@@ -7,7 +7,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertThat;
 
-import com.arangodb.tinkerpop.gremlin.client.EssentialArangoDatabase;
+import com.arangodb.tinkerpop.gremlin.client.ArngDatabaseClient;
 
 import java.util.*;
 
@@ -49,7 +49,7 @@ public class ClientTest {
 	public ExpectedException exception = ExpectedException.none();
 	
 	private PropertiesConfiguration configuration;
-	private EssentialArangoDatabase client;
+	private ArngDatabaseClient client;
 
 	@Parameterized.Parameter
 	public boolean shouldPrefixCollectionWithGraphName;
@@ -76,7 +76,7 @@ public class ClientTest {
 		Properties arangoProperties = ConfigurationConverter.getProperties(configuration);
 		ArangoDBGraph g = new ArangoDBGraph(configuration);
 		System.out.println(g.features());
-		// client = new EssentialArangoDatabase(g, arangoProperties, "tinkerpop", 30000);
+		// client = new ArngDatabaseClient(g, arangoProperties, "tinkerpop", 30000);
 	}
 
 	@Test
@@ -87,7 +87,7 @@ public class ClientTest {
 //	@After
 //	public void tearDown() {
 //		// Drop used graphs and collections, if present
-//		Database db = client.getDB();
+//		DatabaseClient db = client.getDB();
 //		// know_graph
 //		deleteGraph(db, "knows", true);
 //        // social graph
@@ -99,11 +99,11 @@ public class ClientTest {
 //	}
 //
 //    private boolean deleteGraph(
-//        Database db,
+//        DatabaseClient db,
 //        String name,
 //        boolean dropCollections) {
 //        if (db != null) {
-//            ArangoGraph graph = db.graph(name);
+//            GraphClient graph = db.graph(name);
 //            if (graph.exists()) {
 //                Collection<String> edgeDefinitions = dropCollections ? graph.getEdgeDefinitions() : Collections.emptyList();
 //                Collection<String> vertexCollections = dropCollections ? graph.getVertexCollections(): Collections.emptyList();;
@@ -134,7 +134,7 @@ public class ClientTest {
 //    }
 //
 //
-//	// ********* The following methods test a local EssentialArangoDatabase *********
+//	// ********* The following methods test a local ArngDatabaseClient *********
 //
 //	@Test
 //	public void test_RestrictedUserNewDatabase_should_throw_ArangoDBGraphException() throws Exception {
@@ -142,7 +142,7 @@ public class ClientTest {
 //		exception.expect(ArangoDBGraphException.class);
 //		exception.expectMessage(startsWith("General ArangoDB error (unkown error code)"));
 //		ArangoDBGraph g = new ArangoDBGraph(configuration);
-//		new EssentialArangoDatabase(g, arangoProperties, "demo", 30000, true);
+//		new ArngDatabaseClient(g, arangoProperties, "demo", 30000, true);
 //	}
 //
 //	@Test
@@ -153,7 +153,7 @@ public class ClientTest {
 //		configuration.setProperty("arangodb.password", pwd);
 //		Properties arangoProperties = ConfigurationConverter.getProperties(configuration);
 //		ArangoDBGraph g = new ArangoDBGraph(configuration);
-//		EssentialArangoDatabase localClient = new EssentialArangoDatabase(g, arangoProperties, "demo", 30000, true);
+//		ArngDatabaseClient localClient = new ArngDatabaseClient(g, arangoProperties, "demo", 30000, true);
 //		assertThat(localClient.dbExists(), is(true));
 //		localClient.deleteDb();
 //		localClient.shutdown();
@@ -166,7 +166,7 @@ public class ClientTest {
 //		Properties arangoProperties = ConfigurationConverter.getProperties(configuration);
 //		exception.expect(ArangoDBGraphException.class);
 //		exception.expectMessage(startsWith("DB not found or user has no access:"));
-//		new EssentialArangoDatabase(, arangoProperties, "tinkerpop", 30000);
+//		new ArngDatabaseClient(, arangoProperties, "tinkerpop", 30000);
 //	}
 //
 //	@Test
@@ -174,7 +174,7 @@ public class ClientTest {
 //		configuration.setProperty("arangodb.user", "reader");
 //		configuration.setProperty("arangodb.password", "reader");
 //		Properties arangoProperties = ConfigurationConverter.getProperties(configuration);
-//		EssentialArangoDatabase localClient = new EssentialArangoDatabase(, arangoProperties, "tinkerpop", 30000);
+//		ArngDatabaseClient localClient = new ArngDatabaseClient(, arangoProperties, "tinkerpop", 30000);
 //		assertThat(localClient.dbExists(), is(true));
 //		List<String> verticesCollectionNames = new ArrayList<>();
 //		List<String> edgesCollectionNames = new ArrayList<>();
@@ -187,7 +187,7 @@ public class ClientTest {
 //		localClient.shutdown();
 //	}
 //
-//	// ********* The following tests use the EssentialArangoDatabase from @Setup *********
+//	// ********* The following tests use the ArngDatabaseClient from @Setup *********
 //
 //	@Test
 //	public void test_ServerVersion() throws Exception {
@@ -205,11 +205,11 @@ public class ClientTest {
 //		edgesCollectionNames.add("knows");
 //
 //		client.createGraph(graph_name, verticesCollectionNames, edgesCollectionNames, Collections.emptyList());
-//		Database db = client.getDB();
+//		DatabaseClient db = client.getDB();
 //		assertThat("Graph not found in db", db.graph(graph_name).exists(), is(true));
 //		assertThat("Vertex collection found in db", db.collection(String.format("%sperson", knowsPrefix)).exists(), is(true));
 //		assertThat("Edge collection found in db", db.collection(String.format("%sknows", knowsPrefix)).exists(), is(true));
-//		ArangoGraph g = db.graph(graph_name);
+//		GraphClient g = db.graph(graph_name);
 //		Collection<EdgeDefinition> defs = g.getInfo().getEdgeDefinitions();
 //		assertThat(defs, hasSize(2));       // +1 for ELEMENT_HAS_PROPERTIES
 //		EdgeDefinition d = defs.iterator().next();
@@ -231,12 +231,12 @@ public class ClientTest {
 //
 //
 //		client.createGraph(graph_name, verticesCollectionNames, edgesCollectionNames, relations);
-//		Database db = client.getDB();
+//		DatabaseClient db = client.getDB();
 //		assertThat("Created graph not found in db", db.graph(graph_name).exists(), is(true));
 //		assertThat("Vertex collection not found in db", db.collection(String.format("%smale", socialPrefix)).exists(), is(true));
 //		assertThat("Vertex collection not found in db", db.collection(String.format("%sfemale", socialPrefix)).exists(), is(true));
 //		assertThat("Edge collection found in db", db.collection(String.format("%srelation", socialPrefix)).exists(), is(true));
-//		ArangoGraph g = db.graph(graph_name);
+//		GraphClient g = db.graph(graph_name);
 //		Collection<EdgeDefinition> defs = g.getInfo().getEdgeDefinitions();
 //		assertThat(defs, hasSize(2));
 //		EdgeDefinition d = defs.iterator().next();
@@ -262,14 +262,14 @@ public class ClientTest {
 //
 //
 //		client.createGraph(graph_name, verticesCollectionNames, edgesCollectionNames, relations);
-//		Database db = client.getDB();
+//		DatabaseClient db = client.getDB();
 //		assertThat("Craeted graph not found in db", db.graph(graph_name).exists(), is(true));
 //		assertThat("Vertex collection not found in db", db.collection(String.format("%sgermanCity", routeplannerPrefix)).exists(), is(true));
 //		assertThat("Vertex collection not found in db", db.collection(String.format("%sfrenchCity", routeplannerPrefix)).exists(), is(true));
 //		assertThat("Edge collection found in db", db.collection(String.format("%sfrenchHighway", routeplannerPrefix)).exists(), is(true));
 //		assertThat("Edge collection found in db", db.collection(String.format("%sgermanHighway", routeplannerPrefix)).exists(), is(true));
 //		assertThat("Edge collection found in db", db.collection(String.format("%sinternationalHighway", routeplannerPrefix)).exists(), is(true));
-//		ArangoGraph g = db.graph(graph_name);
+//		GraphClient g = db.graph(graph_name);
 //		Collection<EdgeDefinition> defs = g.getInfo().getEdgeDefinitions();
 //		assertThat("Not all edge definitions created", defs, hasSize(4));
 //		List<String> edgeNames = defs.stream().map(EdgeDefinition::getCollection).collect(Collectors.toList());

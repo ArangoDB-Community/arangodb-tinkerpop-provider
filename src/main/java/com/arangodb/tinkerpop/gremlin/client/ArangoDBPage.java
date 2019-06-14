@@ -3,13 +3,8 @@ package com.arangodb.tinkerpop.gremlin.client;
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBGraph;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-import com.google.common.collect.Lists;
-import org.apache.tinkerpop.gremlin.structure.Edge;
 
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Map;
 
 public class ArangoDBPage<EType extends ArangoDBBaseDocument> implements Iterator<EType> {
 
@@ -53,7 +48,7 @@ public class ArangoDBPage<EType extends ArangoDBBaseDocument> implements Iterato
                         "and the document key separated by /.");
             }
             assert keyInfo[1].equals(collection);
-            return graph.getClient().getElement(keyInfo[0], keyInfo[1], eType);
+            return graph.getDatabase().getElement(keyInfo[0], keyInfo[1], eType);
         }
 
     }

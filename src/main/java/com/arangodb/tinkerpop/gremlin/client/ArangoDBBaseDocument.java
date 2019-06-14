@@ -48,6 +48,7 @@ public abstract class ArangoDBBaseDocument {
 
     /** the graph of the document. */
 
+    @Deprecated
     @Expose(serialize = false, deserialize = false)
     protected ArangoDBGraph graph;
 
@@ -66,17 +67,33 @@ public abstract class ArangoDBBaseDocument {
     /**
      * Instantiates a new Arango DB base document. The document's collection is assigned by requesting the graph to
      * prefix the collection.
-     *
-     * @param key 			        the key to assign to the docuement
+     *  @param key                    the key to assign to the docuement
      * @param label                 the document label
-     * @param graph                 the graph that contains the document
+     * @param collection
      */
 
-    public ArangoDBBaseDocument(String key, String label, ArangoDBGraph graph) {
+    public ArangoDBBaseDocument(
+            String key,
+            String label,
+            String collection) {
         this._key = key;
         this.label = label;
-        this.graph = graph;
-        this.collection = graph.getPrefixedCollectioName(label);
+//        this.graph = graph;
+//        this.collection = graph.getPrefixedCollectioName(label);
+        this.collection = collection;
+    }
+
+    public ArangoDBBaseDocument(
+            String key,
+            String label,
+            String collection,
+            boolean paired) {
+        this._key = key;
+        this.label = label;
+//        this.graph = graph;
+//        this.collection = graph.getPrefixedCollectioName(label);
+        this.collection = collection;
+        this.paired = paired;
     }
 
     /**
