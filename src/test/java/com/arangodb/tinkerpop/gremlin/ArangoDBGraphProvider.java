@@ -214,7 +214,7 @@ public class ArangoDBGraphProvider extends AbstractGraphProvider {
 		}
 		else {
 			ArangoDBGraph agraph = (ArangoDBGraph) graph;
-			client = agraph.getDatabase();
+			client = agraph.getDatabaseClient();
 			client.clear(agraph);
 			agraph.close();
 		}

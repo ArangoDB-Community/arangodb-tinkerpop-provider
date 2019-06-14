@@ -2,7 +2,6 @@ package com.arangodb.tinkerpop.gremlin.client;
 
 import com.arangodb.entity.EdgeDefinition;
 import com.arangodb.model.GraphCreateOptions;
-import com.arangodb.tinkerpop.gremlin.structure.ArangoDBGraph;
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBGraphVariables;
 
 import java.util.List;

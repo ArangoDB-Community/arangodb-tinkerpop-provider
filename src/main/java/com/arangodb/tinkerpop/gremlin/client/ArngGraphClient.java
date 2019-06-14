@@ -34,10 +34,10 @@ public class ArngGraphClient implements GraphClient {
     private final boolean paired;
     private final Cache<String, ArangoDBGraphVariables> cache = CacheBuilder.newBuilder()
             .weakValues()
-            .build(); // look Ma, no CacheLoader
+            .build();
 
-    public ArngGraphClient(DatabaseClient db, String name, boolean shldPrfxCllctnsNms) {
-        this(db, name, shldPrfxCllctnsNms, false);
+    public ArngGraphClient(DatabaseClient db, String graphName, boolean shldPrfxCllctnsNms) {
+        this(db, graphName, shldPrfxCllctnsNms, false);
     }
 
     public ArngGraphClient(

@@ -48,7 +48,7 @@ public class ArangoDBPage<EType extends ArangoDBBaseDocument> implements Iterato
                         "and the document key separated by /.");
             }
             assert keyInfo[1].equals(collection);
-            return graph.getDatabase().getElement(keyInfo[0], keyInfo[1], eType);
+            return graph.getDatabaseClient().getElement(keyInfo[0], keyInfo[1], eType);
         }
 
     }

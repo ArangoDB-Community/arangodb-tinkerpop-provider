@@ -1,8 +1,14 @@
 package com.arangodb.tinkerpop.gremlin.client;
 
+import com.arangodb.ArangoDB;
+import com.arangodb.tinkerpop.gremlin.structure.ArangoDBEdge;
+import com.arangodb.tinkerpop.gremlin.structure.ArangoDBVertex;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationConverter;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.Properties;
@@ -64,7 +70,26 @@ public class PlainArangoDBConfiguration implements ArangoDBConfiguration {
     }
 
     @Override
+    public ArangoDB buildDriver() {
+        try {
+            ByteArrayOutputStream os = new ByteArrayOutputStream();
+            transformToProperties().store(os, null);
+            ByteArrayInputStream targetStream = new ByteArrayInputStream(os.toByteArray());
+            ArangoDBVertexVPack vertexVpack = new ArangoDBVertexVPack();
+            ArangoDBEdgeVPack edgeVPack = new ArangoDBEdgeVPack();
+            return new ArangoDB.Builder().loadProperties(targetStream)
+                    .registerDeserializer(ArangoDBVertex.class, vertexVpack)
+                    .registerSerializer(ArangoDBVertex.class, vertexVpack)
+                    .registerDeserializer(ArangoDBEdge.class, edgeVPack)
+                    .registerSerializer(ArangoDBEdge.class, edgeVPack)
+                    .build();
+        } catch (IOException e) {
+           throw new IllegalStateException("Error writing to the output stream when creating drivier.", e);
+        }
+    }
+
+    @Override
     public boolean createDatabase() {
-        return configuration.getBoolean(PROPERTY_KEY_SHOULD_PREFIX_COLLECTION_NAMES, false);
+        return configuration.getBoolean(PROPERTY_KEY_DB_CREATE, false);
     }
 }

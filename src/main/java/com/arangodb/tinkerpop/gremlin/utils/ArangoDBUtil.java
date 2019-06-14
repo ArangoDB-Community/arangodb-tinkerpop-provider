@@ -202,82 +202,8 @@ public class ArangoDBUtil {
 		}
 	}
 
-	/**
-	 * Create an EdgeDefinition from a relation in the Configuration. The format of a relation is:
-	 * <pre>
-	 * collection:from-&gt;to
-	 * </pre>
-	 * Where collection is the name of the Edge collection, and to and from are comma separated list of
-	 * node collection names.
-	 *
-	 * @param graphName 			the name of the graph
-	 * @param relation 				the relation
-	 * @return an EdgeDefinition that represents the relation.
-	 * @throws ArangoDBGraphException if the relation is malformed
-	 */
-
-	public static EdgeDefinition relationPropertyToEdgeDefinition(
-			String graphName,
-			String relation,
-			boolean shouldPrefixCollectionWithGraphName) throws ArangoDBGraphException {
-		logger.info("Creating EdgeRelation from {}", relation);
-		EdgeDefinition result = new EdgeDefinition();
-		String[] info = relation.split(":");
-		if (info.length != 2) {
-			throw new ArangoDBGraphException("Error in configuration. Malformed relation " + relation);
-		}
-		result.collection(getCollectioName(graphName, info[0], shouldPrefixCollectionWithGraphName));
-		info = info[1].split("->");
-		if (info.length != 2) {
-			throw new ArangoDBGraphException("Error in configuration. Malformed relation> " + relation);
-		}
-		List<String> trimmed = Arrays.stream(info[0].split(","))
-				.map(String::trim)
-				.map(c -> getCollectioName(graphName, c, shouldPrefixCollectionWithGraphName))
-				.collect(Collectors.toList());
-		String[] from = new String[trimmed.size()];
-		from = trimmed.toArray(from);
-
-		trimmed = Arrays.stream(info[1].split(","))
-				.map(String::trim)
-				.map(c -> getCollectioName(graphName, c, shouldPrefixCollectionWithGraphName))
-				.collect(Collectors.toList());
-		String[] to = new String[trimmed.size()];
-		to = trimmed.toArray(to);
-		result.from(from).to(to);
-		return result;
-	}
 
 
-	/**
-	 * Creates the default edge definitions. When no relations are provided, the graph schema is
-	 * assumed to be fully connected, i.e. there is an EdgeDefintion for each possible combination
-	 * of Vertex-Edge-Vertex triplets.
-	 *
-	 * @param graphName 				the graph name
-	 * @param verticesCollectionNames 	the vertex collection names
-	 * @param edgesCollectionNames 		the edge collection names
-	 * @return the list of edge definitions
-	 */
-
-	public static List<EdgeDefinition> createDefaultEdgeDefinitions (
-			String graphName,
-			List<String> verticesCollectionNames,
-			List<String> edgesCollectionNames, boolean shouldPrefixCollectionWithGraphName) {
-		List<EdgeDefinition> result = new ArrayList<>();
-		for (String e : edgesCollectionNames) {
-			for (String from : verticesCollectionNames) {
-				for (String to : verticesCollectionNames) {
-					EdgeDefinition ed = new EdgeDefinition()
-							.collection(getCollectioName(graphName, e, shouldPrefixCollectionWithGraphName))
-							.from(getCollectioName(graphName, from, shouldPrefixCollectionWithGraphName))
-							.to(getCollectioName(graphName, to, shouldPrefixCollectionWithGraphName));
-					result.add(ed);
-				}
-			}
-		}
-		return result;
-	}
 
 
 	/**

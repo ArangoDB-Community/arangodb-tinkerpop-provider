@@ -105,7 +105,7 @@ public class ArangoDBVertex extends ArangoDBBaseDocument implements Vertex, Aran
 			properties().forEachRemaining(VertexProperty::remove);
 			//Remove vertex
 			try {
-				graph.getDatabase().deleteDocument(this);
+				graph.getDatabaseClient().deleteDocument(this);
 				// Need to delete incoming edges too
 			} catch (ArangoDBGraphException ex) {
 				// Pass Removing a property that does not exists should not throw an exception.
@@ -156,7 +156,7 @@ public class ArangoDBVertex extends ArangoDBBaseDocument implements Vertex, Aran
 			edge = new ArangoDBEdge(label, this, ((ArangoDBVertex) inVertex), graph);
 		}
         // The vertex needs to exist before we can attach properties
-		graph.getDatabase().insertEdge(edge);
+		graph.getDatabaseClient().insertEdge(edge);
         ElementHelper.attachProperties(edge, keyValues);
 		return edge;
 	}
@@ -241,7 +241,7 @@ public class ArangoDBVertex extends ArangoDBBaseDocument implements Vertex, Aran
 		if (edgeCollections.isEmpty()) {
 			return Collections.emptyIterator();
 		}
-		return new ArangoDBIterator<>(graph, graph.getDatabase().getVertexEdges(this, edgeCollections, direction));
+		return new ArangoDBIterator<>(graph, graph.getDatabaseClient().getVertexEdges(this, edgeCollections, direction));
 	}
 
 
@@ -253,7 +253,7 @@ public class ArangoDBVertex extends ArangoDBBaseDocument implements Vertex, Aran
 		if (edgeCollections.isEmpty()) {
 			return Collections.emptyIterator();
 		}
-		ArangoCursor<ArangoDBVertex> documentNeighbors = graph.getDatabase().getDocumentNeighbors(this, edgeCollections, direction, ArangoDBPropertyFilter.empty(), ArangoDBVertex.class);
+		ArangoCursor<ArangoDBVertex> documentNeighbors = graph.getDatabaseClient().getDocumentNeighbors(this, edgeCollections, direction, ArangoDBPropertyFilter.empty(), ArangoDBVertex.class);
 		return new ArangoDBIterator<>(graph, documentNeighbors);
 	}
 
@@ -307,7 +307,7 @@ public class ArangoDBVertex extends ArangoDBBaseDocument implements Vertex, Aran
 	 */
 	public void save() {
 		if (paired) {
-			graph.getDatabase().updateDocument(this);
+			graph.getDatabaseClient().updateDocument(this);
 		}
 	}
 

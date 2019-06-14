@@ -9,21 +9,21 @@ import java.util.Properties;
 
 public interface ArangoDBConfiguration {
 
-    static final String PROPERTY_KEY_PREFIX = "gremlin.arangodb.conf";
+    String PROPERTY_KEY_PREFIX = "gremlin.arangodb.conf";
 
-    static final String PROPERTY_KEY_DB_NAME = "graph.db";
+    String PROPERTY_KEY_DB_NAME = "graph.db";
 
-    static final String PROPERTY_KEY_DB_CREATE = "graph.db.create";
+    String PROPERTY_KEY_DB_CREATE = "graph.db.create";
 
-    static final String PROPERTY_KEY_GRAPH_NAME = "graph.name";
+    String PROPERTY_KEY_GRAPH_NAME = "graph.name";
 
-    static final String PROPERTY_KEY_VERTICES = "graph.vertex";
+    String PROPERTY_KEY_VERTICES = "graph.vertex";
 
-    static final String PROPERTY_KEY_EDGES = "graph.edge";
+    String PROPERTY_KEY_EDGES = "graph.edge";
 
-    static final String PROPERTY_KEY_RELATIONS = "graph.relation";
+    String PROPERTY_KEY_RELATIONS = "graph.relation";
 
-    static final String PROPERTY_KEY_SHOULD_PREFIX_COLLECTION_NAMES = "graph.shouldPrefixCollectionNames";
+    String PROPERTY_KEY_SHOULD_PREFIX_COLLECTION_NAMES = "graph.shouldPrefixCollectionNames";
 
     /**
      * Get the vertex collection names defined in the configuration. Returns an empty collection if no vertex collections
@@ -99,10 +99,18 @@ public interface ArangoDBConfiguration {
      * Transform the configuration into a Properties representation
      * @return A Properties version of the configuration.
      */
+
     Properties transformToProperties();
 
-
+    /**
+     * Reurn the configuration used to create this ArangoDBConfiguration
+     * @return
+     */
     Configuration configuration();
 
-
+    /**
+     * Build a new ArangoDB (driver) using this configuration
+     * @return
+     */
+    ArangoDB buildDriver();
 }

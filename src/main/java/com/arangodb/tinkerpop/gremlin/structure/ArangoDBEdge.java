@@ -101,7 +101,7 @@ public class ArangoDBEdge extends ArangoDBBaseEdge implements Edge, ArangoDBElem
 		logger.info("removing {} from graph {}.", this._key(), graph.name());
 		if (paired) {
 			try {
-				graph.getDatabase().deleteEdge(this);
+				graph.getDatabaseClient().deleteEdge(this);
 			} catch (ArangoDBGraphException ex) {
 
 			}
@@ -123,7 +123,7 @@ public class ArangoDBEdge extends ArangoDBBaseEdge implements Edge, ArangoDBElem
 			break;
 		}
 		String edgeCollection = isPaired() ? label() : graph.getPrefixedCollectioName(label());
-		return new ArangoDBIterator<>(graph, graph.getDatabase().getEdgeVertices(_id(), edgeCollection, from, to));
+		return new ArangoDBIterator<>(graph, graph.getDatabaseClient().getEdgeVertices(_id(), edgeCollection, from, to));
 	}
 
 	@Override
@@ -157,7 +157,7 @@ public class ArangoDBEdge extends ArangoDBBaseEdge implements Edge, ArangoDBElem
 	@Override
 	public void save() {
 		if (paired) {
-			graph.getDatabase().updateEdge(this);
+			graph.getDatabaseClient().updateEdge(this);
 		}
 	}
 
