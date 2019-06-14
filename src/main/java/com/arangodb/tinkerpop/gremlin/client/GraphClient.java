@@ -71,4 +71,11 @@ public interface GraphClient {
      */
 
     String getPrefixedCollectioName(String collectionName);
+
+    /**
+     * Returns true if the graph has been paired with an instance in the DB.
+     * @see #pairWithDatabaseGraph(List, List, GraphCreateOptions)
+     * @return
+     */
+    boolean isPaired();
 }

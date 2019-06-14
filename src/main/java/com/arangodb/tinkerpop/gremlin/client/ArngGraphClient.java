@@ -5,11 +5,17 @@ import com.arangodb.ArangoGraph;
 import com.arangodb.entity.EdgeDefinition;
 import com.arangodb.model.GraphCreateOptions;
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBGraphVariables;
+import com.google.common.base.Throwables;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.util.concurrent.UncheckedExecutionException;
 import org.apache.tinkerpop.gremlin.structure.Graph;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 import static com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil.edgeDefinitionString;
@@ -26,15 +32,18 @@ public class ArngGraphClient implements GraphClient {
     private final boolean shouldPrefixCollectionNames;
     private final String graphName;
     private final boolean paired;
+    private final Cache<String, ArangoDBGraphVariables> cache = CacheBuilder.newBuilder()
+            .weakValues()
+            .build(); // look Ma, no CacheLoader
 
     public ArngGraphClient(DatabaseClient db, String name, boolean shldPrfxCllctnsNms) {
-        this(db, shldPrfxCllctnsNms, name, false);
+        this(db, name, shldPrfxCllctnsNms, false);
     }
 
     public ArngGraphClient(
         DatabaseClient db,
-        boolean shouldPrefixCollectionNames,
         String graphName,
+        boolean shouldPrefixCollectionNames,
         boolean paired) {
         this.db = db;
         this.shouldPrefixCollectionNames = shouldPrefixCollectionNames;
@@ -43,8 +52,7 @@ public class ArngGraphClient implements GraphClient {
     }
 
     @Override
-    public ArangoDBGraphVariables insertGraphVariables(
-            ArangoDBGraphVariables variables) {
+    public ArangoDBGraphVariables insertGraphVariables(ArangoDBGraphVariables variables) {
         logger.debug("Insert graph variables {} in {}", variables, graphName);
         if (variables.isPaired()) {
             throw new ArangoDBGraphException("Paired documents can not be inserted, only updated");
@@ -71,33 +79,50 @@ public class ArngGraphClient implements GraphClient {
         if (!it.hasNext()) {
             throw new ArangoDBGraphException("Failed to insert graph variables.");
         }
-        return it.next();
+        variables = it.next().pair(this);
+        cache.put("variables", variables);
+        return variables;
     }
 
     @Override
 	public ArangoDBGraphVariables getGraphVariables() throws GraphVariablesNotFoundException {
 		logger.debug("Get graph variables");
-        VariableIterator it;
-		try {
-            Map<String, Object> bindVars = new HashMap<>();
-            bindVars.put("key", graphName);
-            it = new VariableIterator(this,
-                    db.executeAqlQuery(
+        final ArngGraphClient client = this;
+        try {
+            return cache.get("variables", new Callable<ArangoDBGraphVariables>() {
+                @Override
+                public ArangoDBGraphVariables call() throws GraphVariablesNotFoundException {
+                    VariableIterator it;
+                    try {
+                        Map<String, Object> bindVars = new HashMap<>();
+                        bindVars.put("key", graphName);
+                        it = new VariableIterator(client,
+                        db.executeAqlQuery(
                         new ArangoDBQueryBuilder().document(GRAPH_VARIABLES_COLLECTION, "key").toString(),
                         bindVars,
                         null,
                         ArangoDBGraphVariables.class));
-		} catch (ArangoDBException e) {
-			logger.error("Error executing AQL query to get graph variables");
-            throw ArangoDBExceptions.getArangoDBException(e);
-		}
-		if (!it.hasNext()) {
-            throw new GraphVariablesNotFoundException(String.format("No graph variables found for graph %s", graphName));
+                    } catch (ArangoDBException e) {
+                        logger.error("Error executing AQL query to get graph variables");
+                        throw ArangoDBExceptions.getArangoDBException(e);
+                    }
+                    if (!it.hasNext()) {
+                        throw new GraphVariablesNotFoundException(String.format("No graph variables found for graph %s", graphName));
+                    }
+                    ArangoDBGraphVariables result = it.next();
+                    result.collection(client.getPrefixedCollectioName(result.label));
+                    return result;
+                    }
+                });
+        } catch (ExecutionException e) {
+            Throwables.propagateIfPossible(
+                    e.getCause(), GraphVariablesNotFoundException.class);
+            throw new IllegalStateException(e);
+        } catch (UncheckedExecutionException e) {
+            Throwables.throwIfUnchecked(e.getCause());
+            throw new IllegalStateException(e);
         }
-        ArangoDBGraphVariables result = it.next();
-		result.collection(result.label);
-		return result;
-	}
+    }
 
     @Override
     public void updateGraphVariables(ArangoDBGraphVariables variables) throws GraphVariablesNotFoundException {
@@ -123,8 +148,8 @@ public class ArngGraphClient implements GraphClient {
             throw new GraphVariablesNotFoundException("Failed to update graph variables.");
         }
         variables._rev(it.next()._rev());
+        cache.put("variables", variables);
         logger.info("Document updated, new rev {}", variables._rev());
-
     }
 
 	@Override
@@ -144,6 +169,7 @@ public class ArngGraphClient implements GraphClient {
 			throw ArangoDBExceptions.getArangoDBException(e);
 		}
 		variables.setPaired(false);
+		cache.invalidate("variables");
 	}
 
     @Override
@@ -169,10 +195,15 @@ public class ArngGraphClient implements GraphClient {
             return collectionName;
         }
         if(shouldPrefixCollectionNames) {
-            return String.format("%s_%s", name, collectionName);
+            return String.format("%s_%s", graphName, collectionName);
         }else{
             return collectionName;
         }
+    }
+
+    @Override
+    public boolean isPaired() {
+        return paired;
     }
 
     /**
