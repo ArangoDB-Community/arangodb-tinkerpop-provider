@@ -15,6 +15,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import com.arangodb.tinkerpop.gremlin.client.GraphClient;
+import com.arangodb.tinkerpop.gremlin.client.GraphVariablesClient;
 import com.arangodb.velocypack.annotations.Expose;
 import org.apache.tinkerpop.gremlin.structure.Graph;
 import org.apache.tinkerpop.gremlin.structure.util.GraphVariableHelper;
@@ -44,7 +45,7 @@ public class ArangoDBGraphVariables extends ArangoDBBaseDocument implements Grap
     private final Map<String, Object> store = new HashMap<>(4);
 
 	@Expose(serialize = false, deserialize = false)
-	private GraphClient client;
+	private GraphVariablesClient client;
     
     /**
      * Constructor used for ArabgoDB JavaBeans de-/serialisation.
@@ -61,17 +62,18 @@ public class ArangoDBGraphVariables extends ArangoDBBaseDocument implements Grap
 	 *
 	 */
 
-    public ArangoDBGraphVariables(String graphName, GraphClient client) {
+    public ArangoDBGraphVariables(String graphName, GraphVariablesClient client) {
         this(graphName, client, false);
     }
 
-	public ArangoDBGraphVariables(String graphName, GraphClient client, boolean paired) {
+
+	public ArangoDBGraphVariables(String graphName, GraphVariablesClient client, boolean paired) {
 		super(graphName, client.GRAPH_VARIABLES_COLLECTION, client.GRAPH_VARIABLES_COLLECTION, paired);
 		this.client = client;
 	}
 
 	// FIXME Move to interface
-    public ArangoDBGraphVariables pair(GraphClient client) {
+    public ArangoDBGraphVariables pair(GraphVariablesClient client) {
 		return new ArangoDBGraphVariables(_key, client, true);
 
 	}
@@ -101,7 +103,7 @@ public class ArangoDBGraphVariables extends ArangoDBBaseDocument implements Grap
 				client.updateGraphVariables(this);
 			}
 		}
-    	catch (GraphClient.GraphVariablesNotFoundException ex) {
+    	catch (GraphVariablesClient.GraphVariablesNotFoundException ex) {
     		throw new IllegalStateException("Unable to update graph variables information.", ex);
 		}
     }
@@ -118,6 +120,7 @@ public class ArangoDBGraphVariables extends ArangoDBBaseDocument implements Grap
 	public int hashCode() {
 		final int prime = 31;
 		int result = super.hashCode();
+		result = prime * result + ((client == null) ? 0 : client.graphName().hashCode());
 		result = prime * result + ((store.isEmpty()) ? 0 : store.hashCode());
 		return result;
 	}
@@ -131,11 +134,24 @@ public class ArangoDBGraphVariables extends ArangoDBBaseDocument implements Grap
 		if (getClass() != obj.getClass())
 			return false;
 		ArangoDBGraphVariables other = (ArangoDBGraphVariables) obj;
-		if (store.isEmpty()) {
-			if (!other.store.isEmpty())
+		if (client == null) {
+			if (other.client != null) {
 				return false;
-		} else if (!store.equals(other.store))
+			}
+		}
+		else {
+			if (!client.equals(other.client)) {
+				return false;
+			}
+		}
+		if (store.isEmpty()) {
+			if (!other.store.isEmpty()) {
+				return false;
+			}
+		}
+		else if (!store.equals(other.store)) {
 			return false;
+		}
 		return true;
 	}
 

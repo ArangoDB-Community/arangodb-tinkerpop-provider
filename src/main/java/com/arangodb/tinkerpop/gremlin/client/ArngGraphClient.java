@@ -2,9 +2,11 @@ package com.arangodb.tinkerpop.gremlin.client;
 
 import com.arangodb.ArangoDBException;
 import com.arangodb.ArangoGraph;
+import com.arangodb.entity.DocumentEntity;
 import com.arangodb.entity.EdgeDefinition;
 import com.arangodb.model.GraphCreateOptions;
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBGraphVariables;
+import com.arangodb.tinkerpop.gremlin.structure.ArangoDBVertex;
 import com.google.common.base.Throwables;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
@@ -31,9 +33,6 @@ public class ArngGraphClient implements GraphClient {
     private final boolean prefixCollectionNames;
     private final String graphName;
     private final boolean paired;
-    private final Cache<String, ArangoDBGraphVariables> cache = CacheBuilder.newBuilder()
-            .weakValues()
-            .build();
 
     /**
      * Create an ArngGraphClient instance that is not paired with the underlying ArangoDB graph. After construction
@@ -71,126 +70,7 @@ public class ArngGraphClient implements GraphClient {
         this.paired = paired;
     }
 
-    @Override
-    public ArangoDBGraphVariables insertGraphVariables(ArangoDBGraphVariables variables) {
-        logger.debug("Insert graph variables {} in {}", variables, graphName);
-        if (variables.isPaired()) {
-            throw new ArangoDBGraphException("Paired documents can not be inserted, only updated");
-        }
-        VariableIterator it;
-        try {
-            Map<String, Object> bindVars = new HashMap<>();
-            bindVars.put("doc", variables);
-            it = new VariableIterator(
-                    this,
-                        db.executeAqlQuery(
-                            new ArangoDBQueryBuilder().insertDocument(GraphClient.GRAPH_VARIABLES_COLLECTION, "doc").toString(),
-                            bindVars,
-                            null,
-                            ArangoDBGraphVariables.class));
-        } catch (ArangoDBException e) {
-            logger.error("Error executing AQL query to insert graph variables");
-            ArangoDBGraphException arangoDBException = ArangoDBExceptions.getArangoDBException(e);
-            if (arangoDBException.getErrorCode() == 1210) {
-                throw Graph.Exceptions.vertexWithIdAlreadyExists(variables._key);
-            }
-            throw arangoDBException;
-        }
-        if (!it.hasNext()) {
-            throw new ArangoDBGraphException("Failed to insert graph variables.");
-        }
-        variables = it.next().pair(this);
-        cache.put("variables", variables);
-        return variables;
-    }
 
-    @Override
-	public ArangoDBGraphVariables getGraphVariables() throws GraphVariablesNotFoundException {
-		logger.debug("Get graph variables");
-        final ArngGraphClient client = this;
-        try {
-            return cache.get("variables", new Callable<ArangoDBGraphVariables>() {
-                @Override
-                public ArangoDBGraphVariables call() throws GraphVariablesNotFoundException {
-                    VariableIterator it;
-                    try {
-                        Map<String, Object> bindVars = new HashMap<>();
-                        bindVars.put("key", graphName);
-                        it = new VariableIterator(client,
-                        db.executeAqlQuery(
-                        new ArangoDBQueryBuilder().document(GraphClient.GRAPH_VARIABLES_COLLECTION, "key").toString(),
-                        bindVars,
-                        null,
-                        ArangoDBGraphVariables.class));
-                    } catch (ArangoDBException e) {
-                        logger.error("Error executing AQL query to get graph variables");
-                        throw ArangoDBExceptions.getArangoDBException(e);
-                    }
-                    if (!it.hasNext()) {
-                        throw new GraphVariablesNotFoundException(String.format("No graph variables found for graph %s", graphName));
-                    }
-                    ArangoDBGraphVariables result = it.next();
-                    result.collection(client.getPrefixedCollectioName(result.label));
-                    return result;
-                    }
-                });
-        } catch (ExecutionException e) {
-            Throwables.propagateIfPossible(
-                    e.getCause(), GraphVariablesNotFoundException.class);
-            throw new IllegalStateException(e);
-        } catch (UncheckedExecutionException e) {
-            Throwables.throwIfUnchecked(e.getCause());
-            throw new IllegalStateException(e);
-        }
-    }
-
-    @Override
-    public void updateGraphVariables(ArangoDBGraphVariables variables) throws GraphVariablesNotFoundException {
-        logger.debug("Update variables {} in {}", variables.toString(), graphName);
-        if (!variables.isPaired()) {
-            throw new ArangoDBGraphException("Unpaired variables can not be updated, only inserted");
-        }
-        VariableIterator it;
-        try {
-            Map<String, Object> bindVars = new HashMap<>();
-            bindVars.put("key", variables._key());
-            it = new VariableIterator(this,
-                    db.executeAqlQuery(
-                            new ArangoDBQueryBuilder().updateDocument(GraphClient.GRAPH_VARIABLES_COLLECTION, "key").toString(),
-                            bindVars,
-                            null,
-                            ArangoDBGraphVariables.class));
-        } catch (ArangoDBException e) {
-            logger.error("Error executing AQL query to update graph variables");
-            throw ArangoDBExceptions.getArangoDBException(e);
-        }
-        if (!it.hasNext()) {
-            throw new GraphVariablesNotFoundException("Failed to update graph variables.");
-        }
-        variables._rev(it.next()._rev());
-        cache.put("variables", variables);
-        logger.info("Document updated, new rev {}", variables._rev());
-    }
-
-	@Override
-	public void deleteGraphVariables(ArangoDBGraphVariables variables) {
-		logger.debug("Delete variables {} in {}", variables, graphName);
-		try {
-            Map<String, Object> bindVars = new HashMap<>();
-            bindVars.put("key", variables._key());
-            new VariableIterator(this,
-                db.executeAqlQuery(
-                        new ArangoDBQueryBuilder().deleteDocument(GraphClient.GRAPH_VARIABLES_COLLECTION, "key").toString(),
-                        bindVars,
-                       null,
-                        ArangoDBGraphVariables.class));
-		} catch (ArangoDBException e) {
-            logger.error("Error executing AQL query to delete graph variables");
-			throw ArangoDBExceptions.getArangoDBException(e);
-		}
-		variables.setPaired(false);
-		cache.invalidate("variables");
-	}
 
     @Override
     public GraphClient pairWithDatabaseGraph(
@@ -203,15 +83,13 @@ public class ArngGraphClient implements GraphClient {
         }
         else {
             db.createGraph(graphName, edgeDefinitions, options);
-            ArangoDBGraphVariables variables = new ArangoDBGraphVariables(graphName,this);
-            insertGraphVariables(variables);
         }
         return new ArngGraphClient(db, graphName, prefixCollectionNames, true);
     }
 
     @Override
     public String getPrefixedCollectioName(String collectionName) {
-        if (GraphClient.GRAPH_VARIABLES_COLLECTION.equals(collectionName)) {
+        if (GraphVariablesClient.GRAPH_VARIABLES_COLLECTION.equals(collectionName)) {
             return collectionName;
         }
         if(prefixCollectionNames) {
@@ -224,6 +102,48 @@ public class ArngGraphClient implements GraphClient {
     @Override
     public boolean isPaired() {
         return paired;
+    }
+
+    @Override
+    public ArangoDBVertex insertVertex(ArangoDBVertex vertex) {
+        logger.debug("Insert document {} in {}", vertex, graphName);
+		if (vertex.isPaired()) {
+			throw new ArangoDBGraphException("Paired docuemnts can not be inserted, only updated");
+		}
+        VertexIterator it;
+        try {
+            Map<String, Object> bindVars = new HashMap<>();
+            bindVars.put("doc", vertex);
+            it = new VertexIterator(
+                    this,
+                    db.executeAqlQuery(
+                            new ArangoDBQueryBuilder().insertDocument(vertex.collection, "doc").toString(),
+                            bindVars,
+                            null,
+                            ArangoDBVertex.class));
+        } catch (ArangoDBException e) {
+            logger.error("Error executing AQL query to insert graph variables");
+            ArangoDBGraphException arangoDBException = ArangoDBExceptions.getArangoDBException(e);
+            if (arangoDBException.getErrorCode() == 1210) {
+                throw Graph.Exceptions.vertexWithIdAlreadyExists(vertex._key);
+            }
+            throw arangoDBException;
+        }
+        if (!it.hasNext()) {
+            throw new ArangoDBGraphException("Failed to insert graph variables.");
+        }
+        return new ArangoDBVertex()
+        vertex._id(documentEntity.getId());
+        vertex._rev(documentEntity.getRev());
+		if (vertex._key() == null) {
+            vertex._key(documentEntity.getKey());
+		}
+        vertex.setPaired(true);
+    }
+
+    @Override
+    public void close() throws Exception {
+        db.close();
     }
 
     /**
@@ -271,8 +191,15 @@ public class ArngGraphClient implements GraphClient {
         }
     }
 
-    private void checkVertexCollections(List<String> verticesCollectionNames, ArangoGraph graph, GraphCreateOptions options) {
-        List<String> allVertexCollections = new ArrayList<>(verticesCollectionNames);
+    /**
+     * Check that the desired vertex collections match the vertex collections used by the graph.
+     * @param vertexCollections     the names of the vertex collections
+     * @param graph                 the graph
+     * @param options               the graph options
+     */
+
+    private void checkVertexCollections(List<String> vertexCollections, ArangoGraph graph, GraphCreateOptions options) {
+        List<String> allVertexCollections = new ArrayList<>(vertexCollections);
         final Collection<String> orphanCollections = options.getOrphanCollections();
         if (orphanCollections != null) {
             allVertexCollections.addAll(orphanCollections);
@@ -288,5 +215,4 @@ public class ArngGraphClient implements GraphClient {
             throw new ArangoDBGraphException("Not all graph vertex collections appear in the configured vertex collections. Missing " + avc);
         }
     }
-
 }

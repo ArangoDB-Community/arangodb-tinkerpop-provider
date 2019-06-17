@@ -25,7 +25,7 @@ public class VariableIterator implements Iterator<ArangoDBGraphVariables> {
 
 	private final ArangoCursor<ArangoDBGraphVariables> delegate;
 
-	private final GraphClient client;
+	private final GraphVariablesClient client;
 
 	/**
 	 * Instantiates a new ArangoDB iterator.
@@ -33,7 +33,7 @@ public class VariableIterator implements Iterator<ArangoDBGraphVariables> {
 	 * @param client 				the graph client
 	 * @param delegate 				the delegate iterator
 	 */
-	public VariableIterator(GraphClient client, ArangoCursor<ArangoDBGraphVariables> delegate) {
+	public VariableIterator(GraphVariablesClient client, ArangoCursor<ArangoDBGraphVariables> delegate) {
 		super();
 		this.delegate = delegate;
 		this.client = client;

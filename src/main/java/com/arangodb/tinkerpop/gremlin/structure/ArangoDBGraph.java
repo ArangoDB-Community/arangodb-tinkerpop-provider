@@ -460,9 +460,11 @@ public class ArangoDBGraph implements Graph {
 
 	/** A ArngDatabaseClient to handle the connection to the DatabaseClient. */
 
-	private final DatabaseClient databaseClient;
+	// private final DatabaseClient databaseClient;
 
 	private final GraphClient graphClient;
+
+	private final GraphVariablesClient variablesClient;
 
 	/** The name. */
 
@@ -491,13 +493,13 @@ public class ArangoDBGraph implements Graph {
      * @param configuration		the Apache Commons configuration
      * @return 					the Arango DB graphClient
      */
-
+	// FIXME Move this to another class
     public static ArangoDBGraph open(Configuration configuration) {
-		ArangoDBConfiguration arangoConfig = new PlainArangoDBConfiguration(configuration);
-		String dbname = arangoConfig.databaseName()
+		final ArangoDBConfiguration arangoConfig = new PlainArangoDBConfiguration(configuration);
+		final String dbname = arangoConfig.databaseName()
 				.orElseThrow(() -> new IllegalStateException("DatabaseClient name property missing from configuration."));
-
-		ServerClient driver = new ArngServerClient(arangoConfig.buildDriver());
+		final String graphName = arangoConfig.graphName().orElseThrow(() -> new IllegalStateException("Graph name property missing from configuration."));
+		final ServerClient driver = new ArngServerClient(arangoConfig.buildDriver());
 		ArangoDatabase database = driver.getDatabase(dbname);
 		if (!database.exists()) {
 			if (arangoConfig.createDatabase()) {
@@ -515,9 +517,11 @@ public class ArangoDBGraph implements Graph {
 		}
 
 		DatabaseClient databaseClient = new ArngDatabaseClient(database);
+		// FIXME GraphClient could only use the configuration...
+
 		GraphClient graphClient = new ArngGraphClient(
 				databaseClient,
-				arangoConfig.graphName().orElseThrow(() -> new IllegalStateException("Graph name property missing from configuration.")),
+				graphName,
 				arangoConfig.shouldPrefixCollectionNames());
 		final List<String> prefVCols = arangoConfig.vertexCollections().stream().map(graphClient::getPrefixedCollectioName).collect(Collectors.toList());
 		final List<String> prefECols = arangoConfig.edgeCollections().stream().map(graphClient::getPrefixedCollectioName).collect(Collectors.toList());
@@ -532,18 +536,18 @@ public class ArangoDBGraph implements Graph {
 		} catch (EdgeDefinitions.MalformedRelationException e) {
 			throw new ArangoDBGraphException(e);
 		}
-		return new ArangoDBGraph(arangoConfig, databaseClient, graphClient);
+
+		return new ArangoDBGraph(arangoConfig, graphClient, new ArngGraphVariablesClient(databaseClient, graphName));
 	}
 
 	/**
 	 * Creates a Graph
 	 *
 	 * @param configuration 		the ArangoDBConfiguration
-	 * @param databaseClient		the database client
 	 * @param graphClient			the graphClient client
 	 */
 
-	public ArangoDBGraph(ArangoDBConfiguration configuration, DatabaseClient databaseClient, GraphClient graphClient) {
+	public ArangoDBGraph(ArangoDBConfiguration configuration, GraphClient graphClient, GraphVariablesClient variablesClient) {
 
 		logger.info("Creating new ArangoDB Graph from configuration");
 		arangoConfig = configuration;
@@ -563,8 +567,8 @@ public class ArangoDBGraph implements Graph {
 			schemaless = true;
 			edgeCollections.add(DEFAULT_EDGE_COLLECTION);
 		}
-		this.databaseClient = databaseClient;
 		this.graphClient = graphClient;
+		this.variablesClient = variablesClient;
 		// FIXME Cache time expire should be configurable
 		vertices = CacheBuilder.newBuilder()
 				.expireAfterAccess(10, TimeUnit.SECONDS)
@@ -576,7 +580,7 @@ public class ArangoDBGraph implements Graph {
 
 	@Override
 	public void close() throws Exception {
-		getDatabaseClient().close();
+		graphClient.close();
 	}
 
 
@@ -600,8 +604,6 @@ public class ArangoDBGraph implements Graph {
 		return FEATURES;
 	}
 
-
-
 	@Override
 	public Transaction tx() {
 		throw Graph.Exceptions.transactionsNotSupported();
@@ -609,13 +611,11 @@ public class ArangoDBGraph implements Graph {
 
 	@Override
 	public Variables variables() {
-		ArangoDBGraphVariables v = null;
 		try {
-			v = graphClient.getGraphVariables();
-		} catch (GraphClient.GraphVariablesNotFoundException e) {
-			v = graphClient.insertGraphVariables(new ArangoDBGraphVariables(name, graphClient));
+			return variablesClient.getGraphVariables();
+		} catch (GraphVariablesClient.GraphVariablesNotFoundException e) {
+			return variablesClient.insertGraphVariables(new ArangoDBGraphVariables(name, variablesClient));
 		}
-		return v;
 	}
 
 	@Override
@@ -667,7 +667,7 @@ public class ArangoDBGraph implements Graph {
 		}
 		// The vertex needs to exist before we can attach properties, not really!!!
 		// In the new approach we should attach all properties first, then persist!
-		getDatabaseClient().insertVertex(vertex);
+		graphClient.insertVertex(vertex);
 		ElementHelper.attachProperties(vertex, keyValues);
 		vertices.put((String) vertex.id(), vertex);
 		return vertex;
@@ -827,18 +827,6 @@ public class ArangoDBGraph implements Graph {
 	 */
 	private Collection<String> relations() {
 		return arangoConfig.relations();
-	}
-
-
-
-	/**
-	 * Returns the ArngDatabaseClient object.
-	 *
-	 * @return the ArngDatabaseClient object
-	 */
-
-	public DatabaseClient getDatabaseClient() {
-		return databaseClient;
 	}
 
    // TODO Decide which of these methods we want to keep
