@@ -92,14 +92,18 @@ public class ArangoDBGraphVariables extends ArangoDBBaseDocument implements Grap
     public void set(String key, Object value) {
     	GraphVariableHelper.validateVariable(key, value);
     	Object oldValue = this.store.put(key, value);
-    	if (oldValue != null) {
-    		if (!oldValue.equals(value)) {
+    	try {
+			if (oldValue != null) {
+				if (!oldValue.equals(value)) {
+					client.updateGraphVariables(this);
+				}
+			} else {
 				client.updateGraphVariables(this);
-    		}
-    	}
-    	else {
-			client.updateGraphVariables(this);
-    	}
+			}
+		}
+    	catch (GraphClient.GraphVariablesNotFoundException ex) {
+    		throw new IllegalStateException("Unable to update graph variables information.", ex);
+		}
     }
 
     @Override

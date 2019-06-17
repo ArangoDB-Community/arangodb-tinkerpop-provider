@@ -15,7 +15,6 @@ import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 
 import com.arangodb.ArangoDatabase;
-import com.arangodb.entity.EdgeDefinition;
 import com.arangodb.model.GraphCreateOptions;
 import com.arangodb.tinkerpop.gremlin.cache.EdgeLoader;
 import com.arangodb.tinkerpop.gremlin.cache.VertexLoader;
@@ -53,7 +52,7 @@ import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
  * <p>
  * An ArangoDBGraph is instantiated from an Apache Commons Configuration instance. The configuration
  * must provide both TinkerPop and ArangoDB configuration options. The ArangoDB options are
- * described in the ArangoDB Java Driver <a href="https://github.com/arangodb/arangodb-java-driver/blob/master/docs/Drivers/Java/Reference/Setup.md">documentation.</a>
+ * described in the ArangoDB Java ServerClient <a href="https://github.com/arangodb/arangodb-java-driver/blob/master/docs/Drivers/Java/Reference/Setup.md">documentation.</a>
  *
  * For the TinkerPop part, the configuration must provide as a minimum the databaseClient name and the
  * graphClient name. If no vertex, edge and relation information is provided, the graphClient will be considered
@@ -498,13 +497,13 @@ public class ArangoDBGraph implements Graph {
 		String dbname = arangoConfig.databaseName()
 				.orElseThrow(() -> new IllegalStateException("DatabaseClient name property missing from configuration."));
 
-		Driver driver = new ArngDriver(arangoConfig.buildDriver());
+		ServerClient driver = new ArngServerClient(arangoConfig.buildDriver());
 		ArangoDatabase database = driver.getDatabase(dbname);
 		if (!database.exists()) {
 			if (arangoConfig.createDatabase()) {
 				try {
 					database = driver.createDatabase(dbname);
-				} catch (Driver.DatabaseCreationException e) {
+				} catch (ServerClient.DatabaseCreationException e) {
 					throw new ArangoDBGraphException("Unable to crate the databaseClient " + dbname);
 				}
 			}

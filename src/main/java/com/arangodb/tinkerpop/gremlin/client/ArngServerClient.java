@@ -4,12 +4,12 @@ import com.arangodb.ArangoDB;
 import com.arangodb.ArangoDBException;
 import com.arangodb.ArangoDatabase;
 
-public class ArngDriver implements Driver {
+public class ArngServerClient implements ServerClient {
 
     private final ArangoDB delegate;
 
 
-    public ArngDriver(ArangoDB delegate) {
+    public ArngServerClient(ArangoDB delegate) {
         this.delegate = delegate;
     }
 

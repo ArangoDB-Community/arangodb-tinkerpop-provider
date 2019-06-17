@@ -5,6 +5,10 @@ import com.arangodb.entity.EdgeDefinition;
 import java.util.Collection;
 import java.util.List;
 
+/**
+ * Edge definitions are used to create graphs or to check their structure. This interface provides methods for creating
+ * edge definitions from the information in the Graph configuration
+ */
 public interface EdgeDefinitions {
 
     class MalformedRelationException extends Exception {

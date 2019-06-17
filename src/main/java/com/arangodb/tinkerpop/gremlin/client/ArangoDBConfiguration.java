@@ -7,6 +7,10 @@ import java.util.Collection;
 import java.util.Optional;
 import java.util.Properties;
 
+/**
+ * This interface defines the API for working with a (Apache Commons) configuration when used to configure an #ArangoDBGraph
+ *
+ */
 public interface ArangoDBConfiguration {
 
     String PROPERTY_KEY_PREFIX = "gremlin.arangodb.conf";

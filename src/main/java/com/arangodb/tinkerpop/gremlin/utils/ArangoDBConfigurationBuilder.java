@@ -348,7 +348,7 @@ public class ArangoDBConfigurationBuilder {
 	 *
 	 * @param host 					the host in the form url:port
 	 * @return a reference to this object.
-	 * @see <a href="https://github.com/arangodb/arangodb-java-driver/blob/master/docs/Drivers/Java/Reference/Setup.md">ArangoDB Java Driver</a>
+	 * @see <a href="https://github.com/arangodb/arangodb-java-driver/blob/master/docs/Drivers/Java/Reference/Setup.md">ArangoDB Java ServerClient</a>
 	 */
 	
 	public ArangoDBConfigurationBuilder arangoHosts(String host) {
@@ -361,7 +361,7 @@ public class ArangoDBConfigurationBuilder {
 	 *
 	 * @param timeout 					the tiemout
 	 * @return a reference to this object.
-	 * @see <a href="https://github.com/arangodb/arangodb-java-driver/blob/master/docs/Drivers/Java/Reference/Setup.md">ArangoDB Java Driver</a>
+	 * @see <a href="https://github.com/arangodb/arangodb-java-driver/blob/master/docs/Drivers/Java/Reference/Setup.md">ArangoDB Java ServerClient</a>
 	 */
 	
 	public ArangoDBConfigurationBuilder arangoTimeout(int timeout) {
@@ -374,7 +374,7 @@ public class ArangoDBConfigurationBuilder {
 	 *
 	 * @param user 					the user
 	 * @return a reference to this object.
-	 * @see <a href="https://github.com/arangodb/arangodb-java-driver/blob/master/docs/Drivers/Java/Reference/Setup.md">ArangoDB Java Driver</a>
+	 * @see <a href="https://github.com/arangodb/arangodb-java-driver/blob/master/docs/Drivers/Java/Reference/Setup.md">ArangoDB Java ServerClient</a>
 	 */
 	
 	public ArangoDBConfigurationBuilder arangoUser(String user) {
@@ -388,7 +388,7 @@ public class ArangoDBConfigurationBuilder {
 	 *
 	 * @param password the password
 	 * @return a reference to this object.
-	 * @see <a href="https://github.com/arangodb/arangodb-java-driver/blob/master/docs/Drivers/Java/Reference/Setup.md">ArangoDB Java Driver</a>
+	 * @see <a href="https://github.com/arangodb/arangodb-java-driver/blob/master/docs/Drivers/Java/Reference/Setup.md">ArangoDB Java ServerClient</a>
 	 */
 	
 	public ArangoDBConfigurationBuilder arangoPassword(String password) {
@@ -401,7 +401,7 @@ public class ArangoDBConfigurationBuilder {
 	 *
 	 * @param useSsl 					true, to use SSL connection.
 	 * @return a reference to this object.
-	 * @see <a href="https://github.com/arangodb/arangodb-java-driver/blob/master/docs/Drivers/Java/Reference/Setup.md">ArangoDB Java Driver</a>
+	 * @see <a href="https://github.com/arangodb/arangodb-java-driver/blob/master/docs/Drivers/Java/Reference/Setup.md">ArangoDB Java ServerClient</a>
 	 */
 	
 	public ArangoDBConfigurationBuilder arangoSSL(boolean useSsl) {
@@ -414,7 +414,7 @@ public class ArangoDBConfigurationBuilder {
 	 *
 	 * @param size 					the size
 	 * @return a reference to this object.
-	 * @see <a href="https://github.com/arangodb/arangodb-java-driver/blob/master/docs/Drivers/Java/Reference/Setup.md">ArangoDB Java Driver</a>
+	 * @see <a href="https://github.com/arangodb/arangodb-java-driver/blob/master/docs/Drivers/Java/Reference/Setup.md">ArangoDB Java ServerClient</a>
 	 */
 	
 	public ArangoDBConfigurationBuilder arangoVelocyStreamChunk(long size) {
@@ -428,7 +428,7 @@ public class ArangoDBConfigurationBuilder {
 	 *
 	 * @param connections 					the connections
 	 * @return a reference to this object.
-	 * @see <a href="https://github.com/arangodb/arangodb-java-driver/blob/master/docs/Drivers/Java/Reference/Setup.md">ArangoDB Java Driver</a>
+	 * @see <a href="https://github.com/arangodb/arangodb-java-driver/blob/master/docs/Drivers/Java/Reference/Setup.md">ArangoDB Java ServerClient</a>
 	 */
 	
 	public ArangoDBConfigurationBuilder arangoMaxConnections(int connections) {
@@ -441,7 +441,7 @@ public class ArangoDBConfigurationBuilder {
 	 *
 	 * @param time 				the time
 	 * @return a reference to this object.
-	 * @see <a href="https://github.com/arangodb/arangodb-java-driver/blob/master/docs/Drivers/Java/Reference/Setup.md">ArangoDB Java Driver</a>
+	 * @see <a href="https://github.com/arangodb/arangodb-java-driver/blob/master/docs/Drivers/Java/Reference/Setup.md">ArangoDB Java ServerClient</a>
 	 */
 	
 	public ArangoDBConfigurationBuilder arangoTTL(long time) {
@@ -458,7 +458,7 @@ public class ArangoDBConfigurationBuilder {
 	 *
 	 * @param protocol 				the protocol
 	 * @return a reference to this object.
-	 * @see <a href="https://github.com/arangodb/arangodb-java-driver/blob/master/docs/Drivers/Java/Reference/Setup.md">ArangoDB Java Driver</a>
+	 * @see <a href="https://github.com/arangodb/arangodb-java-driver/blob/master/docs/Drivers/Java/Reference/Setup.md">ArangoDB Java ServerClient</a>
 	 */
 	
 	public ArangoDBConfigurationBuilder arangoNetworkProtocol(Protocol protocol) {
@@ -472,7 +472,7 @@ public class ArangoDBConfigurationBuilder {
 	 *
 	 * @param strategy 				the strategy
 	 * @return a reference to this object.
-	 * @see <a href="https://github.com/arangodb/arangodb-java-driver/blob/master/docs/Drivers/Java/Reference/Setup.md">ArangoDB Java Driver</a>
+	 * @see <a href="https://github.com/arangodb/arangodb-java-driver/blob/master/docs/Drivers/Java/Reference/Setup.md">ArangoDB Java ServerClient</a>
 	 */
 	
 	public ArangoDBConfigurationBuilder arangoNetworkProtocol(LoadBalancingStrategy strategy) {
@@ -485,7 +485,7 @@ public class ArangoDBConfigurationBuilder {
 	 *
 	 * @param hostList the host list
 	 * @return a reference to this object.
-	 * @see <a href="https://github.com/arangodb/arangodb-java-driver/blob/master/docs/Drivers/Java/Reference/Setup.md">ArangoDB Java Driver</a>
+	 * @see <a href="https://github.com/arangodb/arangodb-java-driver/blob/master/docs/Drivers/Java/Reference/Setup.md">ArangoDB Java ServerClient</a>
 	 */
 	
 	public ArangoDBConfigurationBuilder arangoAcquireHostList(boolean hostList) {

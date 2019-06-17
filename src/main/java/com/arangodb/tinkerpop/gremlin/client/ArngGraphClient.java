@@ -20,29 +20,53 @@ import java.util.stream.Collectors;
 
 import static com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil.edgeDefinitionString;
 
+/**
+ * A client to connect to graphs on the ArangoDB server.
+ */
 public class ArngGraphClient implements GraphClient {
 
     private static final Logger logger = LoggerFactory.getLogger(ArngGraphClient.class);
 
     private final DatabaseClient db;
-    private final boolean shouldPrefixCollectionNames;
+    private final boolean prefixCollectionNames;
     private final String graphName;
     private final boolean paired;
     private final Cache<String, ArangoDBGraphVariables> cache = CacheBuilder.newBuilder()
             .weakValues()
             .build();
 
-    public ArngGraphClient(DatabaseClient db, String graphName, boolean shldPrfxCllctnsNms) {
-        this(db, graphName, shldPrfxCllctnsNms, false);
+    /**
+     * Create an ArngGraphClient instance that is not paired with the underlying ArangoDB graph. After construction
+     * {@link #pairWithDatabaseGraph(List, List, GraphCreateOptions)} should be invoked to get a paired instance.
+     * @param db                    the database client to reach the db that contains the graph
+     * @param graphName             the graph name
+     * @param prfxCllctnsNms        a boolean flag to indicate if graph collections are prefixed or not
+     *
+     * @see #pairWithDatabaseGraph(List, List, GraphCreateOptions)
+     */
+    public ArngGraphClient(DatabaseClient db, String graphName, boolean prfxCllctnsNms) {
+        this(db, graphName, prfxCllctnsNms, false);
     }
 
-    public ArngGraphClient(
+    /**
+     * Create an ArngGraphClient instance that is paired with the underlying ArangoDB graph. This method is private
+     * as {@link #pairWithDatabaseGraph(List, List, GraphCreateOptions)} is the only way to safely pair this client
+     * to the underlying graph as it does error check or creation correctly.
+     *
+     * @param db                    the database client to reach the db that contains the graph
+     * @param graphName             the graph name
+     * @param shldPrfxCllctnsNms    a boolean flag to indicate if graph collections are prefixed or not
+     * @param paired                a boolean flag to indicate if the client is paired
+     *
+     * @see #pairWithDatabaseGraph(List, List, GraphCreateOptions)
+     */
+    private ArngGraphClient(
         DatabaseClient db,
         String graphName,
-        boolean shouldPrefixCollectionNames,
+        boolean shldPrfxCllctnsNms,
         boolean paired) {
         this.db = db;
-        this.shouldPrefixCollectionNames = shouldPrefixCollectionNames;
+        this.prefixCollectionNames = shldPrfxCllctnsNms;
         this.graphName = graphName;
         this.paired = paired;
     }
@@ -182,7 +206,7 @@ public class ArngGraphClient implements GraphClient {
             ArangoDBGraphVariables variables = new ArangoDBGraphVariables(graphName,this);
             insertGraphVariables(variables);
         }
-        return new ArngGraphClient(db, graphName, shouldPrefixCollectionNames, true);
+        return new ArngGraphClient(db, graphName, prefixCollectionNames, true);
     }
 
     @Override
@@ -190,7 +214,7 @@ public class ArngGraphClient implements GraphClient {
         if (GraphClient.GRAPH_VARIABLES_COLLECTION.equals(collectionName)) {
             return collectionName;
         }
-        if(shouldPrefixCollectionNames) {
+        if(prefixCollectionNames) {
             return String.format("%s_%s", graphName, collectionName);
         }else{
             return collectionName;
