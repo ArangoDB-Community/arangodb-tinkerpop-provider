@@ -19,7 +19,12 @@ import java.util.stream.Collectors;
 
 import static com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil.edgeDefinitionString;
 
-public class PlainArangoDBConfiguration implements GraphConfiguration {
+/**
+ * An implementaiton of {@link GraphConfiguration} for an ArngGraph.
+ *
+ * @author Horacio Hoyos Rodriguez (https://www.york.ac.uk)
+ */
+public class ArngGraphConfiguration implements GraphConfiguration {
 
     public class MalformedRelationException extends Exception {
         public MalformedRelationException(String message) {
@@ -29,7 +34,7 @@ public class PlainArangoDBConfiguration implements GraphConfiguration {
 
     private final Configuration configuration;
 
-    public PlainArangoDBConfiguration(Configuration configuration) {
+    public ArngGraphConfiguration(Configuration configuration) {
         this.configuration = configuration.subset(PROPERTY_KEY_PREFIX);
     }
 

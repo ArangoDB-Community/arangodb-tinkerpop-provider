@@ -524,7 +524,7 @@ public class ArangoDBQueryBuilder {
 	public ArangoDBQueryBuilder updateDocument(
 		String collection,
 		String documentVariable) {
-		queryBuilder.append(String.format("UPDATE %s IN %s RETURN NEW", documentVariable, collection));
+		queryBuilder.append(String.format("UPDATE %s IN %s RETURN NEW._rev", documentVariable, collection));
 		return this;
 	}
 

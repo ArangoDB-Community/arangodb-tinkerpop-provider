@@ -113,33 +113,16 @@ public class ArangoDBVertexProperty<V> extends ArangoDBElementProperty<V> implem
         return cardinality;
     }
 
-    /**
-     * This method is intended for rapid deserialization
-     * @return
-     */
-    public void attachProperties(Collection<ArangoDBElementProperty> properties) {
-        this.pManager.attachProperties(properties);
-    }
-
-    @Override
-    public void save() {
-        this.element.save();
-    }
-
     @Override
     public void removeProperty(ArangoDBElementProperty<?> property) {
-        this.pManager.removeProperty(property);
+        pManager.removeProperty(property);
     }
 
     @Override
-    public void graph(ArangoDBGraph graph) {
-
+    public <PV> void attachProperties(Iterator<Property<PV>> properties) {
+        pManager.attachProperties(properties);
     }
 
-    @Override
-    public void setPaired(boolean paired) {
-
-    }
 
     @Override
     public String toString() {

@@ -12,6 +12,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * An implementation of EdgeClient for an ArngGraph
+ *
+ * @author Horacio Hoyos Rodriguez (https://www.york.ac.uk)
+ */
 public class ArngEdgeClient implements EdgeClient {
 
     private static final Logger logger = LoggerFactory.getLogger(ArngEdgeClient.class);
@@ -62,7 +67,7 @@ public class ArngEdgeClient implements EdgeClient {
         Map<String, Object> bindVars = new HashMap<>();
         ArangoDBQueryBuilder queryBuilder = new ArangoDBQueryBuilder();
         List<String> edgeCollections = new ArrayList<>();
-        edgeCollections.add(graphClient.getPrefixedCollectioName(edge.label()));
+        edgeCollections.add(graph.getDBCollectionName(edge.label()));
         try {
             queryBuilder.with(edgeCollections, bindVars)
                     .documentById(edge.handle(), "e", bindVars)

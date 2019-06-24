@@ -32,7 +32,6 @@ public class ArangoDBElementProperty<V> implements Property<V> {
     protected String key;
 
     /** The element that owns the property */
-    @Expose(serialize = false, deserialize = false)
     protected ArngElement element;
 
     /** The value of the property */

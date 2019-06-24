@@ -1007,7 +1007,7 @@ public class ArngDatabaseClient implements DatabaseClient {
 //	 * @return the configuration
 //	 * @throws ArangoDBException the arango DB exception
 //	 */
-////	public PlainArangoDBConfiguration getConfiguration() {
+////	public ArngGraphConfiguration getConfiguration() {
 ////		return configuration;
 ////	}
 //

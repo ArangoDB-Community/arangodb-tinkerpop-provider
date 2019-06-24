@@ -9,8 +9,10 @@ import java.util.regex.Pattern;
  * Common exceptions to use with an ArangoDB. This class is intended to translate ArangoDB
  * error codes into meaningful exceptions with standard messages. ArangoDBException exception
  * is a RuntimeException intended to stop execution.
+ *
+ *
+ * @author Horacio Hoyos Rodriguez (https://www.york.ac.uk)
  */
-
 public class ArangoDBExceptions {
 
     /** Regex to matches response messages from the ArangoDB client */

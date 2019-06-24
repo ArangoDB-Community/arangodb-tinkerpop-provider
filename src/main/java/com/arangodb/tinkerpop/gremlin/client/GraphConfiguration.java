@@ -6,7 +6,6 @@ import com.arangodb.model.GraphCreateOptions;
 import org.apache.commons.configuration.Configuration;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
 
@@ -149,7 +148,7 @@ public interface GraphConfiguration {
 
     Collection<String> dbEdgeCollections();
 
-    void checkGraphForErrors(ArangoGraph databaseGraph, GraphCreateOptions options) throws EdgeDefinitions.MalformedRelationException, PlainArangoDBConfiguration.MalformedRelationException;
+    void checkGraphForErrors(ArangoGraph databaseGraph, GraphCreateOptions options) throws EdgeDefinitions.MalformedRelationException, ArngGraphConfiguration.MalformedRelationException;
 
     void createGraph(String graphName, GraphCreateOptions options);
 

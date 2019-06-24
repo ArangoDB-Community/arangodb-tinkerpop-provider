@@ -2,7 +2,7 @@ package com.arangodb.tinkerpop.gremlin.structure;
 
 import org.apache.tinkerpop.gremlin.structure.Edge;
 
-public interface ArngEdge extends ArngElement, Edge {
+public interface ArngEdge extends ArngDocument, ArngElement, Edge {
 
     /**
      * Return the id of the from/source vertex.

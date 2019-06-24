@@ -9,13 +9,16 @@
 package com.arangodb.tinkerpop.gremlin.structure;
 
 import org.apache.tinkerpop.gremlin.structure.Element;
+import org.apache.tinkerpop.gremlin.structure.Property;
+
+import java.util.Iterator;
 
 /**
  * The Interface ArngElement.
  * 
  * @author Horacio Hoyos Rodriguez (@horaciohoyosr)
  */
-public interface ArngElement extends ArngDocument, Element {
+public interface ArngElement extends Element {
 
     /**
 	 *  Remove the primaryKey from the element's vertexProperties.
@@ -25,10 +28,10 @@ public interface ArngElement extends ArngDocument, Element {
 	void removeProperty(ArangoDBElementProperty<?> property);
 
 	/**
-	 * Attach all the contained vertexProperties by setting their element/element to this element.
+	 * Attach the properties to the element.
 	 * This method should be called after vertex/edge elements have been deserialized.
 	 */
-//	void attachProperties();
 
+	<V> void attachProperties(Iterator<Property<V>> properties);
 
 }

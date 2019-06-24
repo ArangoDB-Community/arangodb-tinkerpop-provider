@@ -191,6 +191,7 @@ public class ArangoDBVertex extends BaseArngDocument implements Vertex, ArngElem
 				}
 			}
 		}
+		client.update(this);
 		return p;
 	}
 
@@ -218,10 +219,7 @@ public class ArangoDBVertex extends BaseArngDocument implements Vertex, ArngElem
 		this.pManager.removeProperty(property);
 	}
 
-	/**
-	 * This method is intended for rapid deserialization
-	 * @return
-	 */
+	@Override
 	public void attachProperties(String key, Collection<ArangoDBVertexProperty> properties) {
 		this.pManager.attachVertexProperties(key, properties);
 	}
