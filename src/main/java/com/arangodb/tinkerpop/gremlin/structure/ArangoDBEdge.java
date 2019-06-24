@@ -275,6 +275,7 @@ public class ArangoDBEdge extends BaseArngDocument implements ArngEdge {
 	 * This method is intended for rapid deserialization
 	 * @return
 	 */
+
 	public <V> void attachProperties(Iterator<Property<V>>  properties) {
 		this.pManager.attachProperties(properties);
 	}

@@ -15,7 +15,9 @@ import org.slf4j.LoggerFactory;
 import java.util.Map;
 
 /**
- * A client to connect to graphs on the ArangoDB server.
+ * An implementation of GraphClient for an ArngGraph
+ *
+ * @author Horacio Hoyos Rodriguez (https://www.york.ac.uk)
  */
 public class ArngGraphClient implements GraphClient {
 
@@ -85,10 +87,10 @@ public class ArngGraphClient implements GraphClient {
         logger.debug("Delete vertex {} in {}", vertex, graph.name());
         try {
             db.graph(graph.name())
-                    .edgeCollection(graph.getDBCollectionName(vertex.label()))
-                    .deleteEdge(vertex.primaryKey());
+                    .vertexCollection(graph.getDBCollectionName(vertex.label()))
+                    .deleteVertex(vertex.primaryKey());
         } catch (ArangoDBException e) {
-            logger.error("Failed to delete vertex: {}", e.getErrorMessage());
+            logger.error("Failed to remove vertex: {}", e.getErrorMessage());
             throw ArangoDBExceptions.getArangoDBException(e);
         }
     }
@@ -97,11 +99,13 @@ public class ArngGraphClient implements GraphClient {
     public void update(ArangoDBVertex vertex) {
         logger.debug("Update vertex {} in {}", vertex, graph.name());
         try {
-            db.graph(graph.name())
-                    .edgeCollection(vertex.label())
-                    .updateEdge(vertex.primaryKey(), vertex);
+             vertex.revision(
+                     db.graph(graph.name())
+                        .vertexCollection(vertex.label())
+                        .updateVertex(vertex.primaryKey(), vertex)
+                     .getRev());
         } catch (ArangoDBException e) {
-            logger.error("Failed to update edge: {}", e.getErrorMessage());
+            logger.error("Failed to update vertex: {}", e.getErrorMessage());
             throw ArangoDBExceptions.getArangoDBException(e);
         }
     }
@@ -159,9 +163,11 @@ public class ArngGraphClient implements GraphClient {
     public void update(ArangoDBEdge edge) {
         logger.debug("Update edge {} in {}", edge, graph.name());
         try {
+            edge.revision(
             db.graph(graph.name())
-                .edgeCollection(edge.label())
-                .updateEdge(edge.primaryKey(), edge);
+                        .edgeCollection(edge.label())
+                        .updateEdge(edge.primaryKey(), edge)
+                    .getRev());
         } catch (ArangoDBException e) {
             logger.error("Failed to update edge: {}", e.getErrorMessage());
             throw ArangoDBExceptions.getArangoDBException(e);
