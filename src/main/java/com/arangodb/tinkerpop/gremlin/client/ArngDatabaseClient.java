@@ -117,6 +117,8 @@ public class ArngDatabaseClient implements DatabaseClient {
 		return g;
 	}
 
+
+
 	//	/**
 //	 * Create a new graph.
 //	 *
@@ -268,13 +270,13 @@ public class ArngDatabaseClient implements DatabaseClient {
 //	 * vertices, properties or variables.
 //	 *
 //	 * @param <V> 					the value type
-//	 * @param id            		the id of the document (should be a valid ArangoDB _id)
+//	 * @param id            		the id of the document (should be a valid ArangoDB handle)
 //	 * @param docClass 				the returned document class
 //	 * @return the document
 //	 * @throws ArangoDBGraphException 	If there was an error retrieving the document
 //	 */
 //
-//	public <V extends ArangoDBBaseDocument> V getDocument(
+//	public <V extends BaseArngDocument> V getDocument(
 //		String id,
 //		Class<V> docClass) {
 //		logger.debug("Get document with id {}", id);
@@ -285,38 +287,38 @@ public class ArngDatabaseClient implements DatabaseClient {
 //			logger.error("Failed to retrieve vertex: {}", e.getErrorMessage());
 //			throw new ArangoDBGraphException("Failed to retrieve vertex.", e);
 //		}
-//		result.collection(result._id().split("/")[1]);
+//		result.label(result.handle().split("/")[1]);
 //		result.graph(graph);
 //		return result;
 //	}
 //
 //	/**
-//	 * Insert a ArangoDBBaseDocument in the graph. The document is updated with the id, rev and key (if not present).
+//	 * Insert a BaseArngDocument in the graph. The document is updated with the id, revision and primaryKey (if not present).
 //	 * @param document 				the document
 //	 * @throws ArangoDBGraphException 	If there was an error inserting the document
 //	 */
 //
-//	public void insertDocument(ArangoDBBaseDocument document) {
+//	public void insertDocument(BaseArngDocument document) {
 //		logger.debug("Insert document {} in {}", document, graph.name());
 //		if (document.isPaired()) {
 //			throw new ArangoDBGraphException("Paired docuemnts can not be inserted, only updated");
 //		}
 //		DocumentEntity documentEntity;
 //		try {
-//			documentEntity = db.collection(document.collection())
+//			documentEntity = db.label(document.label())
 //					.insertDocument(document);
 //		} catch (ArangoDBException e) {
-//			logger.error("Failed to insert document: {}", e.getMessage());
+//			logger.error("Failed to insertEdge document: {}", e.getMessage());
 //			ArangoDBGraphException arangoDBException = ArangoDBExceptions.getArangoDBException(e);
 //			if (arangoDBException.getErrorCode() == 1210) {
-//				throw Graph.Exceptions.vertexWithIdAlreadyExists(document._key);
+//				throw Graph.Exceptions.vertexWithIdAlreadyExists(document.primaryKey);
 //			}
 //			throw arangoDBException;
 //		}
-//		document._id(documentEntity.getId());
-//		document._rev(documentEntity.getRev());
-//		if (document._key() == null) {
-//			document._key(documentEntity.getKey());
+//		document.handle(documentEntity.getId());
+//		document.revision(documentEntity.getRev());
+//		if (document.primaryKey() == null) {
+//			document.primaryKey(documentEntity.getKey());
 //		}
 //		document.setPaired(true);
 //	}
@@ -327,10 +329,10 @@ public class ArngDatabaseClient implements DatabaseClient {
 //	 * @throws ArangoDBGraphException 	If there was an error deleting the document
 //	 */
 //
-//	public void deleteDocument(ArangoDBBaseDocument document) {
+//	public void deleteDocument(BaseArngDocument document) {
 //		logger.debug("Delete document {} in {}", document, graph.name());
 //		try {
-//			db.collection(document.collection()).deleteDocument(document._key());
+//			db.label(document.label()).deleteDocument(document.primaryKey());
 //		} catch (ArangoDBException e) {
 //			logger.error("Failed to delete document: {}", e.getErrorMessage());
 //            throw ArangoDBExceptions.getArangoDBException(e);
@@ -345,32 +347,32 @@ public class ArngDatabaseClient implements DatabaseClient {
 //	 * @throws ArangoDBGraphException 	If there was an error updating the document
 //	 */
 //
-//	public void updateDocument(ArangoDBBaseDocument document) {
+//	public void updateDocument(BaseArngDocument document) {
 //		logger.debug("Update document {} in {}", document, graph.name());
 //		DocumentUpdateEntity documentUpdateEntity;
 //		try {
-//			documentUpdateEntity = db.collection(document.collection())
-//					.updateDocument(document._key(), document);
+//			documentUpdateEntity = db.label(document.label())
+//					.updateDocument(document.primaryKey(), document);
 //		} catch (ArangoDBException e) {
 //			logger.error("Failed to update document: {}", e.getErrorMessage());
 //            throw ArangoDBExceptions.getArangoDBException(e);
 //		}
-//		logger.info("Document updated, new rev {}", documentUpdateEntity.getRev());
-//		document._rev(documentUpdateEntity.getRev());
+//		logger.info("ArngDocument updated, new revision {}", documentUpdateEntity.getRev());
+//		document.revision(documentUpdateEntity.getRev());
 //	}
 
 //
-//	public <E extends ArangoDBBaseDocument> E getElement(String key, String collection, Class<E> eType)  {
-//		logger.debug("Get element with id {} from {}:{}", key, graph.name(), collection);
+//	public <E extends BaseArngDocument> E getElement(String primaryKey, String label, Class<E> eType)  {
+//		logger.debug("Get element with id {} from {}:{}", primaryKey, graph.name(), label);
 //		E result;
 //		try {
-//			ArangoCollection dbcol = db.collection(collection);
-//			result = dbcol.getDocument(key, eType);
+//			ArangoCollection dbcol = db.label(label);
+//			result = dbcol.getDocument(primaryKey, eType);
 //		} catch (ArangoDBException e) {
 //			logger.error("Failed to retrieve element: {}", e.getErrorMessage());
 //			throw new ArangoDBGraphException("Failed to retrieve element.", e);
 //		}
-//		result.collection(collection);
+//		result.label(label);
 //		result.graph(graph);
 //		return result;
 //	}
@@ -378,35 +380,35 @@ public class ArngDatabaseClient implements DatabaseClient {
 //	/**
 //	 * Get an ArangoDBVertex from the database.
 //	 *
-//	 * @param key                   the key of the document
-//	 * @param collection            the collection from which the document is retrieved
+//	 * @param primaryKey                   the primaryKey of the document
+//	 * @param label            the label from which the document is retrieved
 //	 * @return 						the ArangoDBVertex
 //	 * @throws ArangoDBGraphException 	If there was an error retrieving the document
 //	 */
 //
-//	public ArangoDBVertex getVertex(String key, String collection) {
-//		logger.debug("Get vertex with id {} from {}:{}", key, graph.name(), collection);
+//	public ArangoDBVertex getVertex(String primaryKey, String label) {
+//		logger.debug("Get vertex with id {} from {}:{}", primaryKey, graph.name(), label);
 //		ArangoDBVertex result;
 //		try {
 //			result = db.graph(graph.name())
-//					.vertexCollection(collection)
-//					.getVertex(key, ArangoDBVertex.class);
+//					.vertexCollection(label)
+//					.getVertex(primaryKey, ArangoDBVertex.class);
 //		} catch (ArangoDBException e) {
 //			logger.error("Failed to retrieve vertex: {}", e.getErrorMessage());
 //			throw new ArangoDBGraphException("Failed to retrieve vertex.", e);
 //		}
-//		result.collection(collection);
+//		result.label(label);
 //		result.graph(graph);
 //		return result;
 //	}
 //
 //	/**
-//	 * Insert an ArangoDBVertex in the graph. The ArangoDBVertex is updated with the id, rev and key (if not present)
-//	 * @param vertex              the ArangoDBVertex to insert
+//	 * Insert an ArangoDBVertex in the graph. The ArangoDBVertex is updated with the id, revision and primaryKey (if not present)
+//	 * @param vertex              the ArangoDBVertex to insertEdge
 //	 * @throws ArangoDBGraphException 	If there was an error inserting the vertex
 //	 */
 //
-//	public void insertVertex(ArangoDBVertex vertex) {
+//	public void insertEdge(ArangoDBVertex vertex) {
 //		insertDocument(vertex);
 //	}
 //
@@ -419,51 +421,39 @@ public class ArngDatabaseClient implements DatabaseClient {
 //	 *
 //	 * @param <V> 					the value type
 //	 * @param id            		the id (name) of the edge
-//	 * @param collection 			the collection from which the edge is retrieved
+//	 * @param label 			the label from which the edge is retrieved
 //	 * @param edgeClass 			the edge's specialised class
 //	 * @return the edge
 //	 * @throws ArangoDBGraphException 	If there was an error retrieving the edge
 //	 */
 //
-//	public <V extends ArangoDBBaseEdge> V getEdge(
+//	public <V extends BaseArngEdge> V getEdge(
 //		String id,
-//		String collection,
+//		String label,
 //        Class<V> edgeClass) {
-//		logger.debug("Get edge {} from {}:{}", id, graph.name(), graph.getPrefixedCollectioName(collection));
+//		logger.debug("Get edge {} from {}:{}", id, graph.name(), graph.getDBCollectionName(label));
 //		V result;
 //		try {
 //			result = db.graph(graph.name())
-//					.edgeCollection(graph.getPrefixedCollectioName(collection))
+//					.edgeCollection(graph.getDBCollectionName(label))
 //					.getEdge(id, edgeClass);
 //		} catch (ArangoDBException e) {
 //			logger.error("Failed to retrieve edge: {}", e.getErrorMessage());
 //            throw ArangoDBExceptions.getArangoDBException(e);
 //		}
-//		result.collection(collection);
+//		result.label(label);
 //		result.graph(graph);
 //		return result;
 //	}
 //
 //	/**
-//	 * Insert an edge in the graph. The edge is updated with the id, rev and name (if not
+//	 * Insert an edge in the graph. The edge is updated with the id, revision and name (if not
 //	 * present)
 //	 * @param edge            		the edge
 //	 * @throws ArangoDBGraphException 	If there was an error inserting the edge
 //	 */
 //
-//	public void insertEdge(ArangoDBBaseEdge edge) {
-//		validateElementGraph(edge);
-//		logger.debug("Insert edge {} in {} ", edge, graph.name());
-//		try {
-//			db.graph(graph.name())
-//					.edgeCollection(edge.collection())
-//					.insertEdge(edge);
-//		} catch (ArangoDBException e) {
-//			logger.error("Failed to insert edge: {}", e.getErrorMessage());
-//			throw ArangoDBExceptions.getArangoDBException(e);
-//		}
-//		edge.setPaired(true);
-//	}
+
 //
 //	/**
 //	 * Delete an edge from the graph.
@@ -471,13 +461,13 @@ public class ArngDatabaseClient implements DatabaseClient {
 //	 * @throws ArangoDBGraphException 	If there was an error deleting the edge
 //	 */
 //
-//	public void deleteEdge(ArangoDBBaseEdge edge) {
+//	public void deleteEdge(BaseArngEdge edge) {
 //		validateElementGraph(edge);
 //		logger.debug("Delete edge {} in {}", edge, graph.name());
 //		try {
 //			db.graph(graph.name())
-//			.edgeCollection(edge.collection())
-//			.deleteEdge(edge._key());
+//			.edgeCollection(edge.label())
+//			.deleteEdge(edge.primaryKey());
 //		} catch (ArangoDBException e) {
 //			logger.error("Failed to delete vertex: {}", e.getErrorMessage());
 //            throw ArangoDBExceptions.getArangoDBException(e);
@@ -491,20 +481,20 @@ public class ArngDatabaseClient implements DatabaseClient {
 //	 * @throws ArangoDBGraphException 	If there was an error updating the edge
 //	 */
 //
-//	public void updateEdge(ArangoDBBaseEdge edge) {
+//	public void updateEdge(BaseArngEdge edge) {
 //		validateElementGraph(edge);
 //		logger.debug("Update edge {} in {}", edge, graph.name());
 //		EdgeUpdateEntity edgeEntity;
 //		try {
 //			edgeEntity = db.graph(graph.name())
-//					.edgeCollection(edge.collection())
-//					.updateEdge(edge._key(), edge);
+//					.edgeCollection(edge.label())
+//					.updateEdge(edge.primaryKey(), edge);
 //		} catch (ArangoDBException e) {
 //			logger.error("Failed to update vertex: {}", e.getErrorMessage());
 //            throw ArangoDBExceptions.getArangoDBException(e);
 //		}
-//		logger.info("Edge updated, new rev {}", edgeEntity.getRev());
-//		edge._rev(edgeEntity.getRev());
+//		logger.info("Edge updated, new revision {}", edgeEntity.getRev());
+//		edge.revision(edgeEntity.getRev());
 //	}
 //
 //
@@ -531,7 +521,7 @@ public class ArngDatabaseClient implements DatabaseClient {
 //		logger.debug("Creating query");
 //		queryBuilder.iterateGraph(graph.name(), "v", Optional.of("e"),
 //				Optional.empty(), Optional.empty(), Optional.empty(),
-//				arangoDirection, vertex._id(), bindVars)
+//				arangoDirection, vertex.handle(), bindVars)
 //			.graphOptions(Optional.of(UniqueVertices.NONE), Optional.empty(), true)
 //			.filterSameCollections("e", edgeLabels, bindVars)
 //			.ret("e");
@@ -553,19 +543,19 @@ public class ArngDatabaseClient implements DatabaseClient {
 //	 */
 //
 //	public <T> ArangoCursor<T> getDocumentNeighbors(
-//        ArangoDBBaseDocument document,
+//        BaseArngDocument document,
 //        List<String> edgeLabelsFilter,
 //        Direction direction,
 //        ArangoDBPropertyFilter propertyFilter,
 //        Class<T> resultType) {
-//		logger.debug("Get Document's {}:{} Neighbors, in {}, from collections {}", document, direction, graph.name(), edgeLabelsFilter);
+//		logger.debug("Get ArngDocument's {}:{} Neighbors, in {}, from collections {}", document, direction, graph.name(), edgeLabelsFilter);
 //		Map<String, Object> bindVars = new HashMap<>();
 //		ArangoDBQueryBuilder queryBuilder = new ArangoDBQueryBuilder();
 //		ArangoDBQueryBuilder.Direction arangoDirection = getDirection(direction);
 //		logger.debug("Creating query");
 //		queryBuilder.iterateGraph(graph.name(), "v", Optional.of("e"),
 //				Optional.empty(), Optional.empty(), Optional.empty(),
-//				arangoDirection, document._id(), bindVars)
+//				arangoDirection, document.handle(), bindVars)
 //			.graphOptions(Optional.of(UniqueVertices.GLOBAL), Optional.empty(), true)
 //			.filterSameCollections("e", edgeLabelsFilter, bindVars)
 //			.filterProperties(propertyFilter, "v", bindVars)
@@ -587,7 +577,7 @@ public class ArngDatabaseClient implements DatabaseClient {
 //	 */
 //
 //	public <T> ArangoCursor<T> getElementProperties(
-//        ArangoDBBaseDocument document,
+//        BaseArngDocument document,
 //        List<String> edgeLabelsFilter,
 //        ArangoDBPropertyFilter propertyFilter,
 //        Class<T> propertyType) {
@@ -597,7 +587,7 @@ public class ArngDatabaseClient implements DatabaseClient {
 //		logger.debug("Creating query");
 //        queryBuilder.iterateGraph(graph.name(), "v", Optional.of("e"),
 //				Optional.empty(), Optional.empty(), Optional.empty(),
-//				ArangoDBQueryBuilder.Direction.OUT, document._id(), bindVars)
+//				ArangoDBQueryBuilder.Direction.OUT, document.handle(), bindVars)
 //			.graphOptions(Optional.of(UniqueVertices.GLOBAL), Optional.empty(), true)
 //			.filterSameCollections("e", edgeLabelsFilter, bindVars)
 //			.filterProperties(propertyFilter, "v", bindVars)
@@ -623,7 +613,7 @@ public class ArngDatabaseClient implements DatabaseClient {
 //		logger.debug("Get all {} graph vertices, filtered by ids: {}", graph.name(), ids);
 //		Map<String, Object> bindVars = new HashMap<>();
 //		ArangoDBQueryBuilder queryBuilder = new ArangoDBQueryBuilder();
-//        List<String> prefixedColNames = graph.vertexCollections().stream().map(graph::getPrefixedCollectioName).collect(Collectors.toList());
+//        List<String> prefixedColNames = graph.vertexCollections().stream().map(graph::getDBCollectionName).collect(Collectors.toList());
 //        if (ids.isEmpty()) {
 //			if (prefixedColNames.size() > 1) {
 //				queryBuilder.union(prefixedColNames, "v", bindVars);
@@ -633,7 +623,7 @@ public class ArngDatabaseClient implements DatabaseClient {
 //		}
 //		else {
 //			if (!collections.isEmpty()) {
-//                prefixedColNames = collections.stream().map(graph::getPrefixedCollectioName).collect(Collectors.toList());
+//                prefixedColNames = collections.stream().map(graph::getDBCollectionName).collect(Collectors.toList());
 //			}
 //			queryBuilder.with(prefixedColNames, bindVars)
 //					.documentsById(ids, "v", bindVars);
@@ -659,7 +649,7 @@ public class ArngDatabaseClient implements DatabaseClient {
 //		logger.debug("Get all {} graph edges, filtered by ids: {}", graph.name(), ids);
 //		Map<String, Object> bindVars = new HashMap<>();
 //		ArangoDBQueryBuilder queryBuilder = new ArangoDBQueryBuilder();
-//        List<String> prefixedColNames = graph.edgeCollections().stream().map(graph::getPrefixedCollectioName).collect(Collectors.toList());
+//        List<String> prefixedColNames = graph.edgeCollections().stream().map(graph::getDBCollectionName).collect(Collectors.toList());
 //		if (ids.isEmpty()) {
 //			if (prefixedColNames.size() > 1) {
 //				queryBuilder.union(prefixedColNames, "e", bindVars);
@@ -669,7 +659,7 @@ public class ArngDatabaseClient implements DatabaseClient {
 //		}
 //		else {
 //            if (!collections.isEmpty()) {
-//                prefixedColNames = collections.stream().map(graph::getPrefixedCollectioName).collect(Collectors.toList());
+//                prefixedColNames = collections.stream().map(graph::getDBCollectionName).collect(Collectors.toList());
 //            }
 //		    queryBuilder.with(prefixedColNames, bindVars)
 //				    .documentsById(ids, "e", bindVars);
@@ -685,13 +675,13 @@ public class ArngDatabaseClient implements DatabaseClient {
 //	 * Gets the edge vertices.
 //	 *
 //	 * @param edgeId 				the edge id
-//	 * @param edgeCollection 		the edge collection
+//	 * @param edgeCollection 		the edge label
 //	 * @param from 					if true, get incoming vertex
 //	 * @param to 					if true, get outgoing edge
 //	 * @return the edge vertices
 //	 */
 //
-//	public ArangoCursor<ArangoDBVertex> getEdgeVertices(
+//	public ArangoCursor<ArangoDBVertex> getEdgeFromVertex(
 //		String edgeId,
 //		String edgeCollection,
 //		boolean from, boolean to) {
@@ -700,7 +690,7 @@ public class ArngDatabaseClient implements DatabaseClient {
 //		ArangoDBQueryBuilder queryBuilder = new ArangoDBQueryBuilder();
 //		List<String> edgeCollections = new ArrayList<>();
 //		List<String> vertices = new ArrayList<>();
-//		edgeCollections.add(graph.getPrefixedCollectioName(edgeCollection));
+//		edgeCollections.add(graph.getDBCollectionName(edgeCollection));
 //		if (from) {
 //			vertices.add("_from");
 //		}
@@ -712,7 +702,7 @@ public class ArngDatabaseClient implements DatabaseClient {
 //			.append("FOR v IN ")
 //			.append(vertices.stream().map(v->String.format("e.%s", v))
 //					.collect(Collectors.joining(",", "[", "]\n")))
-//			.ret("Document(v)");
+//			.ret("ArngDocument(v)");
 //		String query = queryBuilder.toString();
 //		logger.debug("AQL {}", query);
 //		return executeAqlQuery(query, bindVars, null, ArangoDBVertex.class);
@@ -749,18 +739,18 @@ public class ArngDatabaseClient implements DatabaseClient {
 //					graph.drop();
 //					for (String definitionName : edgeDefinitions) {
 //						String collectioName = definitionName;
-//						if (db.collection(collectioName).exists()) {
-//							db.collection(collectioName).drop();
+//						if (db.label(collectioName).exists()) {
+//							db.label(collectioName).drop();
 //						}
 //					}
 //					for (String vc : vertexCollections) {
 //						String collectioName = vc;
-//						if (db.collection(collectioName).exists()) {
-//							db.collection(collectioName).drop();
+//						if (db.label(collectioName).exists()) {
+//							db.label(collectioName).drop();
 //						}
 //					}
 //					// Delete the graph variables
-//					db.collection(ArangoDBGraph.GRAPH_VARIABLES_COLLECTION).deleteDocument(name);
+//					db.label(ArangoDBGraph.GRAPH_VARIABLES_COLLECTION).deleteDocument(name);
 //				} catch (ArangoDBException e) {
 //					System.out.println(e);
 //				}
@@ -777,17 +767,17 @@ public class ArngDatabaseClient implements DatabaseClient {
 //	}
 //
 //	/**
-//	 * Delete collection.
+//	 * Delete label.
 //	 *
 //	 * @param name the name
 //	 * @return true, if successful
 //	 */
 //
 //	public boolean deleteCollection(String name) {
-//		ArangoCollection collection = db.collection(name);
-//		if (collection.exists()) {
-//			collection.drop();
-//			return collection.exists();
+//		ArangoCollection label = db.label(name);
+//		if (label.exists()) {
+//			label.drop();
+//			return label.exists();
 //		}
 //		return false;
 //	}
@@ -800,10 +790,10 @@ public class ArngDatabaseClient implements DatabaseClient {
 //	 * Validate that the document is in the same graph.
 //	 * @param document
 //	 */
-//	private void validateElementGraph(ArangoDBBaseDocument document) {
+//	private void validateElementGraph(BaseArngDocument document) {
 //		ArangoDBGraph documentGraph = document.graph();
 //		if ((documentGraph != null) && (!documentGraph.equals(graph))) {
-//			throw new ArangoDBGraphException("Document belongs to another graph.");
+//			throw new ArangoDBGraphException("ArngDocument belongs to another graph.");
 //		}
 //	}
 
@@ -865,7 +855,7 @@ public class ArngDatabaseClient implements DatabaseClient {
 //	}
 
 //	/**
-//	 * Create an index on collection keys.
+//	 * Create an index on label keys.
 //	 *
 //	 * @param graph            the simple graph
 //	 * @param type            the index type ("cap", "geo", "hash", "skiplist")
@@ -884,7 +874,7 @@ public class ArngDatabaseClient implements DatabaseClient {
 //	}
 //
 //	/**
-//	 * Create an index on collection keys.
+//	 * Create an index on label keys.
 //	 *
 //	 * @param graph            the simple graph
 //	 * @param type            the index type ("cap", "geo", "hash", "skiplist")
@@ -923,7 +913,7 @@ public class ArngDatabaseClient implements DatabaseClient {
 //	}
 //
 //	/**
-//	 * Returns the indices of the vertex collection.
+//	 * Returns the indices of the vertex label.
 //	 *
 //	 * @param graph            The graph
 //	 * @return List of indices
@@ -934,7 +924,7 @@ public class ArngDatabaseClient implements DatabaseClient {
 //	}
 //
 //	/**
-//	 * Returns the indices of the edge collection.
+//	 * Returns the indices of the edge label.
 //	 *
 //	 * @param graph            The graph
 //	 * @return List of indices
@@ -962,9 +952,9 @@ public class ArngDatabaseClient implements DatabaseClient {
 //	}
 //
 //	/**
-//	 * Create an index on collection keys.
+//	 * Create an index on label keys.
 //	 *
-//	 * @param collectionName            the collection name
+//	 * @param collectionName            the label name
 //	 * @param type            the index type ("cap", "geo", "hash", "skiplist")
 //	 * @param unique            true for a unique name
 //	 * @param fields            a list of name fields
@@ -986,9 +976,9 @@ public class ArngDatabaseClient implements DatabaseClient {
 //	}
 //
 //	/**
-//	 * Get the List of indices of a collection.
+//	 * Get the List of indices of a label.
 //	 *
-//	 * @param collectionName            the collection name
+//	 * @param collectionName            the label name
 //	 * @return Vector<ArangoDBIndex> List of indices
 //	 * @throws ArangoDBException             if creation failed
 //	 */
@@ -1013,7 +1003,7 @@ public class ArngDatabaseClient implements DatabaseClient {
 //	/**
 //	 * Returns the current connection configuration.
 //	 *
-//	 * @param collectionName the collection name
+//	 * @param collectionName the label name
 //	 * @return the configuration
 //	 * @throws ArangoDBException the arango DB exception
 //	 */
@@ -1022,7 +1012,7 @@ public class ArngDatabaseClient implements DatabaseClient {
 ////	}
 //
 //	/**
-//	 * Truncates a collection
+//	 * Truncates a label
 //	 * 
 //	 * @param collectionName
 //	 */

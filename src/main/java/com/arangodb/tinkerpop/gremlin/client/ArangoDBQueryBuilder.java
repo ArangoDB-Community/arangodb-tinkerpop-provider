@@ -18,7 +18,7 @@ import org.slf4j.LoggerFactory;
 /**
  * The ArangoDB Query Builder class provides static methods for building AQL fragments that can be concatenated to build
  * complete AQL queries. Note that all parameters used to create query fragments are used as is, hence, all
- * pre-processing (e.g. prefix collection names) must be done in the callee.
+ * pre-processing (e.g. prefix label names) must be done in the callee.
  *
  * @author Horacio Hoyos Rodriguez (https://www.york.ac.uk)
  */
@@ -180,7 +180,7 @@ public class ArangoDBQueryBuilder {
 	}
 	
 	/**
-	 * Append a Document and FILTER statements to the query builder. Use this to find a single or
+	 * Append a ArngDocument and FILTER statements to the query builder. Use this to find a single or
 	 * group of elements in the graph. This segment should be used in conjunction with the 
 	 * {@link #with(List, Map)} segment.
 	 *
@@ -194,7 +194,7 @@ public class ArangoDBQueryBuilder {
 		Collection<String> ids,
 		String loopVariable,
 		Map<String, Object> bindVars) {
-		queryBuilder.append("LET docs = FLATTEN(RETURN Document(@ids))\n");
+		queryBuilder.append("LET docs = FLATTEN(RETURN ArngDocument(@ids))\n");
 		queryBuilder.append(String.format("FOR %s IN docs\n", loopVariable));
 		queryBuilder.append(String.format("  FILTER NOT IS_NULL(%s)\n", loopVariable)); // Not needed?
 		bindVars.put("ids", ids);
@@ -203,7 +203,7 @@ public class ArangoDBQueryBuilder {
 	}
 	
 	/**
-	 * Append a Document statement to find a single element in the graph. This segment should be
+	 * Append a ArngDocument statement to find a single element in the graph. This segment should be
 	 * used in conjunction with the {@link #with(List, Map)} segment.
 	 *
 	 * @param id 					the id to look for
@@ -216,7 +216,7 @@ public class ArangoDBQueryBuilder {
 		String id,
 		String loopVariable,
 		Map<String, Object> bindVars) {
-		queryBuilder.append(String.format("LET %s = Document(@id)\n", loopVariable));
+		queryBuilder.append(String.format("LET %s = ArngDocument(@id)\n", loopVariable));
 		bindVars.put("id", id);
 		logger.debug("documentById", queryBuilder.toString());
 		return this;
@@ -252,10 +252,10 @@ public class ArangoDBQueryBuilder {
 	}
 	
 	/**
-	 * Add a FOR x IN y iteration to the query. A global collection counter is used so this operation
+	 * Add a FOR x IN y iteration to the query. A global label counter is used so this operation
 	 * can be used to created nested loops.
 	 * @param loopVariable 			the loop variable
-	 * @param collectionName 		the collection name
+	 * @param collectionName 		the label name
 	 * @param bindVars 				the map of bind parameters
 	 *
 	 * @return a reference to this object.
@@ -318,7 +318,7 @@ public class ArangoDBQueryBuilder {
 	}
 	
 	/**
-	 * Iterate over a collection of edges.
+	 * Iterate over a label of edges.
 	 * @param graphName 			the graph name
 	 * @param vertexVariable 		the vertex variable
 	 * @param edgeVariable 			the edge variable
@@ -407,7 +407,7 @@ public class ArangoDBQueryBuilder {
 	
 	public ArangoDBQueryBuilder filterSameCollections(
 		String filterVariable,
-		List<String> collections,
+		Collection<String> collections,
 		Map<String, Object> bindVars) {
 		if (!collections.isEmpty()) {
 			queryBuilder.append(" FILTER (IS_SAME_COLLECTION(");
@@ -501,8 +501,8 @@ public class ArangoDBQueryBuilder {
 	}
 
 	/**
-	 * Get a document by id/key from a collection.
-	 * Execution of this query requires a bind variable for the id/key
+	 * Get a document by id/primaryKey from a label.
+	 * Execution of this query requires a bind variable for the id/primaryKey
 	 * @param collection
 	 * @param keyVariable
 	 * @return

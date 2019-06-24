@@ -4,7 +4,7 @@ import com.arangodb.tinkerpop.gremlin.structure.ArangoDBGraphVariables;
 
 public interface GraphVariablesClient {
 
-    /** The default collection where graph variables are stored */
+    /** The default label where graph variables are stored */
 
     String GRAPH_VARIABLES_COLLECTION = "TINKERPOP-GRAPH-VARIABLES";
 

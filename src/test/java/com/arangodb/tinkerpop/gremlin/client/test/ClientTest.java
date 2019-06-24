@@ -23,8 +23,8 @@ import org.junit.runners.Parameterized;
  * This tests require four users:
  * <ul>
  *  <li> root:	   To test DB creation, requires root access
- *  <li> gremlin:  To test graph/collection creation+access in the db, requires "Administrate" permission to DB 
- *  <li> reader:   To test graph/collection access in the db, requires "Access" permission to DB 
+ *  <li> gremlin:  To test graph/label creation+access in the db, requires "Administrate" permission to DB
+ *  <li> reader:   To test graph/label access in the db, requires "Access" permission to DB
  *  <li> limited:  To test no access to the db,  requires "No access" permission to DB 
  * </ul> 
  * For all users (except root) the password is expected to be the same as the username. For the root,
@@ -111,14 +111,14 @@ public class ClientTest {
 //                graph.drop();
 //                for (String definitionName : edgeDefinitions) {
 //                    String collectioName = definitionName;
-//                    if (db.collection(collectioName).exists()) {
-//                        db.collection(collectioName).drop();
+//                    if (db.label(collectioName).exists()) {
+//                        db.label(collectioName).drop();
 //                    }
 //                }
 //                for (String vc : vertexCollections) {
 //                    String collectioName = vc;
-//                    if (db.collection(collectioName).exists()) {
-//                        db.collection(collectioName).drop();
+//                    if (db.label(collectioName).exists()) {
+//                        db.label(collectioName).drop();
 //                    }
 //                }
 //                return true;
@@ -207,8 +207,8 @@ public class ClientTest {
 //		client.createGraph(graph_name, verticesCollectionNames, edgesCollectionNames, Collections.emptyList());
 //		DatabaseClient db = client.getDB();
 //		assertThat("Graph not found in db", db.graph(graph_name).exists(), is(true));
-//		assertThat("Vertex collection found in db", db.collection(String.format("%sperson", knowsPrefix)).exists(), is(true));
-//		assertThat("Edge collection found in db", db.collection(String.format("%sknows", knowsPrefix)).exists(), is(true));
+//		assertThat("Vertex label found in db", db.label(String.format("%sperson", knowsPrefix)).exists(), is(true));
+//		assertThat("Edge label found in db", db.label(String.format("%sknows", knowsPrefix)).exists(), is(true));
 //		GraphClient g = db.graph(graph_name);
 //		Collection<EdgeDefinition> defs = g.getInfo().getEdgeDefinitions();
 //		assertThat(defs, hasSize(2));       // +1 for ELEMENT_HAS_PROPERTIES
@@ -233,9 +233,9 @@ public class ClientTest {
 //		client.createGraph(graph_name, verticesCollectionNames, edgesCollectionNames, relations);
 //		DatabaseClient db = client.getDB();
 //		assertThat("Created graph not found in db", db.graph(graph_name).exists(), is(true));
-//		assertThat("Vertex collection not found in db", db.collection(String.format("%smale", socialPrefix)).exists(), is(true));
-//		assertThat("Vertex collection not found in db", db.collection(String.format("%sfemale", socialPrefix)).exists(), is(true));
-//		assertThat("Edge collection found in db", db.collection(String.format("%srelation", socialPrefix)).exists(), is(true));
+//		assertThat("Vertex label not found in db", db.label(String.format("%smale", socialPrefix)).exists(), is(true));
+//		assertThat("Vertex label not found in db", db.label(String.format("%sfemale", socialPrefix)).exists(), is(true));
+//		assertThat("Edge label found in db", db.label(String.format("%srelation", socialPrefix)).exists(), is(true));
 //		GraphClient g = db.graph(graph_name);
 //		Collection<EdgeDefinition> defs = g.getInfo().getEdgeDefinitions();
 //		assertThat(defs, hasSize(2));
@@ -264,11 +264,11 @@ public class ClientTest {
 //		client.createGraph(graph_name, verticesCollectionNames, edgesCollectionNames, relations);
 //		DatabaseClient db = client.getDB();
 //		assertThat("Craeted graph not found in db", db.graph(graph_name).exists(), is(true));
-//		assertThat("Vertex collection not found in db", db.collection(String.format("%sgermanCity", routeplannerPrefix)).exists(), is(true));
-//		assertThat("Vertex collection not found in db", db.collection(String.format("%sfrenchCity", routeplannerPrefix)).exists(), is(true));
-//		assertThat("Edge collection found in db", db.collection(String.format("%sfrenchHighway", routeplannerPrefix)).exists(), is(true));
-//		assertThat("Edge collection found in db", db.collection(String.format("%sgermanHighway", routeplannerPrefix)).exists(), is(true));
-//		assertThat("Edge collection found in db", db.collection(String.format("%sinternationalHighway", routeplannerPrefix)).exists(), is(true));
+//		assertThat("Vertex label not found in db", db.label(String.format("%sgermanCity", routeplannerPrefix)).exists(), is(true));
+//		assertThat("Vertex label not found in db", db.label(String.format("%sfrenchCity", routeplannerPrefix)).exists(), is(true));
+//		assertThat("Edge label found in db", db.label(String.format("%sfrenchHighway", routeplannerPrefix)).exists(), is(true));
+//		assertThat("Edge label found in db", db.label(String.format("%sgermanHighway", routeplannerPrefix)).exists(), is(true));
+//		assertThat("Edge label found in db", db.label(String.format("%sinternationalHighway", routeplannerPrefix)).exists(), is(true));
 //		GraphClient g = db.graph(graph_name);
 //		Collection<EdgeDefinition> defs = g.getInfo().getEdgeDefinitions();
 //		assertThat("Not all edge definitions created", defs, hasSize(4));

@@ -140,13 +140,13 @@ public class ArangoDBConfigurationBuilder {
 			StringBuilder rVal = new StringBuilder();
 			rVal.append(r.getLeft());
 			if (!edges.contains(r.getLeft())) {
-				logger.warn("Missing edege collection {} from relations added to edge collections");
+				logger.warn("Missing edege label {} from relations added to edge collections");
 				edges.add(r.getLeft());
 			}
 			rVal.append(":");
 			for (String sv : r.getMiddle()) {
 				if (!vertices.contains(sv)) {
-					logger.warn("Missing vertex collection {} from relations added to vertex collections");
+					logger.warn("Missing vertex label {} from relations added to vertex collections");
 					vertices.add(r.getLeft());
 				}
 			}
@@ -154,7 +154,7 @@ public class ArangoDBConfigurationBuilder {
 			rVal.append("->");
 			for (String sv : r.getRight()) {
 				if (!vertices.contains(sv)) {
-					logger.warn("Missing vertex collection {} from relations added to vertex collections");
+					logger.warn("Missing vertex label {} from relations added to vertex collections");
 					vertices.add(r.getLeft());
 				}
 			}
@@ -231,9 +231,9 @@ public class ArangoDBConfigurationBuilder {
 	}
 	
 	/**
-	 * Add vertex collection.
+	 * Add vertex label.
 	 *
-	 * @param name 				the vertex collection name
+	 * @param name 				the vertex label name
 	 * @return a reference to this object.
 	 */
 	
@@ -243,9 +243,9 @@ public class ArangoDBConfigurationBuilder {
 	}
 	
 	/**
-	 * Add edge collection.
+	 * Add edge label.
 	 *
-	 * @param name 				the edge collection name
+	 * @param name 				the edge label name
 	 * @return a reference to this object.
 	 */
 	
@@ -255,12 +255,12 @@ public class ArangoDBConfigurationBuilder {
 	}
 	
 	/**
-	 * Configure a 1-to-1 edge, i.e. for a given edge collection define the source and target vertex
+	 * Configure a 1-to-1 edge, i.e. for a given edge label define the source and target vertex
 	 * collections.
 	 *
-	 * @param edgeCollection 		the edge collection
-	 * @param sourceCollection 		the source vertex collection
-	 * @param targetCollection 		the target vertex collection
+	 * @param edgeCollection 		the edge label
+	 * @param sourceCollection 		the source vertex label
+	 * @param targetCollection 		the target vertex label
 	 * @return a reference to this object.
 	 */
 	
@@ -278,11 +278,11 @@ public class ArangoDBConfigurationBuilder {
 	}
 	
 	/**
-	 * Configure a 1-to-many edge, i.e. for a given edge collection define the source and target vertex
+	 * Configure a 1-to-many edge, i.e. for a given edge label define the source and target vertex
 	 * collections.
 	 *
-	 * @param edgeCollection 		the edge collection
-	 * @param sourceCollection 		the source vertex collection
+	 * @param edgeCollection 		the edge label
+	 * @param sourceCollection 		the source vertex label
 	 * @param targetCollections 	the target vertices collections
 	 * @return a reference to this object.
 	 */
@@ -300,12 +300,12 @@ public class ArangoDBConfigurationBuilder {
 	
 	
 	/**
-	 * Configure a many-to-1 edge, i.e. for a given edge collection define the source and target vertex
+	 * Configure a many-to-1 edge, i.e. for a given edge label define the source and target vertex
 	 * collections.
 	 *
-	 * @param edgeCollection 		the edge collection
+	 * @param edgeCollection 		the edge label
 	 * @param sourceCollections 	the source vertices collections
-	 * @param targetCollection 		the target vertex collection
+	 * @param targetCollection 		the target vertex label
 	 * @return a reference to this object.
 	 */
 	
@@ -322,10 +322,10 @@ public class ArangoDBConfigurationBuilder {
 	
 	
 	/**
-	 * Configure a many-to-many edge, i.e. for a given edge collection define the source and target vertex
+	 * Configure a many-to-many edge, i.e. for a given edge label define the source and target vertex
 	 * collections.
 	 *
-	 * @param edgeCollection 		the edge collection
+	 * @param edgeCollection 		the edge label
 	 * @param sourceCollections 	the source vertices collections
 	 * @param targetCollections 	the target vertices collections
 	 * @return a reference to this object.
@@ -494,9 +494,9 @@ public class ArangoDBConfigurationBuilder {
 	}
 
 	/**
-	 * In case of colliding collection names in Graph, these names can be prefixed with Graph Name.
-	 * If set to true collection names are in {@code %s_%s} format (where first %s is graph name, second %s is collection name).
-	 * If set to false, collection names are without any prefix.
+	 * In case of colliding label names in Graph, these names can be prefixed with Graph Name.
+	 * If set to true label names are in {@code %s_%s} format (where first %s is graph name, second %s is label name).
+	 * If set to false, label names are without any prefix.
 	 * Default set to <b>true</b>.
 	 * @param shouldPrefixCollectionNames whether it should prefixed or not.
 	 * @return a reference to this object.

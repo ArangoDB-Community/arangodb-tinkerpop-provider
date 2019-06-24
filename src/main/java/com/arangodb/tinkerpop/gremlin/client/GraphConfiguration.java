@@ -1,9 +1,12 @@
 package com.arangodb.tinkerpop.gremlin.client;
 
 import com.arangodb.ArangoDB;
+import com.arangodb.ArangoGraph;
+import com.arangodb.model.GraphCreateOptions;
 import org.apache.commons.configuration.Configuration;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
 
@@ -11,7 +14,7 @@ import java.util.Properties;
  * This interface defines the API for working with a (Apache Commons) configuration when used to configure an #ArangoDBGraph
  *
  */
-public interface ArangoDBConfiguration {
+public interface GraphConfiguration {
 
     String PROPERTY_KEY_PREFIX = "gremlin.arangodb.conf";
 
@@ -30,34 +33,34 @@ public interface ArangoDBConfiguration {
     String PROPERTY_KEY_SHOULD_PREFIX_COLLECTION_NAMES = "graph.shouldPrefixCollectionNames";
 
     /**
-     * Get the vertex collection names defined in the configuration. Returns an empty collection if no vertex collections
+     * Get the vertex label names defined in the configuration. Returns an empty label if no vertex collections
      * were defined.
      *
      * Vertex collections are configured via the {@link #PROPERTY_KEY_VERTICES} setting
      *
-     * @return A collection containing the defined vertex collections
+     * @return A label containing the defined vertex collections
      */
 
     Collection<String> vertexCollections();
 
     /**
-     * Get the edge collection names defined in the configuration. Returns an empty collection if no edge collections
+     * Get the edge label names defined in the configuration. Returns an empty label if no edge collections
      * were defined.
      *
      * Edge collections are configured via the {@link #PROPERTY_KEY_EDGES} setting
      *
-     * @return A collection containing the defined edge collections
+     * @return A label containing the defined edge collections
      */
 
     Collection<String> edgeCollections();
 
     /**
-     * Get the relations defined in the configuration. Returns an empty collection if no relations were defined.
+     * Get the relations defined in the configuration. Returns an empty label if no relations were defined.
      *
      * Relations are configured via the {@link #PROPERTY_KEY_RELATIONS} setting. If two or more vertex and two or more
      * edge collections are defined, then at least one relation must be defined too.
      *
-     * @return A collection containing the defined relations
+     * @return A label containing the defined relations
      */
 
     Collection<String> relations();
@@ -81,7 +84,7 @@ public interface ArangoDBConfiguration {
     Optional<String> databaseName();
 
     /**
-     * Get the should prefix collection names flag value from the configuration. If not present the default value is true.
+     * Get the should prefix label names flag value from the configuration. If not present the default value is true.
      *
      * The shouldPrefixCollectionNames name is configured via the {@link #PROPERTY_KEY_SHOULD_PREFIX_COLLECTION_NAMES} setting.
      *
@@ -107,7 +110,7 @@ public interface ArangoDBConfiguration {
     Properties transformToProperties();
 
     /**
-     * Reurn the configuration used to create this ArangoDBConfiguration
+     * Reurn the configuration used to create this GraphConfiguration
      * @return
      */
     Configuration configuration();
@@ -117,4 +120,37 @@ public interface ArangoDBConfiguration {
      * @return
      */
     ArangoDB buildDriver();
+
+    /**
+     * Return the label name correctly prefixed according to the shouldPrefixCollectionNames flag
+     * @param collectionName        the label name to prefix
+     * @return
+     */
+
+    /**
+     * Get the label name as stored in the database
+     * @param collectionName
+     * @return
+     */
+
+    String getDBCollectionName(String collectionName);
+
+    /**
+     * Get the name of vertex collections for the configured graph
+     * @return
+     */
+
+    Collection<String> dbVertexCollections();
+
+    /**
+     * Get the name of vertex collections for the configured graph
+     * @return
+     */
+
+    Collection<String> dbEdgeCollections();
+
+    void checkGraphForErrors(ArangoGraph databaseGraph, GraphCreateOptions options) throws EdgeDefinitions.MalformedRelationException, PlainArangoDBConfiguration.MalformedRelationException;
+
+    void createGraph(String graphName, GraphCreateOptions options);
+
 }

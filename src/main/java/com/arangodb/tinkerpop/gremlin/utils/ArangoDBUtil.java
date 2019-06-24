@@ -77,7 +77,7 @@ public class ArangoDBUtil {
 	public static final String ELEMENT_PROPERTIES_EDGE = "ELEMENT-HAS-PROPERTIES";
 
 	/**
-	 * The prefix to denote that a collection is a hidden collection.
+	 * The prefix to denote that a label is a hidden label.
 	 */
 
 	private final static String HIDDEN_PREFIX = "adbt_";
@@ -99,9 +99,9 @@ public class ArangoDBUtil {
 
 	/**
 	 * Since attributes that start with underscore are considered to be system attributes (),
-	 * rename key "_XXXX" to "«a»XXXX" for storage.
+	 * rename primaryKey "_XXXX" to "«a»XXXX" for storage.
 	 *
-	 * @param key       	the key to convert
+	 * @param key       	the primaryKey to convert
 	 * @return String 		the converted String
 	 * @see <a href="https://docs.arangodb.com/latest/Manual/DataModeling/NamingConventions/AttributeNames.html">Manual</a>
 	 */
@@ -117,7 +117,7 @@ public class ArangoDBUtil {
 	 * Since attributes that start with underscore are considered to be system attributes (),
 	 * rename Attribute "«a»XXXX" to "_XXXX" for retrieval.
 	 *
-	 * @param key           the key to convert
+	 * @param key           the primaryKey to convert
 	 * @return String 		the converted String
 	 * @see <a href="https://docs.arangodb.com/latest/Manual/DataModeling/NamingConventions/AttributeNames.html">Manual</a>
 	 */
@@ -131,10 +131,10 @@ public class ArangoDBUtil {
 
 	/**
 	 * Hidden keys, labels, etc. are prefixed in Tinkerpop with  @link Graph.Hidden.HIDDEN_PREFIX). Since in ArangoDB
-	 * collection names must always start with a letter, this method normalises Hidden collections name to valid
+	 * label names must always start with a letter, this method normalises Hidden collections name to valid
 	 * ArangoDB names by replacing the "~" with
 	 *
-	 * @param key 			the key to convert
+	 * @param key 			the primaryKey to convert
 	 * @return String 		the converted String
 	 * @see <a href="https://docs.arangodb.com/latest/Manual/DataModeling/NamingConventions/AttributeNames.html">Manual</a>
 	 */
@@ -151,7 +151,7 @@ public class ArangoDBUtil {
 	 * Since attributes that start with underscore are considered to be system attributes (),
 	 * rename Attribute "«a»XXXX" to "_XXXX" for retrieval.
 	 *
-	 * @param key           the key to convert
+	 * @param key           the primaryKey to convert
 	 * @return String 		the converted String
 	 * @see <a href="https://docs.arangodb.com/latest/Manual/DataModeling/NamingConventions/AttributeNames.html">Manual</a>
 	 */
@@ -166,10 +166,10 @@ public class ArangoDBUtil {
 
 	public enum NamingConventions {
 
-		/** The collection. */
+		/** The label. */
 		COLLECTION(64),
 
-		/** The key. */
+		/** The primaryKey. */
 		KEY(256);
 
 		/** The max length. */
@@ -207,11 +207,11 @@ public class ArangoDBUtil {
 
 
 	/**
-	 * Gets a collection that is unique for the given graph.
+	 * Gets a label that is unique for the given graph.
 	 *
 	 * @param graphName 		the graph name
-	 * @param collectionName 	the collection name
-	 * @return 					the unique collection name
+	 * @param collectionName 	the label name
+	 * @return 					the unique label name
 	 */
 
 	public static String getCollectioName(String graphName, String collectionName, Boolean shouldPrefixWithGraphName) {
@@ -310,7 +310,7 @@ public class ArangoDBUtil {
 	}
 
 	/**
-	 * Create the graph private collections. There is a collection for storing graph properties.
+	 * Create the graph private collections. There is a label for storing graph properties.
 	 * Both vertices and edges can have properties
 	 *
 	 * @param graphName the graph name
@@ -343,7 +343,7 @@ public class ArangoDBUtil {
 	 * Creates an Arango DB edge property.
 	 *
 	 * @param <U> 			the generic type
-	 * @param key 			the key
+	 * @param key 			the primaryKey
 	 * @param value 		the value
 	 * @param edge 			the edge
 	 * @return the created Arango DB edge property
@@ -367,7 +367,7 @@ public class ArangoDBUtil {
 	 * Creates an Arango DB vertex property.
 	 *
 	 * @param <U> 			the generic type
-	 * @param key 			the key
+	 * @param key 			the primaryKey
 	 * @param value 		the value
 	 * @param vertex 		the vertex
 	 * @return the created Arango DB vertex property
@@ -389,7 +389,7 @@ public class ArangoDBUtil {
 	 *
 	 * @param <U> 			the generic type
 	 * @param id 			the id
-	 * @param key 			the key
+	 * @param key 			the primaryKey
 	 * @param value 		the value
 	 * @param vertex 		the vertex
 	 * @return the created Arango DB vertex property
@@ -400,10 +400,10 @@ public class ArangoDBUtil {
 		p = new ArangoDBVertexProperty<>(id, key, value, vertex);
 		ArangoDBGraph g = vertex.graph();
 		ArangoDBGraphClient c = g.getClient();
-		//This is insertion of a property to ELEMENT-PROPERTIES collection, which must be always prefixed with graph name
+		//This is insertion of a property to ELEMENT-PROPERTIES label, which must be always prefixed with graph name
 		c.insertDocument(p, true);
 		ElementHasProperty e = p.assignToElement(vertex);
-		//This is insertion of edge to ELEMENT-HAS-PROPERTIES collection, between ArangoBaseDocument and Property
+		//This is insertion of edge to ELEMENT-HAS-PROPERTIES label, between ArangoBaseDocument and Property
 		c.insertEdge(e, true);
 		return p;
 	}
@@ -412,7 +412,7 @@ public class ArangoDBUtil {
 	 * Creates an Arango DB property property.
 	 *
 	 * @param <U> 				the generic type
-	 * @param key 				the key
+	 * @param key 				the primaryKey
 	 * @param value 			the value
 	 * @param vertexProperty	the vertex property
 	 * @return the created Arango DB property property

@@ -14,14 +14,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import com.arangodb.tinkerpop.gremlin.client.GraphClient;
 import com.arangodb.tinkerpop.gremlin.client.GraphVariablesClient;
 import com.arangodb.velocypack.annotations.Expose;
 import org.apache.tinkerpop.gremlin.structure.Graph;
 import org.apache.tinkerpop.gremlin.structure.util.GraphVariableHelper;
 import org.apache.tinkerpop.gremlin.structure.util.StringFactory;
-
-import com.arangodb.tinkerpop.gremlin.client.ArangoDBBaseDocument;
 
 /**
  * The Class ArangoDBGraphVariables.
@@ -29,7 +26,7 @@ import com.arangodb.tinkerpop.gremlin.client.ArangoDBBaseDocument;
  * @author Horacio Hoyos Rodriguez (https://www.york.ac.uk)
  */
 
-public class ArangoDBGraphVariables extends ArangoDBBaseDocument implements Graph.Variables {
+public class ArangoDBGraphVariables extends BaseArngDocument implements Graph.Variables {
 
 
 	/**
@@ -40,20 +37,13 @@ public class ArangoDBGraphVariables extends ArangoDBBaseDocument implements Grap
 
     }
 
-    /** The key:value store for properties. */
+    /** The primaryKey:value store for properties. */
     
     private final Map<String, Object> store = new HashMap<>(4);
 
 	@Expose(serialize = false, deserialize = false)
-	private GraphVariablesClient client;
-    
-    /**
-     * Constructor used for ArabgoDB JavaBeans de-/serialisation.
-     */
-    
-    public ArangoDBGraphVariables() {
-        super();
-    }
+	private final GraphVariablesClient client;
+
 
     /**
      * Instantiates a new Arango DB graph variables.
@@ -63,18 +53,31 @@ public class ArangoDBGraphVariables extends ArangoDBBaseDocument implements Grap
 	 */
 
     public ArangoDBGraphVariables(String graphName, GraphVariablesClient client) {
-        this(graphName, client, false);
+        this(null, graphName, null, client.GRAPH_VARIABLES_COLLECTION, client);
     }
 
+	public ArangoDBGraphVariables(
+		String id,
+		String key,
+		String rev,
+		String label) {
+		this(id, key, rev, label, null);
+	}
 
-	public ArangoDBGraphVariables(String graphName, GraphVariablesClient client, boolean paired) {
-		super(graphName, client.GRAPH_VARIABLES_COLLECTION, client.GRAPH_VARIABLES_COLLECTION, paired);
+
+	public ArangoDBGraphVariables(
+		String id,
+		String key,
+		String rev,
+		String label,
+		GraphVariablesClient client) {
+		super(id, key, rev, label);
 		this.client = client;
 	}
 
 	// FIXME Move to interface
-    public ArangoDBGraphVariables pair(GraphVariablesClient client) {
-		return new ArangoDBGraphVariables(_key, client, true);
+    public ArangoDBGraphVariables useClient(GraphVariablesClient client) {
+		return new ArangoDBGraphVariables(_id, _key, _rev, label, client);
 
 	}
 
@@ -139,10 +142,8 @@ public class ArangoDBGraphVariables extends ArangoDBBaseDocument implements Grap
 				return false;
 			}
 		}
-		else {
-			if (!client.equals(other.client)) {
-				return false;
-			}
+		else if (!client.graphName().equals(other.client.graphName())) {
+			return false;
 		}
 		if (store.isEmpty()) {
 			if (!other.store.isEmpty()) {

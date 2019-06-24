@@ -1,4 +1,4 @@
-package com.arangodb.tinkerpop.gremlin.client;
+package com.arangodb.tinkerpop.gremlin.velocipack;
 
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBEdge;
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBElementProperty;
@@ -40,9 +40,9 @@ import java.util.*;
  * In the following example the base document attributes have been augmented with Tinkerpop metadata:
  * <pre>{@code
  * {
- *   "_id" : "knows/3456789",
- *   "_key" : "3456789",
- *   "_rev" : "14253647",
+ *   "handle" : "knows/3456789",
+ *   "primaryKey" : "3456789",
+ *   "revision" : "14253647",
  *   "_from": "persons/653214"
  *   "_to": "persons/5486214"
  *   "relation" : "Friend",
@@ -64,11 +64,11 @@ public class ArangoDBEdgeVPack implements VPackSerializer<ArangoDBEdge>, VPackDe
         VPackSerializationContext context) throws VPackException {
 
         builder.add(attribute, ValueType.OBJECT);
-        if (value._id() != null) {
-            builder.add("_id", value._id());
+        if (value.handle() != null) {
+            builder.add("handle", value.handle());
         }
-        if (value._key() != null) {
-            builder.add("_key", value._key());
+        if (value.primaryKey() != null) {
+            builder.add("primaryKey", value.primaryKey());
         }
         if (value._from() != null) {
             builder.add("_from", value._from());
@@ -101,8 +101,9 @@ public class ArangoDBEdgeVPack implements VPackSerializer<ArangoDBEdge>, VPackDe
             Map.Entry<String, VPackSlice> entry = it.next();
             pTypes.put(entry.getKey(), context.deserialize(entry.getValue(), String.class));
         }
+        // FIXME We KNOW the keys we want, so we wan use a constructor, not reflection!
         it = vpack.objectIterator();
-        List<ArangoDBElementProperty> properties = new ArrayList<>();
+        List<Property<?>> properties = new ArrayList<>();
         while (it.hasNext()) {
             Map.Entry<String, VPackSlice> entry = it.next();
             String key = entry.getKey();

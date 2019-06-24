@@ -11,19 +11,14 @@ package com.arangodb.tinkerpop.gremlin.structure;
 import org.apache.tinkerpop.gremlin.structure.Element;
 
 /**
- * The Interface ArangoDBElement.
+ * The Interface ArngElement.
  * 
  * @author Horacio Hoyos Rodriguez (@horaciohoyosr)
  */
-public interface ArangoDBElement extends Element {
-	
-	/**
-	 * Persist changes in the element to the DB.
-	 */
-	void save();
+public interface ArngElement extends ArngDocument, Element {
 
     /**
-	 *  Remove the key from the element's vertexProperties.
+	 *  Remove the primaryKey from the element's vertexProperties.
 	 *
 	 * @param property the property
 	 */
@@ -35,17 +30,5 @@ public interface ArangoDBElement extends Element {
 	 */
 //	void attachProperties();
 
-    /**
-     * Graph.
-     *
-     * @param graph the graph
-     */
-    void graph(ArangoDBGraph graph);
 
-    /**
-     * Sets the paired.
-     *
-     * @param paired the new paired
-     */
-    void setPaired(boolean paired);
 }

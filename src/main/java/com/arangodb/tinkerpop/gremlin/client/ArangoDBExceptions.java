@@ -71,7 +71,7 @@ public class ArangoDBExceptions {
     */
 
     public static ArangoDBGraphException getNamingConventionError(String cause, String details) {
-        return new ArangoDBGraphException("The provided label or key name does not satisfy the naming conventions." +
+        return new ArangoDBGraphException("The provided label or primaryKey name does not satisfy the naming conventions." +
             String.format(cause, details));
     }
 

@@ -46,7 +46,7 @@ public interface DatabaseClient extends AutoCloseable {
     /**
      * Execute the AQL query against the database
      * @param query                 the AQL query
-     * @param bindVars              a map of key:value for bind variables
+     * @param bindVars              a map of primaryKey:value for bind variables
      * @param aqlQueryOptions       AQL query options
      * @param type                  The type of the elements in the result
      * @param <T>                   The type of the elements in the result

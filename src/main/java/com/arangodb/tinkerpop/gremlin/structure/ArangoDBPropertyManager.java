@@ -25,11 +25,11 @@ public class ArangoDBPropertyManager {
 
     private final Element element;
 
-    /** The properties managed by this manager, keyd by property key (name) */
+    /** The properties managed by this manager, keyd by property primaryKey (name) */
 
     protected Map<String, Collection<Property>> properties = new HashMap<>();
 
-    /** The cardinality of the properties managed by this mamanger, keyed by property key (name) */
+    /** The cardinality of the properties managed by this mamanger, keyed by property primaryKey (name) */
 
     private Map<String, VertexProperty.Cardinality> cardinalities = new HashMap<>();
 
@@ -74,9 +74,9 @@ public class ArangoDBPropertyManager {
     }
 
     /**
-     * Get the cardinality of a given key.
-     * @param key                   The key
-     * @return                      The Cardinality of the key
+     * Get the cardinality of a given primaryKey.
+     * @param key                   The primaryKey
+     * @return                      The Cardinality of the primaryKey
      */
     VertexProperty.Cardinality cardinality(String key) {
         return cardinalities.get(key);
@@ -86,13 +86,12 @@ public class ArangoDBPropertyManager {
     // Methods for Edges and VertexProperties
 
     /**
-     * Retrieve the Property for the given key. If the cardinality of the Property is {#link Cardinality.list} or
+     * Retrieve the Property for the given primaryKey. If the cardinality of the Property is {#link Cardinality.list} or
      * {#link Cardinality.set} it returns only one value.
-     * @param key                   The key of the property to retrive
+     * @param key                   The primaryKey of the property to retrive
      * @param <V>                   The expected type of the property value
      * @return
      */
-    @SuppressWarnings("unchecked")
     public <V> Property<V> property(final String key) {
         if (properties.containsKey(key)) {
             final Collection<Property> properties = this.properties.get(key);
@@ -117,35 +116,35 @@ public class ArangoDBPropertyManager {
     }
 
     /**
-     * Add or set a property value for the {@link #element} given its key.
-     * @param key                   The property key
+     * Add or set a property value for the {@link #element} given its primaryKey.
+     * @param key                   The property primaryKey
      * @param value                 The property value
      * @return                      The created or modified property
      */
     public <V> Property<V> property(final String key, final V value) {
-        ArangoDBElementProperty<V> p = new ArangoDBElementProperty<>(key, value, (ArangoDBElement) element);
+        ArangoDBElementProperty<V> p = new ArangoDBElementProperty<>(key, value, (ArngElement) element);
         addSingleProperty(key, p);
         return p;
     }
 
     /**
-     * Add a collection of Properties that the manager needs to manage. This methods is used during de-serialization
+     * Add a label of Properties that the manager needs to manage. This methods is used during de-serialization
      * to add properties to an Edge or VertexProperty
-     * @param properties            The collection of properties.
+     * @param properties            The label of properties.
      */
-    void attachProperties(Collection<ArangoDBElementProperty> properties) {
-        for (ArangoDBElementProperty p : properties) {
+    <V> void attachProperties(Iterator<Property<V>> properties) {
+        properties.forEachRemaining(p -> {
             this.properties.put(p.key(), new HashSet<>(Collections.singleton(p)));
             this.cardinalities.put(p.key(), VertexProperty.Cardinality.single);
-        }
+        });
     }
 
     // Methods for Vertices
 
     /**
-     * Retrieve the VertexProperty for the given key. If the cardinality of the Property is {#link Cardinality.list} or
+     * Retrieve the VertexProperty for the given primaryKey. If the cardinality of the Property is {#link Cardinality.list} or
      * {#link Cardinality.set} it returns only one value.
-     * @param key                   The key of the property to retrive
+     * @param key                   The primaryKey of the property to retrive
      * @param <V>                   The expected type of the property value
      * @return
      */
@@ -173,10 +172,10 @@ public class ArangoDBPropertyManager {
     }
 
     /**
-     * Get the {@link VertexProperty} for the provided key. If the property does not exist, return
+     * Get the {@link VertexProperty} for the provided primaryKey. If the property does not exist, return
      * {@link VertexProperty#empty}.
      *
-     * @param key                   the key of the vertex property to get
+     * @param key                   the primaryKey of the vertex property to get
      * @param <V>                   the expected type of the vertex property value
      * @return                      the retrieved vertex property
      */
@@ -187,13 +186,13 @@ public class ArangoDBPropertyManager {
     }
 
     /**
-     * Create a new vertex property. If the cardinality is {@link VertexProperty.Cardinality#single}, then set the key
-     * to the value. If the cardinality is {@link VertexProperty.Cardinality#list}, then add a new value to the key.
+     * Create a new vertex property. If the cardinality is {@link VertexProperty.Cardinality#single}, then set the primaryKey
+     * to the value. If the cardinality is {@link VertexProperty.Cardinality#list}, then add a new value to the primaryKey.
      * If the cardinality is {@link VertexProperty.Cardinality#set}, then only add a new value if that value doesn't
-     * already exist for the key.
+     * already exist for the primaryKey.
      *
-     * @param cardinality           the desired cardinality of the property key
-     * @param key                   the key of the vertex property
+     * @param cardinality           the desired cardinality of the property primaryKey
+     * @param key                   the primaryKey of the vertex property
      * @param value                 The value of the vertex property
      * @param <V>                   the type of the value of the vertex property
      * @return                      the newly created vertex property
@@ -226,17 +225,15 @@ public class ArangoDBPropertyManager {
             }
         }
         props.add(p);
-        // TODO Determine the correct place to save to reduce the amount of transactions
-        ((ArangoDBElement) element).save();
         return p;
     }
 
     /**
-     * Get all the vertexProperties that match the key:value pair.
-     * @param key                   the key of the vertex property
+     * Get all the vertexProperties that match the primaryKey:value useClient.
+     * @param key                   the primaryKey of the vertex property
      * @param value                 the value of the vertex property to match
      * @param <V>                   the type of the value of the vertex property
-     * @return                      a collection of properties that match the value
+     * @return                      a label of properties that match the value
      */
     <V> Collection<VertexProperty<V>> propertiesForValue(String key, V value) {
         if (!properties.containsKey(key)) {
@@ -266,9 +263,9 @@ public class ArangoDBPropertyManager {
     }
 
     /**
-     * Add a collection of Properties that the manager needs to manage. This methods is used during de-serialization
+     * Add a label of Properties that the manager needs to manage. This methods is used during de-serialization
      * to add properties to an Edge or VertexProperty
-     * @param properties            The collection of properties.
+     * @param properties            The label of properties.
      */
     void attachVertexProperties(String key, Collection<ArangoDBVertexProperty> properties) {
         this.properties.put(key, properties.stream().map(p -> (ArangoDBElementProperty)p).collect(Collectors.toList()));
@@ -280,14 +277,12 @@ public class ArangoDBPropertyManager {
 
     /**
      * Helper method to add Properties with {#link Cardinality.single} cardinality.
-     * @param key                   the key of the property
+     * @param key                   the primaryKey of the property
      * @param p                     the property
      */
     private void addSingleProperty(String key, ArangoDBElementProperty<?> p) {
         this.properties.put(key, new HashSet<>(Collections.singleton(p)));
         this.cardinalities.put(key, VertexProperty.Cardinality.single);
-        // TODO Determine the correct place to save to reduce the amount of transactions
-        ((ArangoDBElement) element).save();
     }
 
     /**
@@ -303,8 +298,8 @@ public class ArangoDBPropertyManager {
     }
 
     /**
-     * Return an iterator of all properties for the given key.
-     * @param key                   The property key
+     * Return an iterator of all properties for the given primaryKey.
+     * @param key                   The property primaryKey
      * @param <V>                   The type of the property value
      * @param <P>                   The type of the properties to return
      * @return                      An iterator of the existing properties.
@@ -319,8 +314,8 @@ public class ArangoDBPropertyManager {
     }
 
     /**
-     * Return an iteratod of all the values for the given key
-     * @param key                   The property key
+     * Return an iteratod of all the values for the given primaryKey
+     * @param key                   The property primaryKey
      * @param <V>                   The type of the property value
      * @return                      An iterator of the properties' values
      */

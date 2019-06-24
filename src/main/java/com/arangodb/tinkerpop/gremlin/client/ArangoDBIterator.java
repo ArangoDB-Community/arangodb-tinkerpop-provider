@@ -11,6 +11,7 @@ package com.arangodb.tinkerpop.gremlin.client;
 import java.util.Iterator;
 
 import com.arangodb.ArangoCursor;
+import com.arangodb.tinkerpop.gremlin.structure.BaseArngDocument;
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBGraph;
 
 /**
@@ -48,9 +49,9 @@ public class ArangoDBIterator<IType> implements Iterator<IType> {
 	@SuppressWarnings("unchecked")
 	@Override
 	public IType next() {
-		ArangoDBBaseDocument next = (ArangoDBBaseDocument) delegate.next();
+		BaseArngDocument next = (BaseArngDocument) delegate.next();
 		next.graph(graph);
-		next.collection(graph.getPrefixedCollectioName(next.label));
+		next.label(graph.getPrefixedCollectioName(next.label));
 		next.setPaired(true);
 		return (IType) next;
 	}

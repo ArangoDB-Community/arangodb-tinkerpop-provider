@@ -30,7 +30,7 @@ import java.util.Set;
  * @author Horacio Hoyos Rodriguez (https://www.york.ac.uk)
  */
 
-public class ArangoDBVertexProperty<V> extends ArangoDBElementProperty<V> implements VertexProperty<V>, ArangoDBElement {
+public class ArangoDBVertexProperty<V> extends ArangoDBElementProperty<V> implements VertexProperty<V>, ArngElement {
 
 	/** The Logger. */
 	

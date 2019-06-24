@@ -53,7 +53,7 @@ public class ArngGraphVariablesClient implements GraphVariablesClient {
                             null,
                             ArangoDBGraphVariables.class));
         } catch (ArangoDBException e) {
-            logger.error("Error executing AQL query to insert graph variables");
+            logger.error("Error executing AQL query to insertEdge graph variables");
             ArangoDBGraphException arangoDBException = ArangoDBExceptions.getArangoDBException(e);
             if (arangoDBException.getErrorCode() == 1210) {
                 throw Graph.Exceptions.vertexWithIdAlreadyExists(variables._key);
@@ -61,9 +61,8 @@ public class ArngGraphVariablesClient implements GraphVariablesClient {
             throw arangoDBException;
         }
         if (!it.hasNext()) {
-            throw new ArangoDBGraphException("Failed to insert graph variables.");
+            throw new ArangoDBGraphException("Failed to insertEdge graph variables.");
         }
-        variables = it.next().pair(this);
         cache.put("variables", variables);
         return variables;
     }
@@ -79,10 +78,10 @@ public class ArngGraphVariablesClient implements GraphVariablesClient {
                     VariableIterator it;
                     try {
                         Map<String, Object> bindVars = new HashMap<>();
-                        bindVars.put("key", graphName);
+                        bindVars.put("primaryKey", graphName);
                         it = new VariableIterator(client,
                                 db.executeAqlQuery(
-                                        new ArangoDBQueryBuilder().document(GraphVariablesClient.GRAPH_VARIABLES_COLLECTION, "key").toString(),
+                                        new ArangoDBQueryBuilder().document(GraphVariablesClient.GRAPH_VARIABLES_COLLECTION, "primaryKey").toString(),
                                         bindVars,
                                         null,
                                         ArangoDBGraphVariables.class));
@@ -94,7 +93,7 @@ public class ArngGraphVariablesClient implements GraphVariablesClient {
                         throw new GraphVariablesNotFoundException(String.format("No graph variables found for graph %s", graphName));
                     }
                     ArangoDBGraphVariables result = it.next();
-                    result.collection(GraphVariablesClient.GRAPH_VARIABLES_COLLECTION);
+                    result.label(GraphVariablesClient.GRAPH_VARIABLES_COLLECTION);
                     return result;
                 }
             });
@@ -117,10 +116,10 @@ public class ArngGraphVariablesClient implements GraphVariablesClient {
         VariableIterator it;
         try {
             Map<String, Object> bindVars = new HashMap<>();
-            bindVars.put("key", variables._key());
+            bindVars.put("primaryKey", variables.primaryKey());
             it = new VariableIterator(this,
                     db.executeAqlQuery(
-                            new ArangoDBQueryBuilder().updateDocument(GraphVariablesClient.GRAPH_VARIABLES_COLLECTION, "key").toString(),
+                            new ArangoDBQueryBuilder().updateDocument(GraphVariablesClient.GRAPH_VARIABLES_COLLECTION, "primaryKey").toString(),
                             bindVars,
                             null,
                             ArangoDBGraphVariables.class));
@@ -131,9 +130,9 @@ public class ArngGraphVariablesClient implements GraphVariablesClient {
         if (!it.hasNext()) {
             throw new GraphVariablesNotFoundException("Failed to update graph variables.");
         }
-        variables._rev(it.next()._rev());
+        variables.revision(it.next().revision());
         cache.put("variables", variables);
-        logger.info("Document updated, new rev {}", variables._rev());
+        logger.info("ArngDocument updated, new revision {}", variables.revision());
     }
 
     @Override
@@ -141,10 +140,10 @@ public class ArngGraphVariablesClient implements GraphVariablesClient {
         logger.debug("Delete variables {} in {}", variables, graphName);
         try {
             Map<String, Object> bindVars = new HashMap<>();
-            bindVars.put("key", variables._key());
+            bindVars.put("primaryKey", variables.primaryKey());
             new VariableIterator(this,
                     db.executeAqlQuery(
-                            new ArangoDBQueryBuilder().deleteDocument(GraphVariablesClient.GRAPH_VARIABLES_COLLECTION, "key").toString(),
+                            new ArangoDBQueryBuilder().deleteDocument(GraphVariablesClient.GRAPH_VARIABLES_COLLECTION, "primaryKey").toString(),
                             bindVars,
                             null,
                             ArangoDBGraphVariables.class));

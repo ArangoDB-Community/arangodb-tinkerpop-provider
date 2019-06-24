@@ -9,8 +9,10 @@
 package com.arangodb.tinkerpop.gremlin.client;
 
 import com.arangodb.ArangoCursor;
-import com.arangodb.tinkerpop.gremlin.structure.ArangoDBGraph;
-import com.arangodb.tinkerpop.gremlin.structure.ArangoDBGraphVariables;
+import com.arangodb.tinkerpop.gremlin.structure.ArangoDBEdge;
+import com.arangodb.tinkerpop.gremlin.structure.ArangoDBVertex;
+import org.apache.tinkerpop.gremlin.structure.Edge;
+import org.apache.tinkerpop.gremlin.structure.Vertex;
 
 import java.util.Iterator;
 
@@ -21,11 +23,11 @@ import java.util.Iterator;
  * @author Horacio Hoyos Rodriguez (https://www.york.ac.uk)
  */
 
-public class VariableIterator implements Iterator<ArangoDBGraphVariables> {
+public class VertexIterator implements Iterator<Vertex> {
 
-	private final ArangoCursor<ArangoDBGraphVariables> delegate;
+	private final ArangoCursor<ArangoDBVertex> delegate;
 
-	private final GraphVariablesClient client;
+	private final VertexClient client;
 
 	/**
 	 * Instantiates a new ArangoDB iterator.
@@ -33,7 +35,7 @@ public class VariableIterator implements Iterator<ArangoDBGraphVariables> {
 	 * @param client 				the graph client
 	 * @param delegate 				the delegate iterator
 	 */
-	public VariableIterator(GraphVariablesClient client, ArangoCursor<ArangoDBGraphVariables> delegate) {
+	public VertexIterator(VertexClient client, ArangoCursor<ArangoDBVertex> delegate) {
 		super();
 		this.delegate = delegate;
 		this.client = client;
@@ -45,8 +47,8 @@ public class VariableIterator implements Iterator<ArangoDBGraphVariables> {
 	}
 
 	@Override
-	public ArangoDBGraphVariables next() {
+	public ArangoDBVertex next() {
 		return delegate.next().useClient(client);
 	}
-	
+
 }

@@ -27,13 +27,13 @@ import java.util.NoSuchElementException;
 
 public class ArangoDBElementProperty<V> implements Property<V> {
 
-    /** The key (name) that identifies this property. */
+    /** The primaryKey (name) that identifies this property. */
 
     protected String key;
 
     /** The element that owns the property */
     @Expose(serialize = false, deserialize = false)
-    protected ArangoDBElement element;
+    protected ArngElement element;
 
     /** The value of the property */
 
@@ -47,7 +47,7 @@ public class ArangoDBElementProperty<V> implements Property<V> {
     public ArangoDBElementProperty() { }
 
 
-    public ArangoDBElementProperty(String key, V value, ArangoDBElement element) {
+    public ArangoDBElementProperty(String key, V value, ArngElement element) {
         this.key = key;
         this.value = value;
         this.element = element;
@@ -64,7 +64,7 @@ public class ArangoDBElementProperty<V> implements Property<V> {
         return element;
     }
 
-    public void element(ArangoDBElement element) {
+    public void element(ArngElement element) {
         this.element = element;
     }
 

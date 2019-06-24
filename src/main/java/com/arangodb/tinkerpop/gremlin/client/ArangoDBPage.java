@@ -1,12 +1,13 @@
 package com.arangodb.tinkerpop.gremlin.client;
 
+import com.arangodb.tinkerpop.gremlin.structure.BaseArngDocument;
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBGraph;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 
 import java.util.Iterator;
 
-public class ArangoDBPage<EType extends ArangoDBBaseDocument> implements Iterator<EType> {
+public class ArangoDBPage<EType extends BaseArngDocument> implements Iterator<EType> {
 
     final private String startId;
     final private int pageSize;
@@ -44,8 +45,8 @@ public class ArangoDBPage<EType extends ArangoDBBaseDocument> implements Iterato
         public EType load(String key) {
             String[] keyInfo = key.split("/");
             if (keyInfo.length < 2) {
-                throw new ArangoDBGraphException("Element ids should consists of the collection's name " +
-                        "and the document key separated by /.");
+                throw new ArangoDBGraphException("Element ids should consists of the label's name " +
+                        "and the document primaryKey separated by /.");
             }
             assert keyInfo[1].equals(collection);
             return graph.getDatabaseClient().getElement(keyInfo[0], keyInfo[1], eType);

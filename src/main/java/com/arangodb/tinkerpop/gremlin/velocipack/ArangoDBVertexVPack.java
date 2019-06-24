@@ -1,4 +1,4 @@
-package com.arangodb.tinkerpop.gremlin.client;
+package com.arangodb.tinkerpop.gremlin.velocipack;
 
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBElementProperty;
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBVertex;
@@ -10,11 +10,9 @@ import com.arangodb.velocypack.exception.VPackParserException;
 import org.apache.tinkerpop.gremlin.structure.Property;
 import org.apache.tinkerpop.gremlin.structure.VertexProperty;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * The ArangoDBVertexVPack is a specialized VPackSerializer/Deserializer that can traverse the vertex's vertexProperties
@@ -38,7 +36,7 @@ import java.util.stream.Collectors;
  *         "type: ["<propValue.class.qualifiedName()>", ...]
  *         "properties": [
  *           {
- *             "key": "<key>"
+ *             "primaryKey": "<primaryKey>"
  *             "value": "<value>"
  *             "type:   "<value.class.qualifiedName()>"
  *           },
@@ -54,9 +52,9 @@ import java.util.stream.Collectors;
  * In the following example the base document attributes have been augmented with Tinkerpop metadata:
  * <pre>{@code
  * {
- *   "_id" : "myusers/3456789",
- *   "_key" : "3456789",
- *   "_rev" : "14253647",
+ *   "handle" : "myusers/3456789",
+ *   "primaryKey" : "3456789",
+ *   "revision" : "14253647",
  *   "firstName" : "John",
  *   "lastName" : "Doe",
  *   "address" : {
@@ -91,7 +89,7 @@ import java.util.stream.Collectors;
  *         [],
  *         [],
  *         [{
- *           "key": "since",
+ *           "primaryKey": "since",
  *           "value": 1996,
  *           "type": "lang.java.Integer"
  *         }],
@@ -129,11 +127,11 @@ public class ArangoDBVertexVPack implements VPackSerializer<ArangoDBVertex>, VPa
         VPackSerializationContext context) throws VPackException {
 
         builder.add(attribute, ValueType.OBJECT);
-        if (value._id() != null) {
-            builder.add("_id", value._id());
+        if (value.handle() != null) {
+            builder.add("handle", value.handle());
         }
-        if (value._key() != null) {
-            builder.add("_key", value._key());
+        if (value.primaryKey() != null) {
+            builder.add("primaryKey", value.primaryKey());
         }
         Map<String, TinkerPopMetadata> metadataMap = new HashMap<>();
         Map<String, List<Object>> pValues = new HashMap<>();
