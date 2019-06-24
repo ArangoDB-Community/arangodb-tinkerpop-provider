@@ -56,14 +56,6 @@ public class ArangoDBGraphVariables extends BaseArngDocument implements Graph.Va
         this(null, graphName, null, client.GRAPH_VARIABLES_COLLECTION, client);
     }
 
-	public ArangoDBGraphVariables(
-		String id,
-		String key,
-		String rev,
-		String label) {
-		this(id, key, rev, label, null);
-	}
-
 
 	public ArangoDBGraphVariables(
 		String id,
@@ -113,10 +105,7 @@ public class ArangoDBGraphVariables extends BaseArngDocument implements Graph.Va
 
     @Override
     public void remove(String key) {
-    	Object oldValue = this.store.remove(key);
-    	if (oldValue != null) {
-			client.deleteGraphVariables(this);
-    	}
+    	this.store.remove(key);
     }
 
 	@Override

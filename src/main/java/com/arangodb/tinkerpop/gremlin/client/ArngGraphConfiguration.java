@@ -21,7 +21,7 @@ import static com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil.edgeDefinitionSt
 
 public class PlainArangoDBConfiguration implements GraphConfiguration {
 
-    class MalformedRelationException extends Exception {
+    public class MalformedRelationException extends Exception {
         public MalformedRelationException(String message) {
             super(message);
         }

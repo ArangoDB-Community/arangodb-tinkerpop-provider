@@ -490,7 +490,7 @@ public class ArangoDBGraph implements ArngGraph {
      */
 	// FIXME Move this to another class
     public static ArangoDBGraph open(Configuration configuration) {
-		final GraphConfiguration arangoConfig = new PlainArangoDBConfiguration(configuration);
+		final GraphConfiguration arangoConfig = new ArngGraphConfiguration(configuration);
 		final String dbname = arangoConfig.databaseName()
 				.orElseThrow(() -> new IllegalStateException("DatabaseClient name property missing from configuration."));
 		final String graphName = arangoConfig.graphName().orElseThrow(() -> new IllegalStateException("Graph name property missing from configuration."));
@@ -516,7 +516,7 @@ public class ArangoDBGraph implements ArngGraph {
 		if (databaseGraph.exists()) {
 			try {
 				arangoConfig.checkGraphForErrors(databaseGraph, new GraphCreateOptions());
-			} catch (EdgeDefinitions.MalformedRelationException e) {
+			} catch (ArngGraphConfiguration.MalformedRelationException e) {
 				throw new IllegalStateException("Existing graph does not match configuration", e);
 			}
 		}
@@ -627,7 +627,7 @@ public class ArangoDBGraph implements ArngGraph {
 		try {
 			return variablesClient.getGraphVariables();
 		} catch (GraphVariablesClient.GraphVariablesNotFoundException e) {
-			return variablesClient.insertGraphVariables(new ArangoDBGraphVariables(name, variablesClient));
+			return variablesClient.insertGraphVariables();
 		}
 	}
 

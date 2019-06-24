@@ -26,7 +26,7 @@ public abstract class BaseArngDocument implements ArngDocument {
 
     /** ArangoDB internal revision. */
 
-    protected final String _rev;
+    protected String _rev;
 
     /** ArangoDB internal primaryKey - mapped to TinkerPop's ID. */
 
@@ -52,12 +52,6 @@ public abstract class BaseArngDocument implements ArngDocument {
         this.paired = (id != null) && (rev != null);
     }
 
-    /**
-     * Get the ArngDocument's ArangoDB Id.
-     *
-     * @return the id
-     */
-
     @Override
     public final String handle() throws ElementNotPairedException {
         if (!paired) {
@@ -66,26 +60,19 @@ public abstract class BaseArngDocument implements ArngDocument {
         return _id;
     }
 
-    /**
-     * Get the ArngDocument's ArangoDB Key.
-     *
-     * @return the name
-     */
-
     @Override
     public final String primaryKey() {
         return _key;
     }
 
-    /**
-     * Get the ArngDocument's ArangoDB Revision.
-     *
-     * @return the revision
-     */
-
     @Override
     public final String revision() {
         return _rev;
+    }
+
+    @Override
+    public void revision(String newRev) {
+        this._rev = newRev;
     }
 
     /**
@@ -94,6 +81,7 @@ public abstract class BaseArngDocument implements ArngDocument {
      * @return the label
      */
 
+    @Override
     public final String label() {
         return label;
     }

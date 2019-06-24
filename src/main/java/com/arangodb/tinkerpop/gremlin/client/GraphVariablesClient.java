@@ -22,12 +22,11 @@ public interface GraphVariablesClient {
 
     /**
      * Insert an ArangoDBGraphVariables document for a given graph.
-     * @param variables                the variables
      * @throws ArangoDBGraphException 	If there was an error inserting the document or if the variables
      *      are already paired.
      * @throws IllegalArgumentException If graph variables already exist for the graph
      */
-    ArangoDBGraphVariables insertGraphVariables(ArangoDBGraphVariables variables);
+    ArangoDBGraphVariables insertGraphVariables();
 
     /**
      * Get the graph variables for the given graph
@@ -44,11 +43,4 @@ public interface GraphVariablesClient {
 
     void updateGraphVariables(ArangoDBGraphVariables variables) throws GraphVariablesNotFoundException;
 
-    /**
-     * Delete the graph variables for the given graph
-     * @param variables                the variables
-     * @throws ArangoDBGraphException 	If there was an error deleting the document
-     */
-
-    void deleteGraphVariables(ArangoDBGraphVariables variables);
 }
