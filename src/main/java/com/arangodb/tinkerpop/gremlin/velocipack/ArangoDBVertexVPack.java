@@ -1,8 +1,8 @@
 package com.arangodb.tinkerpop.gremlin.velocipack;
 
-import com.arangodb.tinkerpop.gremlin.structure.ArangoDBElementProperty;
+import com.arangodb.tinkerpop.gremlin.structure.properties.ArngElementProperty;
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBVertex;
-import com.arangodb.tinkerpop.gremlin.structure.ArangoDBVertexProperty;
+import com.arangodb.tinkerpop.gremlin.structure.properties.ArngVertexProperty;
 import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
 import com.arangodb.velocypack.*;
 import com.arangodb.velocypack.exception.VPackException;
@@ -24,8 +24,8 @@ import java.util.*;
  * and an array for {@link VertexProperty.Cardinality#set} and {@link VertexProperty.Cardinality#list}.
  *
  * We use the following JSON structure to persist the Tinkerpop metadata. For each property we have an entry which
- * captures the cardinality, type(s) and nested properties. Note that the <i>type</i> and <i>properties</i> values
- * are arrays so we can persist type and nested properties for each of the property's values.
+ * captures the cardinality, type(s) and nested elementProperties. Note that the <i>type</i> and <i>elementProperties</i> values
+ * are arrays so we can persist type and nested elementProperties for each of the property's values.
  * <p>
  * <pre>{@code
  *   {
@@ -34,7 +34,7 @@ import java.util.*;
  *       "<property_key>": {
  *         "cardinality": "<VertexProperty.Cardinality>"
  *         "type: ["<propValue.class.qualifiedName()>", ...]
- *         "properties": [
+ *         "elementProperties": [
  *           {
  *             "primaryKey": "<primaryKey>"
  *             "value": "<value>"
@@ -70,22 +70,22 @@ import java.util.*;
  *     "firstName" : {
  *       "cardinality": "single",
  *       "type": ["lang.java.String"],
- *       "properties": [ { } ]
+ *       "elementProperties": [ { } ]
  *       },
  *     "lastName" : {
  *       "cardinality": "single",
  *       "type": ["lang.java.String"],
- *       "properties": [ { } ]
+ *       "elementProperties": [ { } ]
  *     },
  *     "address" : {
  *       "cardinality": "single",
  *       "type": "Object",
- *       "properties": [ { } ]
+ *       "elementProperties": [ { } ]
  *     },
  *     "hobbies" : {
  *       "cardinality": "list",
  *       "type": ["lang.java.String", "lang.java.String", "lang.java.String"],
- *       "properties": [
+ *       "elementProperties": [
  *         [],
  *         [],
  *         [{
@@ -110,7 +110,7 @@ public class ArangoDBVertexVPack implements VPackSerializer<ArangoDBVertex>, VPa
 
         public VertexProperty.Cardinality cardinality;
         public List<String> type;
-        public List<List<ArangoDBElementProperty>> properties;
+        public List<List<ArngElementProperty>> properties;
 
         public TinkerPopMetadata() { }
 
@@ -136,10 +136,10 @@ public class ArangoDBVertexVPack implements VPackSerializer<ArangoDBVertex>, VPa
         Map<String, TinkerPopMetadata> metadataMap = new HashMap<>();
         Map<String, List<Object>> pValues = new HashMap<>();
         Map<String, List<String>> pTypes = new HashMap<>();
-        Map<String, List<List<ArangoDBElementProperty>>> pProperties = new HashMap<>();
+        Map<String, List<List<ArngElementProperty>>> pProperties = new HashMap<>();
         Iterator<? extends Property<Object>> itty = value.properties();
         while (itty.hasNext()) {
-            ArangoDBVertexProperty<?> p = (ArangoDBVertexProperty<?>) itty.next();
+            ArngVertexProperty<?> p = (ArngVertexProperty<?>) itty.next();
             TinkerPopMetadata md = metadataMap.get(p.key());
             if (md == null) {
                 md = new TinkerPopMetadata(p.getCardinality());
@@ -155,9 +155,9 @@ public class ArangoDBVertexVPack implements VPackSerializer<ArangoDBVertex>, VPa
                 values.add(p.value());
                 List<String> types = getOrInit(p.key(), pTypes);
                 types.add(p.value().getClass().getCanonicalName());
-                List<List<ArangoDBElementProperty>> properties = getOrInit(p.key(), pProperties);
-                ArrayList<ArangoDBElementProperty> nps = new ArrayList<>();
-                p.properties(p.keys().toArray(new String[0])).forEachRemaining(np -> nps.add((ArangoDBElementProperty)np));
+                List<List<ArngElementProperty>> properties = getOrInit(p.key(), pProperties);
+                ArrayList<ArngElementProperty> nps = new ArrayList<>();
+                p.properties(p.keys().toArray(new String[0])).forEachRemaining(np -> nps.add((ArngElementProperty)np));
                 properties.add(nps);
             }
         }
@@ -212,15 +212,15 @@ public class ArangoDBVertexVPack implements VPackSerializer<ArangoDBVertex>, VPa
                     if (rawValue instanceof Collections) {
                         // Without metadata we can not infer Set
                         Collection<?> value = (Collection<?>) rawValue;
-                        List<ArangoDBVertexProperty> properties = new ArrayList<>();
+                        List<ArngVertexProperty> properties = new ArrayList<>();
                         for (Object v : value) {
-                            ArangoDBVertexProperty<?> vp = new ArangoDBVertexProperty<>(key, v, vertex, VertexProperty.Cardinality.list);
+                            ArngVertexProperty<?> vp = new ArngVertexProperty<>(key, v, vertex, VertexProperty.Cardinality.list);
                             properties.add(vp);
                         }
                         vertex.attachProperties(key, properties);
                     }
                     else {
-                        ArangoDBVertexProperty<?> vp = new ArangoDBVertexProperty<>(key, rawValue, vertex, VertexProperty.Cardinality.single);
+                        ArngVertexProperty<?> vp = new ArngVertexProperty<>(key, rawValue, vertex, VertexProperty.Cardinality.single);
                         vertex.attachProperties(key, Collections.singletonList(vp));
                     }
                 }
@@ -228,17 +228,17 @@ public class ArangoDBVertexVPack implements VPackSerializer<ArangoDBVertex>, VPa
                     VertexProperty.Cardinality  cardinality = md.cardinality;
                     if (cardinality.equals(VertexProperty.Cardinality.single)) {
                         Object value = ArangoDBUtil.getCorretctPrimitive(rawValue, md.type.get(0));
-                        ArangoDBVertexProperty<?> vp = new ArangoDBVertexProperty<>(key, value, vertex, cardinality);
+                        ArngVertexProperty<?> vp = new ArngVertexProperty<>(key, value, vertex, cardinality);
                         vertex.attachProperties(key, Collections.singletonList(vp));
                     }
                     else if (cardinality.equals(VertexProperty.Cardinality.list)) {
                         List<Object> value = (List<Object>) rawValue;
-                        List<ArangoDBVertexProperty> properties = new ArrayList<>();
+                        List<ArngVertexProperty> properties = new ArrayList<>();
                         for (int index = 0; index<value.size(); index++) {
                             Object v = ArangoDBUtil.getCorretctPrimitive(value.get(index), md.type.get(0));
-                            ArangoDBVertexProperty<?> vp = new ArangoDBVertexProperty<>(key, v, vertex, VertexProperty.Cardinality.list);
+                            ArngVertexProperty<?> vp = new ArngVertexProperty<>(key, v, vertex, VertexProperty.Cardinality.list);
                             properties.add(vp);
-                            List<ArangoDBElementProperty> nps = md.properties.get(index);
+                            List<ArngElementProperty> nps = md.properties.get(index);
                             vp.attachProperties(nps);
                         }
                         vertex.attachProperties(key, properties);
@@ -258,10 +258,10 @@ public class ArangoDBVertexVPack implements VPackSerializer<ArangoDBVertex>, VPa
         return result;
     }
 
-    private List<ArangoDBElementProperty> propertyList(ArangoDBVertexProperty<?> vertexProperty) {
-        List<ArangoDBElementProperty> properties = new ArrayList<>();
+    private List<ArngElementProperty> propertyList(ArngVertexProperty<?> vertexProperty) {
+        List<ArngElementProperty> properties = new ArrayList<>();
         Iterator<Property<Object>> npit = vertexProperty.properties(vertexProperty.keys().toArray(new String[0]));
-        npit.forEachRemaining(p -> properties.add((ArangoDBElementProperty)p));
+        npit.forEachRemaining(p -> properties.add((ArngElementProperty)p));
         return properties;
     }
 }

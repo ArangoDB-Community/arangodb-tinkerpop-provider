@@ -7,6 +7,8 @@ import java.util.Set;
 
 import com.arangodb.tinkerpop.gremlin.client.ArngDatabaseClient;
 import com.arangodb.tinkerpop.gremlin.structure.*;
+import com.arangodb.tinkerpop.gremlin.structure.properties.ArngElementProperty;
+import com.arangodb.tinkerpop.gremlin.structure.properties.ArngVertexProperty;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationConverter;
 import org.apache.tinkerpop.gremlin.AbstractGraphProvider;
@@ -31,10 +33,10 @@ public class ArangoDBGraphProvider extends AbstractGraphProvider {
         add(ArangoDBGraph.class);
         add(ArangoDBGraphVariables.class);
 		add(ArangoDBEdgeProperty.class);
-        add(ArangoDBElementProperty.class);
+        add(ArngElementProperty.class);
 		add(ArangoDBPropertyProperty.class);
         add(ArangoDBVertex.class);
-        add(ArangoDBVertexProperty.class);
+        add(ArngVertexProperty.class);
     }};
     
     

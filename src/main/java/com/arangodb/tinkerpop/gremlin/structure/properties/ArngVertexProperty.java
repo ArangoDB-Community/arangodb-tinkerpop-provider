@@ -6,68 +6,66 @@
 //
 //////////////////////////////////////////////////////////////////////////////////////////
 
-package com.arangodb.tinkerpop.gremlin.structure;
+package com.arangodb.tinkerpop.gremlin.structure.properties;
 
-import com.arangodb.velocypack.annotations.Expose;
+import com.arangodb.tinkerpop.gremlin.structure.ArangoDBVertex;
+import com.arangodb.tinkerpop.gremlin.structure.ArngElement;
 import org.apache.tinkerpop.gremlin.structure.Property;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
 import org.apache.tinkerpop.gremlin.structure.VertexProperty;
 import org.apache.tinkerpop.gremlin.structure.util.ElementHelper;
 import org.apache.tinkerpop.gremlin.structure.util.StringFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.Set;
 
 
 /**
- * The Class ArangoDBVertexProperty.
+ * An implementation of {@link VertexProperty} for ArangoDB vertices. This implementation delegates property access to
+ * an {@link ElementProperties} instance.
  *
  * @param <V> the type of the property value
  * 
  * @author Horacio Hoyos Rodriguez (https://www.york.ac.uk)
  */
 
-public class ArangoDBVertexProperty<V> extends ArangoDBElementProperty<V> implements VertexProperty<V>, ArngElement {
+public class ArngVertexProperty<V> extends ArngElementProperty<V> implements VertexProperty<V>, ArngElement {
 
-	/** The Logger. */
-	
-	private static final Logger logger = LoggerFactory.getLogger(ArangoDBVertexProperty.class);
+    /** All property access is delegated */
 
-    /** The cardinality of the property */
-
-    private Cardinality cardinality;
-
-    @Expose(serialize = false, deserialize = false)
-    private ArangoDBPropertyManager pManager;
+    private final ElementProperties properties;
 
     /**
-     * Constructor used for ArabgoDB JavaBeans serialisation.
+     * Instantiates a new arango DB vertex property using an {@link ArngElementProperties} as delegate for
+     * property acess.
+     *
+     * @param name                  the property name
+     * @param value                 the property value
+     * @param owner                 the property owner
      */
 
-	public ArangoDBVertexProperty() {
-	    super();
-        pManager = new ArangoDBPropertyManager(this);
-	}
-
+    public ArngVertexProperty(
+            String name,
+            V value,
+            ArangoDBVertex owner) {
+        this(name, value, owner, new ArngElementProperties());
+    }
 	/**
 	 * Instantiates a new arango DB vertex property.
 	 *
-	 * @param name the name
-	 * @param value the value
-	 * @param owner the owner
+	 * @param name                  the property name
+	 * @param value                 the property value
+	 * @param owner                 the property owner
+     * @param properties            the delegate responsible of property access
 	 */
 	
-	public ArangoDBVertexProperty(
+	public ArngVertexProperty(
         String name,
         V value,
         ArangoDBVertex owner,
-        Cardinality cardinality) {
+        ElementProperties properties) {
 		super(name, value, owner);
-        this.cardinality = cardinality;
-
+        this.properties = properties;
 	}
 
 	@Override
@@ -86,43 +84,40 @@ public class ArangoDBVertexProperty<V> extends ArangoDBElementProperty<V> implem
     }
     @Override
     public <U> Iterator<Property<U>> properties(String... propertyKeys) {
-        return pManager.properties(propertyKeys);
+        return properties.properties(propertyKeys);
     }
 
     @Override
     public Set<String> keys() {
-        return pManager.keys();
+        return properties.keys();
     }
 
     @Override
     public <U> Property<U> property(String key) {
-        return pManager.property(key);
+        return properties.property(key);
     }
 
     @Override
     public <U> Iterator<U> values(String... propertyKeys) {
-        return pManager.values(propertyKeys);
+        return properties.values(propertyKeys);
     }
 
     @Override
     public <U> Property<U> property(String key, U value) {
-        return pManager.property(key, value);
-    }
-
-    public Cardinality getCardinality() {
-        return cardinality;
-    }
-
-    @Override
-    public void removeProperty(ArangoDBElementProperty<?> property) {
-        pManager.removeProperty(property);
+        final Property<U> property = properties.property(key, value, this);
+        update();
+        return property;
     }
 
     @Override
-    public <PV> void attachProperties(Iterator<Property<PV>> properties) {
-        pManager.attachProperties(properties);
+    public void removeProperty(Property<?> property) {
+        properties.removeProperty(property.key());
     }
 
+    @Override
+    public void update() {
+        element.update();
+    }
 
     @Override
     public String toString() {
@@ -138,6 +133,5 @@ public class ArangoDBVertexProperty<V> extends ArangoDBElementProperty<V> implem
     public int hashCode() {
     	return key().hashCode() + value().hashCode();
     }
-
 
 }

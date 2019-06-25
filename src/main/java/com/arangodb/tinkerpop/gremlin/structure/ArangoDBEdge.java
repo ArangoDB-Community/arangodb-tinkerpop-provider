@@ -14,10 +14,9 @@ import java.util.concurrent.TimeUnit;
 
 import com.arangodb.ArangoCursor;
 import com.arangodb.ArangoDBException;
-import com.arangodb.entity.DocumentField;
-import com.arangodb.tinkerpop.gremlin.cache.VertexLoader;
 import com.arangodb.tinkerpop.gremlin.client.*;
-import com.arangodb.velocypack.annotations.Expose;
+import com.arangodb.tinkerpop.gremlin.structure.properties.ArngElementProperties;
+import com.arangodb.tinkerpop.gremlin.structure.properties.ElementProperties;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -72,9 +71,9 @@ public class ArangoDBEdge extends BaseArngDocument implements ArngEdge {
 		}
 	}
 
-	/** All property access is delegated to the property manager */
+	/** All property access is delegated */
 
-	private final ArangoDBPropertyManager pManager;
+	private final ElementProperties properties;
 
 	private final LoadingCache<String, ArangoDBVertex> vertices;
 
@@ -92,7 +91,7 @@ public class ArangoDBEdge extends BaseArngDocument implements ArngEdge {
 		String label,
 		ArangoDBVertex from,
 		ArangoDBVertex to) {
-		this(null, key, null, label, from, to, null);
+		this(null, key, null, label, from, to, null, new ArngElementProperties());
 	}
 
 	/**
@@ -112,7 +111,18 @@ public class ArangoDBEdge extends BaseArngDocument implements ArngEdge {
 		String label,
 		ArangoDBVertex from,
 		ArangoDBVertex to) {
-		this(id, key, rev, label, from, to, null);
+		this(id, key, rev, label, from, to, null, new ArngElementProperties());
+	}
+
+	public ArangoDBEdge(
+		String id,
+		String key,
+		String rev,
+		String label,
+		ArangoDBVertex from,
+		ArangoDBVertex to,
+		EdgeClient client) {
+		this(id, key, rev, label, from, to, client, new ArngElementProperties());
 	}
 
 	/**
@@ -131,7 +141,8 @@ public class ArangoDBEdge extends BaseArngDocument implements ArngEdge {
 		String label,
 		ArangoDBVertex from,
 		ArangoDBVertex to,
-		EdgeClient client) {
+		EdgeClient client,
+		ElementProperties properties) {
 		super(id, key, rev, label);
 		this.client = client;
 		vertices = CacheBuilder.newBuilder()
@@ -139,17 +150,17 @@ public class ArangoDBEdge extends BaseArngDocument implements ArngEdge {
 				.build(new EdgeVertexLoader(this, client));
 		vertices.put("from", from);
 		vertices.put("to", to);
-		pManager = new ArangoDBPropertyManager(this);
+		this.properties = properties;
 	}
 
-	// FIXME Move to interface
-	public ArangoDBEdge useClient(EdgeClient client) {
-		try {
-			return new ArangoDBEdge(_id, _key, _rev, label, vertices.get("from"), vertices.get("to"), client);
-		} catch (ExecutionException e) {
-			throw new IllegalStateException("Error assigning client to edge", e);
-		}
-	}
+//	// FIXME Move to interface
+//	public ArangoDBEdge useClient(EdgeClient client) {
+//		try {
+//			return new ArangoDBEdge(_id, _key, _rev, label, vertices.get("from"), vertices.get("to"), client);
+//		} catch (ExecutionException e) {
+//			throw new IllegalStateException("Error assigning client to edge", e);
+//		}
+//	}
 
 	@Override
 	public String from() {
@@ -235,49 +246,44 @@ public class ArangoDBEdge extends BaseArngDocument implements ArngEdge {
 	}
 
 	@Override
-	public void removeProperty(ArangoDBElementProperty<?> property) {
-		pManager.removeProperty(property);
+	public void removeProperty(Property<?> property) {
+		properties.removeProperty(property.key());
+	}
+
+	@Override
+	public void update() {
+		client.update(this);
 	}
 
 
 	@Override
 	public <V> Property<V> property(final String key) {
 		logger.debug("Get property {}", key);
-		return pManager.property(key);
+		return properties.property(key);
 	}
 
 	@Override
 	public <V> Iterator<Property<V>> properties(String... propertyKeys) {
 		logger.debug("Get Properties {}", (Object[])propertyKeys);
-		return pManager.properties(propertyKeys);
+		return properties.properties(propertyKeys);
 	}
 
 	@Override
 	public <V> Iterator<V> values(String... propertyKeys) {
 		logger.debug("Get Values {}", (Object[])propertyKeys);
-		return pManager.values(propertyKeys);
+		return properties.values(propertyKeys);
 	}
 
 	@Override
 	public <V> Property<V> property(final String key, final V value) {
-		Property<V> result = pManager.property(key, value);
-		client.update(this);
+		Property<V> result = properties.property(key, value, this);
+		update();
 		return result;
 	}
 
-
 	@Override
 	public Set<String> keys() {
-		return pManager.keys();
-	}
-
-	/**
-	 * This method is intended for rapid deserialization
-	 * @return
-	 */
-
-	public <V> void attachProperties(Iterator<Property<V>>  properties) {
-		this.pManager.attachProperties(properties);
+		return properties.keys();
 	}
 
 	@Override

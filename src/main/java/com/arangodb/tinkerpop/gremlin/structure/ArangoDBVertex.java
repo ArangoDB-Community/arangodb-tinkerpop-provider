@@ -10,6 +10,7 @@ package com.arangodb.tinkerpop.gremlin.structure;
 
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBGraphException;
 import com.arangodb.tinkerpop.gremlin.client.VertexClient;
+import com.arangodb.tinkerpop.gremlin.structure.properties.*;
 import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
 import org.apache.tinkerpop.gremlin.structure.*;
 import org.apache.tinkerpop.gremlin.structure.VertexProperty.Cardinality;
@@ -35,11 +36,23 @@ import java.util.regex.Matcher;
 
 public class ArangoDBVertex extends BaseArngDocument implements Vertex, ArngElement {
 
+	public static class CantAddValueToSinglePropertyException extends Exception {
+
+		public CantAddValueToSinglePropertyException(String message) {
+			super(message);
+		}
+	}
+
+	public static class CantRemoveValueFromSinglePropertyException extends Exception {
+		public CantRemoveValueFromSinglePropertyException(String message) {
+		}
+	}
+
 	private static final Logger logger = LoggerFactory.getLogger(ArangoDBVertex.class);
 
 	/** All property access is delegated to the property manager */
 
-	protected ArangoDBPropertyManager pManager;
+	protected VertexProperties properties;
 
 	private final VertexClient client;
 
@@ -72,7 +85,7 @@ public class ArangoDBVertex extends BaseArngDocument implements Vertex, ArngElem
 		VertexClient client) {
 		super(id, key, rev, label);
 		this.client = client;
-		pManager = new ArangoDBPropertyManager(this);
+		properties = new ArngVertexProperties(this);
 	}
 
 	// FIXME Move to interface
@@ -159,7 +172,7 @@ public class ArangoDBVertex extends BaseArngDocument implements Vertex, ArngElem
 
 	@Override
 	public <V> VertexProperty<V> property(final String key) {
-		return pManager.vertexProperty(key);
+		return properties.property(key);
 	}
 
 	@Override
@@ -169,30 +182,9 @@ public class ArangoDBVertex extends BaseArngDocument implements Vertex, ArngElem
 		V value,
 		Object... keyValues) {
 		logger.debug("setting vertex property {} = {} ({})", key, value, keyValues);
-		ElementHelper.validateProperty(key, value);
-		ElementHelper.legalPropertyKeyValueArray(keyValues);
-		VertexProperty<V> p;
-		if (cardinality.equals(VertexProperty.Cardinality.single)) {
-			p = pManager.vertexProperty(key, value);
-			addNestedProperties(p, keyValues);
-			ElementHelper.attachProperties(p, keyValues);
-		}
-		// FIXME This assumes Cardinality is not changed from set to list (and viceversa)
-		else {
-			p = pManager.vertexProperty(key, value, cardinality);
-			Collection<VertexProperty<V>> matches = pManager.propertiesForValue(key, value);
-			if (matches.isEmpty()) {
-				ElementHelper.attachProperties(p, keyValues);
-			}
-			else {
-				for (VertexProperty<V> m : matches) {
-					p = m;
-					ElementHelper.attachProperties(m, keyValues);
-				}
-			}
-		}
-		client.update(this);
-		return p;
+		VertexProperty<V> result = properties.property(cardinality, key, value, keyValues);
+		update();
+		return result;
 	}
 
 
@@ -200,42 +192,35 @@ public class ArangoDBVertex extends BaseArngDocument implements Vertex, ArngElem
 	@Override
 	public <V> Iterator<VertexProperty<V>> properties(String... propertyKeys) {
 		logger.debug("Get Properties {}", (Object[])propertyKeys);
-		return pManager.vertexProperties(propertyKeys);
+		return properties.properties(propertyKeys);
 	}
 
 	@Override
 	public <V> Iterator<V> values(String... propertyKeys) {
 		logger.debug("Get Values {}", (Object[])propertyKeys);
-		return pManager.values(propertyKeys);
+		return properties.values(propertyKeys);
 	}
 
 	@Override
 	public Set<String> keys() {
-		return pManager.keys();
+		return properties.keys();
 	}
 
 	@Override
-	public void removeProperty(ArangoDBElementProperty<?> property) {
-		this.pManager.removeProperty(property);
+	public void removeProperty(Property<?> property) {
+		properties.removeProperty((VertexProperty<?>) property);
 	}
 
 	@Override
-	public void attachProperties(String key, Collection<ArangoDBVertexProperty> properties) {
-		this.pManager.attachVertexProperties(key, properties);
+	public void update() {
+		client.update(this);
 	}
 
-	/**
-	 * Add the nested vertexProperties to the vertex property
-	 * @param p             the VertexProperty
-	 * @param keyValues     the pairs of nested primaryKey:value to add
-	 */
-	private void addNestedProperties(VertexProperty<?> p, Object[] keyValues) {
-		for (int i = 0; i < keyValues.length; i = i + 2) {
-			if (!keyValues[i].equals(T.id) && !keyValues[i].equals(T.label)) {
-				p.property((String)keyValues[i], keyValues[i + 1]);
-			}
-		}
-	}
+//	@Override
+//	public void attachProperties(String key, Collection<ArngVertexProperty> elementProperties) {
+//		this.elementProperties.attachVertexProperties(key, elementProperties);
+//	}
+
 
 	@Override
 	public String toString() {

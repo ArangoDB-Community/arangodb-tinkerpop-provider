@@ -8,6 +8,8 @@
 
 package com.arangodb.tinkerpop.gremlin.jsr223;
 
+import com.arangodb.tinkerpop.gremlin.structure.properties.ArngElementProperty;
+import com.arangodb.tinkerpop.gremlin.structure.properties.ArngVertexProperty;
 import org.apache.tinkerpop.gremlin.jsr223.AbstractGremlinPlugin;
 import org.apache.tinkerpop.gremlin.jsr223.DefaultImportCustomizer;
 import org.apache.tinkerpop.gremlin.jsr223.ImportCustomizer;
@@ -41,12 +43,12 @@ public class ArangoDBGremlinPlugin extends AbstractGremlinPlugin {
                     ArangoDBQueryBuilder.class,
                     ArangoDBEdge.class,
             		ArangoDBEdgeProperty.class,
-            		ArangoDBElementProperty.class,
+            		ArngElementProperty.class,
                     ArangoDBGraph.class,
                     ArangoDBGraphVariables.class,
                     ArangoDBPropertyProperty.class,
                     ArangoDBVertex.class,
-                    ArangoDBVertexProperty.class,
+                    ArngVertexProperty.class,
                     ArangoDBUtil.class
             		)
             	.create();

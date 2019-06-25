@@ -6,32 +6,35 @@
 //
 //////////////////////////////////////////////////////////////////////////////////////////
 
-package com.arangodb.tinkerpop.gremlin.structure;
+package com.arangodb.tinkerpop.gremlin.structure.properties;
 
-import com.arangodb.velocypack.annotations.Expose;
+import com.arangodb.tinkerpop.gremlin.structure.ArngElement;
 import org.apache.tinkerpop.gremlin.structure.Element;
 import org.apache.tinkerpop.gremlin.structure.Property;
 import org.apache.tinkerpop.gremlin.structure.util.ElementHelper;
 import org.apache.tinkerpop.gremlin.structure.util.StringFactory;
 
+import java.util.Collections;
+import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 
 /**
- * The Class ArangoDBProperty.
+ * Implementation of {@link Property} for ArangoDB elements (Edges and VertexProperties)
  *
  * @param <V> the property value type
  *
- * @author Horacio Hoyos Rodriguez (@horaciohoyosr)
+ * @author Horacio Hoyos Rodriguez (https://www.york.ac.uk)
  */
 
-public class ArangoDBElementProperty<V> implements Property<V> {
+public class ArngElementProperty<V> implements ElementProperty<V> {
 
     /** The primaryKey (name) that identifies this property. */
 
     protected String key;
 
     /** The element that owns the property */
+
     protected ArngElement element;
 
     /** The value of the property */
@@ -42,11 +45,8 @@ public class ArangoDBElementProperty<V> implements Property<V> {
 
     protected String type;
 
-    /** Empty constructor for de-/serialization */
-    public ArangoDBElementProperty() { }
 
-
-    public ArangoDBElementProperty(String key, V value, ArngElement element) {
+    public ArngElementProperty(String key, V value, ArngElement element) {
         this.key = key;
         this.value = value;
         this.element = element;
@@ -101,4 +101,9 @@ public class ArangoDBElementProperty<V> implements Property<V> {
         return key.hashCode() + value.hashCode();
     }
 
+
+    @Override
+    public Iterator<V> values() {
+        return Collections.singletonList(value).iterator();
+    }
 }

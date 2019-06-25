@@ -200,7 +200,7 @@ public class ArngDatabaseClient implements DatabaseClient {
 //			ByteArrayInputStream targetStream = null;
 //			try {
 //				ByteArrayOutputStream os = new ByteArrayOutputStream();
-//				properties.store(os, null);
+//				elementProperties.store(os, null);
 //				targetStream = new ByteArrayInputStream(os.toByteArray());
 //			} catch (IOException e) {
 //				// Ignore exception as the ByteArrayOutputStream is always writable.
@@ -213,7 +213,7 @@ public class ArngDatabaseClient implements DatabaseClient {
 //					.registerDeserializer(ArangoDBEdge.class, edgeVPack)
 //					.registerSerializer(ArangoDBEdge.class, edgeVPack)
 //					.build();
-//			return new ArngDatabaseClient(properties, graph, driver);
+//			return new ArngDatabaseClient(elementProperties, graph, driver);
 //		}
 //		else {
 //			return this;
@@ -254,11 +254,11 @@ public class ArngDatabaseClient implements DatabaseClient {
 //					throw new ArangoDBGraphException(String.format("DB not found or user has no access: {}@{}. If you " +
 //									"want to force craetion set the 'graph.db.create' flag to true in the " +
 //									"configuration.",
-//							properties.getProperty("arangodb.user"), dbname));
+//							elementProperties.getProperty("arangodb.user"), dbname));
 //				}
 //			}
 //		}
-//		return new ArngDatabaseClient(properties, graph, driver, db);
+//		return new ArngDatabaseClient(elementProperties, graph, driver, db);
 //	}
 
 
@@ -267,7 +267,7 @@ public class ArngDatabaseClient implements DatabaseClient {
 	/** PURE DOCUMENT OPERATIONS BYPASS THE GRAPH CONTRACT; SHOULD BE AVOIDED? */
 //	/**
 //	 * Get a document from the database. The method is generic so we it can be used to retrieve
-//	 * vertices, properties or variables.
+//	 * vertices, elementProperties or variables.
 //	 *
 //	 * @param <V> 					the value type
 //	 * @param id            		the id of the document (should be a valid ArangoDB handle)
@@ -566,7 +566,7 @@ public class ArngDatabaseClient implements DatabaseClient {
 //	}
 //
 //	/**
-//	 * Gets the element properties.
+//	 * Gets the element elementProperties.
 //	 *
 //	 * @param <T> 					the generic type
 //	 * @param document              the document

@@ -66,11 +66,11 @@ import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
  * <pre>gremlin.arangodb.conf.graphClient.db = myDB
  * </pre>
  * <p>
- * To define the schema, (EdgeCollections in ArangoDB world) three properties can be used:
+ * To define the schema, (EdgeCollections in ArangoDB world) three elementProperties can be used:
  * <tt>graphClient.vertex</tt>, <tt>graphClient.edge</tt> and <tt>graphClient.relation</tt>. The graphClient.vertex and
- * graphClient.edge properties allow definition of the ArangoDB collections used to store nodes and edges
+ * graphClient.edge elementProperties allow definition of the ArangoDB collections used to store nodes and edges
  * respectively. The relations property is used to describe the allowed edge-node relations. For
- * simple graphs, only one graphClient.vertex and graphClient.edge properties need to be provided. In this case
+ * simple graphs, only one graphClient.vertex and graphClient.edge elementProperties need to be provided. In this case
  * edges are allowed to connect to any two nodes. For example:
  * <pre>gremlin.arangodb.conf.graphClient.vertex = Place
  *gremlin.arangodb.conf.graphClient.edge = Transition
@@ -309,7 +309,7 @@ public class ArangoDBGraph implements ArngGraph {
 				 *  the string representation of these is fine for ArangoDB, which makes the test
 				 *  complain because it expects the actual class to be deserialized. We can test
 				 *  to see if a string is accepted for deserialization.
-				 *  TODO As with properties, a way to support this is to store the id value class
+				 *  TODO As with elementProperties, a way to support this is to store the id value class
 				 */
 				return false;
 			}
@@ -392,7 +392,7 @@ public class ArangoDBGraph implements ArngGraph {
 				 *  the string representation of these is fine for ArangoDB, which makes the test
 				 *  complain because it expects the actual class to be deserialized. We can test
 				 *  to see if a string is accepted for deserialization.
-				 *  TODO As with properties, a way to support this is to store the id value class
+				 *  TODO As with elementProperties, a way to support this is to store the id value class
 				 */
 				return false;
 			}

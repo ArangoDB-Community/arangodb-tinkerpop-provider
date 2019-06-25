@@ -1,7 +1,7 @@
 package com.arangodb.tinkerpop.gremlin.velocipack;
 
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBEdge;
-import com.arangodb.tinkerpop.gremlin.structure.ArangoDBElementProperty;
+import com.arangodb.tinkerpop.gremlin.structure.properties.ArngElementProperty;
 import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
 import com.arangodb.velocypack.*;
 import com.arangodb.velocypack.exception.VPackException;
@@ -14,17 +14,17 @@ import java.lang.reflect.Method;
 import java.util.*;
 
 /**
- * The ArangoDBEdgeVPack is a specialized VPackSerializer/Deserializer that can traverse the edges's properties
+ * The ArangoDBEdgeVPack is a specialized VPackSerializer/Deserializer that can traverse the edges's elementProperties
  * and store both their values and additional required Tinkerpop metadata: their expected Java types. For edges the
- * cardinality is always {@link VertexProperty.Cardinality#single} and no nested properties are allowed. In order to
+ * cardinality is always {@link VertexProperty.Cardinality#single} and no nested elementProperties are allowed. In order to
  * avoid breaking the expectations of the serialized documents, the Tinkerpop metadata is stored separately under the
  * "!tinkerpop" property. This allows reusing existing collections with Tinkerpop and quering the documents via AQL
  * without having to worry about the Tinkerpop metadata. The property's value is stored with the property in the root
  * JSON object using a single value.
  *
  * We use the following JSON structure to persist the Tinkerpop metadata. For each property we have a value that
- * captures the type. Note that the <i>type</i> and <i>properties</i> values
- * are arrays so we can persist type and nested properties for each of the property's values.
+ * captures the type. Note that the <i>type</i> and <i>elementProperties</i> values
+ * are arrays so we can persist type and nested elementProperties for each of the property's values.
  * <p>
  * <pre>{@code
  *   {
@@ -79,7 +79,7 @@ public class ArangoDBEdgeVPack implements VPackSerializer<ArangoDBEdge>, VPackDe
         Map<String, String> pTypes = new HashMap<>();
         Iterator<? extends Property<Object>> itty = value.properties();
         while (itty.hasNext()) {
-            ArangoDBElementProperty<?> p = (ArangoDBElementProperty<?>) itty.next();
+            ArngElementProperty<?> p = (ArngElementProperty<?>) itty.next();
             pTypes.put(p.key(), p.value().getClass().getCanonicalName());
             context.serialize(builder, p.key(), p.value());
         }
@@ -126,7 +126,7 @@ public class ArangoDBEdgeVPack implements VPackSerializer<ArangoDBEdge>, VPackDe
             else {
                 Object rawValue = context.deserialize(entry.getValue(), Object.class);
                 Object v = ArangoDBUtil.getCorretctPrimitive(rawValue, pTypes.get(key));
-                ArangoDBElementProperty<Object> p = new ArangoDBElementProperty<>(key, v, edge);
+                ArngElementProperty<Object> p = new ArngElementProperty<>(key, v, edge);
                 properties.add(p);
             }
         }

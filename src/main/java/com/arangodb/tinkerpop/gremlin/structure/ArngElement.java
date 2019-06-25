@@ -11,12 +11,10 @@ package com.arangodb.tinkerpop.gremlin.structure;
 import org.apache.tinkerpop.gremlin.structure.Element;
 import org.apache.tinkerpop.gremlin.structure.Property;
 
-import java.util.Iterator;
-
 /**
  * The Interface ArngElement.
- * 
- * @author Horacio Hoyos Rodriguez (@horaciohoyosr)
+ *
+ * @author Horacio Hoyos Rodriguez (https://www.york.ac.uk)
  */
 public interface ArngElement extends Element {
 
@@ -25,13 +23,15 @@ public interface ArngElement extends Element {
 	 *
 	 * @param property the property
 	 */
-	void removeProperty(ArangoDBElementProperty<?> property);
+	void removeProperty(Property<?> property);
+
+	void update();
 
 	/**
-	 * Attach the properties to the element.
+	 * Attach the elementProperties to the element.
 	 * This method should be called after vertex/edge elements have been deserialized.
 	 */
 
-	<V> void attachProperties(Iterator<Property<V>> properties);
+	//<V> void attachProperties(Iterator<Property<V>> elementProperties);
 
 }

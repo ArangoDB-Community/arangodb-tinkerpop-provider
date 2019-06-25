@@ -18,7 +18,7 @@ public abstract class BaseTestCase {
 	@Before
 	public void setUp() throws Exception {
 
-		// host name and port see: arangodb.properties
+		// host name and port see: arangodb.elementProperties
 		PropertiesConfiguration configuration = new PropertiesConfiguration();
 		configuration.setProperty("arangodb.hosts", "127.0.0.1:8529");
 		configuration.setProperty("arangodb.user", "gremlin");

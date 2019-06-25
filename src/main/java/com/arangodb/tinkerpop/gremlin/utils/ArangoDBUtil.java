@@ -25,17 +25,16 @@ import com.arangodb.tinkerpop.gremlin.client.ArangoDBGraphClient;
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBGraphException;
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBEdge;
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBEdgeProperty;
-import com.arangodb.tinkerpop.gremlin.structure.ArangoDBElementProperty.ElementHasProperty;
+import com.arangodb.tinkerpop.gremlin.structure.properties.ArngElementProperty.ElementHasProperty;
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBGraph;
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBPropertyProperty;
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBVertex;
-import com.arangodb.tinkerpop.gremlin.structure.ArangoDBVertexProperty;
+import com.arangodb.tinkerpop.gremlin.structure.properties.ArngVertexProperty;
 import com.arangodb.velocypack.VPack;
 import com.arangodb.velocypack.VPackSlice;
 import com.arangodb.velocypack.exception.VPackParserException;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -50,7 +49,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * This class provides utility methods for creating properties and for normalising property and
+ * This class provides utility methods for creating elementProperties and for normalising property and
  * collections names (to satisfy Arango DB naming conventions.
  *
  * @author Achim Brandt (http://www.triagens.de)
@@ -310,8 +309,8 @@ public class ArangoDBUtil {
 	}
 
 	/**
-	 * Create the graph private collections. There is a label for storing graph properties.
-	 * Both vertices and edges can have properties
+	 * Create the graph private collections. There is a label for storing graph elementProperties.
+	 * Both vertices and edges can have elementProperties
 	 *
 	 * @param graphName the graph name
 	 * @param vertexCollections the vertex collections
@@ -373,9 +372,9 @@ public class ArangoDBUtil {
 	 * @return the created Arango DB vertex property
 	 */
 
-	public static <U> ArangoDBVertexProperty<U> createArangoDBVertexProperty(String key, U value, ArangoDBVertex vertex) {
-		ArangoDBVertexProperty<U> p;
-		p = new ArangoDBVertexProperty<>(key, value, vertex);
+	public static <U> ArngVertexProperty<U> createArangoDBVertexProperty(String key, U value, ArangoDBVertex vertex) {
+		ArngVertexProperty<U> p;
+		p = new ArngVertexProperty<>(key, value, vertex);
 		ArangoDBGraph g = vertex.graph();
 		ArangoDBGraphClient c = g.getClient();
 		c.insertDocument(p, true);
@@ -395,9 +394,9 @@ public class ArangoDBUtil {
 	 * @return the created Arango DB vertex property
 	 */
 
-	public static <U> ArangoDBVertexProperty<U> createArangoDBVertexProperty(String id, String key, U value, ArangoDBVertex vertex) {
-		ArangoDBVertexProperty<U> p;
-		p = new ArangoDBVertexProperty<>(id, key, value, vertex);
+	public static <U> ArngVertexProperty<U> createArangoDBVertexProperty(String id, String key, U value, ArangoDBVertex vertex) {
+		ArngVertexProperty<U> p;
+		p = new ArngVertexProperty<>(id, key, value, vertex);
 		ArangoDBGraph g = vertex.graph();
 		ArangoDBGraphClient c = g.getClient();
 		//This is insertion of a property to ELEMENT-PROPERTIES label, which must be always prefixed with graph name
@@ -418,7 +417,7 @@ public class ArangoDBUtil {
 	 * @return the created Arango DB property property
 	 */
 
-	public static <U> ArangoDBPropertyProperty<U> createArangoDBPropertyProperty(String key, U value, ArangoDBVertexProperty<?> vertexProperty) {
+	public static <U> ArangoDBPropertyProperty<U> createArangoDBPropertyProperty(String key, U value, ArngVertexProperty<?> vertexProperty) {
 		ArangoDBPropertyProperty<U> p;
 		p = new ArangoDBPropertyProperty<>(key, value, vertexProperty);
 		ArangoDBGraph g = vertexProperty.graph();

@@ -37,7 +37,7 @@ public class ArangoDBGraphVariables extends BaseArngDocument implements Graph.Va
 
     }
 
-    /** The primaryKey:value store for properties. */
+    /** The primaryKey:value store for elementProperties. */
     
     private final Map<String, Object> store = new HashMap<>(4);
 
