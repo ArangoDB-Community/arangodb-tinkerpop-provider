@@ -58,7 +58,7 @@ import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
  * graphClient name. If no vertex, edge and relation information is provided, the graphClient will be considered
  * schema-less.
  * <p>
- * All settings are prefixed with "gremlin.arangodb.conf". So, for example, to set the value of the
+ * All settings are prefixed with "gremlin.arangodb.conf". So, for example, to set the baseValue of the
  * Arango DB hosts property (arango db configuration), the configuration must read:
  * <pre>gremlin.arangodb.conf.arangodb.hosts = 127.0.0.1:8529
  * </pre>
@@ -107,7 +107,7 @@ import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
  * In order to allow multiple graphs in the same databaseClient, vertex and edge collections can be prefixed with the
  * graphClient name in order to avoid label clashes. To enable this function the graphClient.shouldPrefixCollectionNames
  * property should be set to <code>true</code>. If you have an existing graphClient/collections and want to reuse those,
- * the flag should be set to <code>false</code>. The default value is <code>true</code>.
+ * the flag should be set to <code>false</code>. The default baseValue is <code>true</code>.
  * <p>
  * The list of allowed settings is:
  * <ul>
@@ -309,7 +309,7 @@ public class ArangoDBGraph implements ArngGraph {
 				 *  the string representation of these is fine for ArangoDB, which makes the test
 				 *  complain because it expects the actual class to be deserialized. We can test
 				 *  to see if a string is accepted for deserialization.
-				 *  TODO As with elementProperties, a way to support this is to store the id value class
+				 *  TODO As with elementProperties, a way to support this is to store the id baseValue class
 				 */
 				return false;
 			}
@@ -392,7 +392,7 @@ public class ArangoDBGraph implements ArngGraph {
 				 *  the string representation of these is fine for ArangoDB, which makes the test
 				 *  complain because it expects the actual class to be deserialized. We can test
 				 *  to see if a string is accepted for deserialization.
-				 *  TODO As with elementProperties, a way to support this is to store the id value class
+				 *  TODO As with elementProperties, a way to support this is to store the id baseValue class
 				 */
 				return false;
 			}

@@ -1,5 +1,6 @@
 package com.arangodb.tinkerpop.gremlin.structure.properties;
 
+import com.arangodb.tinkerpop.gremlin.structure.ArangoDBVertex;
 import org.apache.tinkerpop.gremlin.structure.Element;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
 import org.apache.tinkerpop.gremlin.structure.VertexProperty;
@@ -30,7 +31,7 @@ public interface VertexProperties {
     /**
      * @see Vertex#property(String, Object)
      */
-    <V> VertexProperty<V> property(String key, V value);
+    <V> VertexProperty<V> property(ArangoDBVertex vertex, String key, V value);
 
     /**
      * @see Element#values(String...)
@@ -41,7 +42,7 @@ public interface VertexProperties {
     /**
      * @see Vertex#property(VertexProperty.Cardinality, String, Object, Object...)
      */
-    <V> VertexProperty<V> property(VertexProperty.Cardinality cardinality, String key, V value, Object... keyValues);
+    <V> VertexProperty<V> property(ArangoDBVertex vertex, VertexProperty.Cardinality cardinality, String key, V value, Object... keyValues);
 
     /**
      * @see Vertex#properties(String...)

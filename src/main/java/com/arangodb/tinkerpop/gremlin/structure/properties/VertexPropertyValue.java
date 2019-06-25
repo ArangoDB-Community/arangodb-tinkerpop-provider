@@ -1,6 +1,7 @@
 package com.arangodb.tinkerpop.gremlin.structure.properties;
 
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBVertex;
+import com.arangodb.tinkerpop.gremlin.velocipack.VPackVertexProperty;
 import org.apache.tinkerpop.gremlin.structure.VertexProperty;
 
 import java.util.Iterator;
@@ -16,7 +17,7 @@ public interface VertexPropertyValue<V> {
 
     /**
      * Get one VertexProperty for the given key. If the property's cardinality is {@link org.apache.tinkerpop.gremlin.structure.VertexProperty.Cardinality#list}
-     * or {@link org.apache.tinkerpop.gremlin.structure.VertexProperty.Cardinality#set} and more than one value is
+     * or {@link org.apache.tinkerpop.gremlin.structure.VertexProperty.Cardinality#set} and more than one baseValue is
      * stored, an IllegalStateException is thrown.
      * @param key                   the property key
      * @return  a VertexProperty for the matching key
@@ -51,24 +52,31 @@ public interface VertexPropertyValue<V> {
     void addValues(Iterator<VertexProperty<V>> values) throws ArangoDBVertex.CantAddValueToSinglePropertyException;
 
     /**
-     * Add the given value to the existing ones. If the property's cardinality is {@link org.apache.tinkerpop.gremlin.structure.VertexProperty.Cardinality#single}
+     * Add the given baseValue to the existing ones. If the property's cardinality is {@link org.apache.tinkerpop.gremlin.structure.VertexProperty.Cardinality#single}
      * a {@link com.arangodb.tinkerpop.gremlin.structure.ArangoDBVertex.CantAddValueToSinglePropertyException} exception
      * is thrown.
      *
-     * @param value                 the value to add
+     * @param value                 the baseValue to add
      * @throws ArangoDBVertex.CantAddValueToSinglePropertyException
      */
 
     void addValue(VertexProperty value) throws ArangoDBVertex.CantAddValueToSinglePropertyException;
 
     /**
-     * Remove the given value to the existing ones. If the property's cardinality is {@link org.apache.tinkerpop.gremlin.structure.VertexProperty.Cardinality#single}
+     * Remove the given baseValue to the existing ones. If the property's cardinality is {@link org.apache.tinkerpop.gremlin.structure.VertexProperty.Cardinality#single}
      * a {@link com.arangodb.tinkerpop.gremlin.structure.ArangoDBVertex.CantRemoveValueFromSinglePropertyException} exception
      * is thrown.
      *
-     * @param value                 the value to remove
+     * @param value                 the baseValue to remove
      * @throws ArangoDBVertex.CantRemoveValueFromSinglePropertyException
      */
 
     boolean removeOne(ArngVertexProperty<V> value) throws ArangoDBVertex.CantRemoveValueFromSinglePropertyException;
+
+    /**
+     * Create a VPackVertexProperty that represents this {@link VertexPropertyValue} as required for serialization
+     * via VPack.
+     * @return a VPackVertexProperty that contains the required information for serialization
+     */
+    VPackVertexProperty preSerialize();
 }

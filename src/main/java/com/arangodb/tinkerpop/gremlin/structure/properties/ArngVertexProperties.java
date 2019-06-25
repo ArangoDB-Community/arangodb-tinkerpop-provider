@@ -9,7 +9,7 @@ import java.util.*;
 
 /**
  * An implementation of {@link VertexProperties} for an {@link ArangoDBVertex} that uses a {@link HashMap} to store
- * value information for each key.
+ * baseValue information for each key.
  *
  * The stored values are instances of {@link ArngVertexPropertyValue}.
  *
@@ -17,17 +17,11 @@ import java.util.*;
  */
 public class ArngVertexProperties implements VertexProperties {
 
-    /** The element that owns the property */
+    // ArangoDBVertex vertex;
 
-    protected final ArangoDBVertex vertex;
-
-    /** The value(s) of the elementProperties, keyd by property primaryKey (name) */
+    /** The baseValue(s) of the elementProperties, keyd by property primaryKey (name) */
 
     protected final Map<String, VertexPropertyValue> properties = new HashMap<>();
-
-    public ArngVertexProperties(ArangoDBVertex element) {
-        this.vertex = element;
-    }
 
     @Override
     public Set<String> keys() {
@@ -40,16 +34,9 @@ public class ArngVertexProperties implements VertexProperties {
         return properties.get(key).one(key);
     }
 
-    /**
-     * Get the {@link VertexProperty} for the provided primaryKey. If the property does not exist, return
-     * {@link VertexProperty#empty}.
-     *
-     * @param <V>                   the expected type of the vertex property value
-     * @param key                   the primaryKey of the vertex property to get
-     * @return                      the retrieved vertex property
-     */
     @Override
     public <V> VertexProperty<V> property(
+        final ArangoDBVertex vertex,
         final String key,
         final V value) {
         final ArngVertexProperty<V> property = new ArngVertexProperty<>(key, value, vertex);
@@ -67,6 +54,7 @@ public class ArngVertexProperties implements VertexProperties {
 
     @Override
     public <V> VertexProperty<V> property(
+        ArangoDBVertex vertex,
         VertexProperty.Cardinality cardinality,
         String key,
         V value,
@@ -81,7 +69,7 @@ public class ArngVertexProperties implements VertexProperties {
         }
         else {
             try {
-                return multivalue(key, value, cardinality, keyValues);
+                return multivalue(vertex, key, value, cardinality, keyValues);
             } catch (ArangoDBVertex.CantAddValueToSinglePropertyException e) {
                 throw new IllegalArgumentException("The property couldn't be created", e);
             }
@@ -99,6 +87,7 @@ public class ArngVertexProperties implements VertexProperties {
 
     @SuppressWarnings("unchecked")
     private <V> VertexProperty<V> multivalue(
+        ArangoDBVertex vertex,
         String key,
         V value,
         VertexProperty.Cardinality cardinality,
@@ -126,8 +115,12 @@ public class ArngVertexProperties implements VertexProperties {
             properties.remove(property.key());
         }
         else {
-            if (value.removeOne((ArngVertexProperty) property)) {
-                properties.remove(property.key());
+            try {
+                if (value.removeOne((ArngVertexProperty) property)) {
+                    properties.remove(property.key());
+                }
+            } catch (ArangoDBVertex.CantRemoveValueFromSinglePropertyException e) {
+                throw new IllegalArgumentException("Unable to remove the property.", e);
             }
         }
     }

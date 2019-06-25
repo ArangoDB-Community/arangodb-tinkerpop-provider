@@ -36,7 +36,7 @@ public interface GraphClient extends AutoCloseable {
     /**
      * Execute the AQL query against the database
      * @param query                 the AQL query
-     * @param bindVars              a map of primaryKey:value for bind variables
+     * @param bindVars              a map of primaryKey:baseValue for bind variables
      * @param aqlQueryOptions       AQL query options
      * @param type                  The type of the elements in the result
      * @param <T>                   The type of the elements in the result
@@ -50,7 +50,7 @@ public interface GraphClient extends AutoCloseable {
      * Insert a new vertex in the graph.
      * @param key                   the vertex's primary key (can be null)
      * @param label                 the vertex's label
-     * @param keyValues             the key:value edge property pairs
+     * @param keyValues             the key:baseValue edge property pairs
      * @return  a new instance of the vertex that uses the provided client.
      */
     ArangoDBVertex insertVertex(String key, String label, Object... keyValues);
@@ -74,7 +74,7 @@ public interface GraphClient extends AutoCloseable {
      * @param from                  the source vertex of the edge
      * @param to                    the target vertex of the edge
      * @param edgeClient            the edge clien to assing to the edge
-     * @param keyValues             the key:value edge property pairs
+     * @param keyValues             the key:baseValue edge property pairs
      * @return
      */
     ArangoDBEdge insertEdge(String key, String label,

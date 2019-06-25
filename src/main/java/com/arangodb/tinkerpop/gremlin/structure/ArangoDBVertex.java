@@ -10,7 +10,8 @@ package com.arangodb.tinkerpop.gremlin.structure;
 
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBGraphException;
 import com.arangodb.tinkerpop.gremlin.client.VertexClient;
-import com.arangodb.tinkerpop.gremlin.structure.properties.*;
+import com.arangodb.tinkerpop.gremlin.structure.properties.ArngVertexProperties;
+import com.arangodb.tinkerpop.gremlin.structure.properties.VertexProperties;
 import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
 import org.apache.tinkerpop.gremlin.structure.*;
 import org.apache.tinkerpop.gremlin.structure.VertexProperty.Cardinality;
@@ -19,7 +20,6 @@ import org.apache.tinkerpop.gremlin.structure.util.StringFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -34,7 +34,7 @@ import java.util.regex.Matcher;
  * @author Horacio Hoyos Rodriguez (https://www.york.ac.uk)
  */
 
-public class ArangoDBVertex extends BaseArngDocument implements Vertex, ArngElement {
+public class ArangoDBVertex extends BaseArngDocument implements ArngVertex {
 
 	public static class CantAddValueToSinglePropertyException extends Exception {
 
@@ -44,7 +44,9 @@ public class ArangoDBVertex extends BaseArngDocument implements Vertex, ArngElem
 	}
 
 	public static class CantRemoveValueFromSinglePropertyException extends Exception {
+
 		public CantRemoveValueFromSinglePropertyException(String message) {
+			super(message);
 		}
 	}
 
@@ -65,7 +67,25 @@ public class ArangoDBVertex extends BaseArngDocument implements Vertex, ArngElem
 	public ArangoDBVertex(
 		String key,
 		String label) {
-		this(null, key, null, label, null);
+		this(null, key, null, label, null, new ArngVertexProperties());
+	}
+
+	/**
+	 * Instantiates a new arango DB vertex.
+	 *
+	 * @param id					the edge handle
+	 * @param key					the edge primary key
+	 * @param rev					the edge revision
+	 * @param label					the edge label
+	 * @param client				the client
+	 */
+	public ArangoDBVertex(
+			String id,
+			String key,
+			String rev,
+			String label,
+			VertexClient client) {
+		this(id, key, rev, label, client,new ArngVertexProperties());
 	}
 
 	/**
@@ -82,15 +102,16 @@ public class ArangoDBVertex extends BaseArngDocument implements Vertex, ArngElem
 		String key,
 		String rev,
 		String label,
-		VertexClient client) {
+		VertexClient client,
+		VertexProperties properties) {
 		super(id, key, rev, label);
 		this.client = client;
-		properties = new ArngVertexProperties(this);
+		this.properties = properties;
 	}
 
 	// FIXME Move to interface
 	public ArangoDBVertex useClient(VertexClient client) {
-		return new ArangoDBVertex(_id, _key, _rev, label, client);
+		return new ArangoDBVertex(_id, _key, _rev, label, client, properties);
 	}
 
 	@Override
@@ -98,7 +119,7 @@ public class ArangoDBVertex extends BaseArngDocument implements Vertex, ArngElem
 		try {
 			return handle();
 		} catch (ElementNotPairedException e) {
-			throw new IllegalStateException("Id of unpaired elements can't be retrieved.", e);
+			return primaryKey();
 		}
 	}
 
@@ -176,13 +197,18 @@ public class ArangoDBVertex extends BaseArngDocument implements Vertex, ArngElem
 	}
 
 	@Override
+	public <V> VertexProperty<V> property(final String key, final V value) {
+		return properties.property(this, key, value);
+	}
+
+	@Override
 	public <V> VertexProperty<V> property(
 		Cardinality cardinality,
 		String key,
 		V value,
 		Object... keyValues) {
 		logger.debug("setting vertex property {} = {} ({})", key, value, keyValues);
-		VertexProperty<V> result = properties.property(cardinality, key, value, keyValues);
+		VertexProperty<V> result = properties.property(this, cardinality, key, value, keyValues);
 		update();
 		return result;
 	}
@@ -215,12 +241,6 @@ public class ArangoDBVertex extends BaseArngDocument implements Vertex, ArngElem
 	public void update() {
 		client.update(this);
 	}
-
-//	@Override
-//	public void attachProperties(String key, Collection<ArngVertexProperty> elementProperties) {
-//		this.elementProperties.attachVertexProperties(key, elementProperties);
-//	}
-
 
 	@Override
 	public String toString() {

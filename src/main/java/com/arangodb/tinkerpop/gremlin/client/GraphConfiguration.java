@@ -69,7 +69,7 @@ public interface GraphConfiguration {
      *
      * The graph name is configured via the {@link #PROPERTY_KEY_GRAPH_NAME} setting.
      *
-     * @return An Optional containing the graph name, or empty if the configuration does not have the value
+     * @return An Optional containing the graph name, or empty if the configuration does not have the baseValue
      */
     Optional<String> graphName();
 
@@ -78,25 +78,25 @@ public interface GraphConfiguration {
      *
      * The database name is configured via the {@link #PROPERTY_KEY_DB_NAME} setting.
      *
-     * @return An Optional containing the database name, or empty if the configuration does not have the value
+     * @return An Optional containing the database name, or empty if the configuration does not have the baseValue
      */
     Optional<String> databaseName();
 
     /**
-     * Get the should prefix label names flag value from the configuration. If not present the default value is true.
+     * Get the should prefix label names flag baseValue from the configuration. If not present the default baseValue is true.
      *
      * The shouldPrefixCollectionNames name is configured via the {@link #PROPERTY_KEY_SHOULD_PREFIX_COLLECTION_NAMES} setting.
      *
-     * @return The flag value.
+     * @return The flag baseValue.
      */
     boolean shouldPrefixCollectionNames();
 
     /**
-     * Get the create db flag value from the configuration. If not present the default value is false.
+     * Get the create db flag baseValue from the configuration. If not present the default baseValue is false.
      *
      * The create db is configured via the {@link #PROPERTY_KEY_DB_CREATE} setting.
      *
-     * @return The flag value.
+     * @return The flag baseValue.
      */
 
     boolean createDatabase();

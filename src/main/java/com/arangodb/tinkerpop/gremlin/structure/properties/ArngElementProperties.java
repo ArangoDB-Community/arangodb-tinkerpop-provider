@@ -7,14 +7,14 @@ import org.apache.tinkerpop.gremlin.structure.*;
 import java.util.*;
 
 /**
- * An implementation of {@link ElementProperties} that uses a {@link HashMap} to store value information for each key.
+ * An implementation of {@link ElementProperties} that uses a {@link HashMap} to store baseValue information for each key.
  * The stored values are instances of {@link ElementProperty}.
  *
  * @author Horacio Hoyos Rodriguez (https://www.york.ac.uk)
  */
 public class ArngElementProperties implements ElementProperties {
 
-    /** The value(s) of the elementProperties, keyd by property primaryKey (name) */
+    /** The baseValue(s) of the elementProperties, keyd by property primaryKey (name) */
 
     protected final Map<String, ElementProperty> elementProperties = new HashMap<>();
 
@@ -34,9 +34,9 @@ public class ArngElementProperties implements ElementProperties {
 
     @Override
     public <V> Property<V> property(
-        final String key,
-        final V value,
-        ArngElement element) {
+            ArngElement element,
+            final String key,
+            final V value) {
         final ElementProperty<V> property = new ArngElementProperty<>(key, value, element);
         elementProperties.put(key, property);
         return property;

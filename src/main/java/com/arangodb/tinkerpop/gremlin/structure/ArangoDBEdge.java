@@ -94,6 +94,14 @@ public class ArangoDBEdge extends BaseArngDocument implements ArngEdge {
 		this(null, key, null, label, from, to, null, new ArngElementProperties());
 	}
 
+	public ArangoDBEdge(
+		String id,
+		String key,
+		String rev,
+		String label) {
+		this(id, key, rev, label, null, null, null, new ArngElementProperties());
+	}
+
 	/**
 	 *
 	 * @param id					the edge handle
@@ -148,19 +156,23 @@ public class ArangoDBEdge extends BaseArngDocument implements ArngEdge {
 		vertices = CacheBuilder.newBuilder()
 				.expireAfterAccess(10, TimeUnit.SECONDS)
 				.build(new EdgeVertexLoader(this, client));
-		vertices.put("from", from);
-		vertices.put("to", to);
+		if (from != null) {
+			vertices.put("from", from);
+		}
+		if (to != null) {
+			vertices.put("to", to);
+		}
 		this.properties = properties;
 	}
 
-//	// FIXME Move to interface
-//	public ArangoDBEdge useClient(EdgeClient client) {
-//		try {
-//			return new ArangoDBEdge(_id, _key, _rev, label, vertices.get("from"), vertices.get("to"), client);
-//		} catch (ExecutionException e) {
-//			throw new IllegalStateException("Error assigning client to edge", e);
-//		}
-//	}
+	// FIXME Move to interface
+	public ArangoDBEdge useClient(EdgeClient client) {
+		try {
+			return new ArangoDBEdge(_id, _key, _rev, label, vertices.get("from"), vertices.get("to"), client, properties);
+		} catch (ExecutionException e) {
+			throw new IllegalStateException("Error assigning client to edge", e);
+		}
+	}
 
 	@Override
 	public String from() {
@@ -185,7 +197,7 @@ public class ArangoDBEdge extends BaseArngDocument implements ArngEdge {
 		try {
 			return handle();
 		} catch (ElementNotPairedException e) {
-			throw new IllegalStateException("Id of unpaired elements can't be retrieved.", e);
+			return primaryKey();
 		}
 	}
 
@@ -276,7 +288,7 @@ public class ArangoDBEdge extends BaseArngDocument implements ArngEdge {
 
 	@Override
 	public <V> Property<V> property(final String key, final V value) {
-		Property<V> result = properties.property(key, value, this);
+		Property<V> result = properties.property(this, key, value);
 		update();
 		return result;
 	}

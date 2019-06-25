@@ -24,7 +24,7 @@ import java.util.Set;
  * An implementation of {@link VertexProperty} for ArangoDB vertices. This implementation delegates property access to
  * an {@link ElementProperties} instance.
  *
- * @param <V> the type of the property value
+ * @param <V> the type of the property baseValue
  * 
  * @author Horacio Hoyos Rodriguez (https://www.york.ac.uk)
  */
@@ -40,7 +40,7 @@ public class ArngVertexProperty<V> extends ArngElementProperty<V> implements Ver
      * property acess.
      *
      * @param name                  the property name
-     * @param value                 the property value
+     * @param value                 the property baseValue
      * @param owner                 the property owner
      */
 
@@ -54,7 +54,7 @@ public class ArngVertexProperty<V> extends ArngElementProperty<V> implements Ver
 	 * Instantiates a new arango DB vertex property.
 	 *
 	 * @param name                  the property name
-	 * @param value                 the property value
+	 * @param value                 the property baseValue
 	 * @param owner                 the property owner
      * @param properties            the delegate responsible of property access
 	 */
@@ -104,7 +104,7 @@ public class ArngVertexProperty<V> extends ArngElementProperty<V> implements Ver
 
     @Override
     public <U> Property<U> property(String key, U value) {
-        final Property<U> property = properties.property(key, value, this);
+        final Property<U> property = properties.property(this, key, value);
         update();
         return property;
     }

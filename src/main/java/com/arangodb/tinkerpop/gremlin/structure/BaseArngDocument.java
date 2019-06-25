@@ -66,7 +66,10 @@ public abstract class BaseArngDocument implements ArngDocument {
     }
 
     @Override
-    public final String revision() {
+    public final String revision() throws ElementNotPairedException {
+        if (!paired) {
+            throw new ElementNotPairedException("Id of an unpaired element can't be accessed");
+        }
         return _rev;
     }
 

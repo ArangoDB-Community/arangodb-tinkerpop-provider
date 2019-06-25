@@ -5,6 +5,7 @@ import com.arangodb.tinkerpop.gremlin.structure.ArangoDBVertex;
 import com.arangodb.tinkerpop.gremlin.structure.properties.ArngVertexProperty;
 import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
 import com.arangodb.velocypack.*;
+import com.arangodb.velocypack.exception.VPackBuilderException;
 import com.arangodb.velocypack.exception.VPackException;
 import com.arangodb.velocypack.exception.VPackParserException;
 import org.apache.tinkerpop.gremlin.structure.Property;
@@ -17,12 +18,16 @@ import java.util.*;
 /**
  * The ArangoDBVertexVPack is a specialized VPackSerializer/Deserializer that can traverse the vertex's vertexProperties
  * and store both their values and additional required Tinkerpop metadata: their expected Java types, the cardinality
- * and nested vertexProperties. In order to avoid breaking the expectations of the serialized documents, the Tinkerpop
- * metadata is stored separately under the "!tinkerpop" property. This allows reusing existing collections with
- * Tinkerpop and quering the documents via AQL without having to worry about the Tinkerpop metadata. The property's
- * value is stored with the property in the root JSON object using a single value for {@link VertexProperty.Cardinality#single}
+ * and nested vertexProperties.
+ * <p>
+ * In order to avoid breaking the expectations of the serialized documents (i.e. to allow reuse of exising graphs), the
+ * Tinkerpop metadata is stored separately under the "!tinkerpop" property. This allows existing documents to be used
+ * transparently as well as existing AQL queries that rely on previously defined attribtues.
+ * <p>
+ * The property's baseValue is stored with the property in the root JSON object using a single baseValue for {@link VertexProperty.Cardinality#single}
  * and an array for {@link VertexProperty.Cardinality#set} and {@link VertexProperty.Cardinality#list}.
- *
+ * The Tinkerpop metadata will hold type informartion accordingly.
+ * <p>
  * We use the following JSON structure to persist the Tinkerpop metadata. For each property we have an entry which
  * captures the cardinality, type(s) and nested elementProperties. Note that the <i>type</i> and <i>elementProperties</i> values
  * are arrays so we can persist type and nested elementProperties for each of the property's values.
@@ -37,8 +42,8 @@ import java.util.*;
  *         "elementProperties": [
  *           {
  *             "primaryKey": "<primaryKey>"
- *             "value": "<value>"
- *             "type:   "<value.class.qualifiedName()>"
+ *             "baseValue": "<baseValue>"
+ *             "type:   "<baseValue.class.qualifiedName()>"
  *           },
  *           { ... }
  *           ...
@@ -61,11 +66,7 @@ import java.util.*;
  *     "street" : "Road To Nowhere 1",
  *     "city" : "Gotham"
  *   },
- *   "hobbies" : [
- *     {name: "swimming", "howFavorite": 10},
- *     {name: "biking", "howFavorite": 6},
- *     {name: "programming", "howFavorite": 4}
- *   ],
+ *   "hobbies" : [ "swimming","biking", "programming"],
  *   "!tinkerpop": {
  *     "firstName" : {
  *       "cardinality": "single",
@@ -89,7 +90,7 @@ import java.util.*;
  *         [],
  *         [],
  *         [{
- *           "primaryKey": "since",
+ *           "key": "since",
  *           "value": 1996,
  *           "type": "lang.java.Integer"
  *         }],
@@ -103,21 +104,7 @@ public class ArangoDBVertexVPack implements VPackSerializer<ArangoDBVertex>, VPa
 
     public static final String TINKERPOP_METADATA_KEY = "!tinkerpop";
 
-    /**
-     * A Class to capture the metadata information and let VPack serialize it
-     */
-    public static class TinkerPopMetadata {
 
-        public VertexProperty.Cardinality cardinality;
-        public List<String> type;
-        public List<List<ArngElementProperty>> properties;
-
-        public TinkerPopMetadata() { }
-
-        public TinkerPopMetadata(final VertexProperty.Cardinality cardinality) {
-            this.cardinality = cardinality;
-        }
-    }
 
     @Override
     public void serialize(
@@ -126,17 +113,21 @@ public class ArangoDBVertexVPack implements VPackSerializer<ArangoDBVertex>, VPa
         ArangoDBVertex value,
         VPackSerializationContext context) throws VPackException {
 
-        builder.add(attribute, ValueType.OBJECT);
-        if (value.handle() != null) {
-            builder.add("handle", value.handle());
+        try (VPackElement element = new VPackElement(builder)) {
+            element.startObject(attribute);
+            element.addSpecialAttributes(value);
+
+
+        } catch (Exception e) {
+            throw new VPackBuilderException(e);
         }
-        if (value.primaryKey() != null) {
-            builder.add("primaryKey", value.primaryKey());
-        }
-        Map<String, TinkerPopMetadata> metadataMap = new HashMap<>();
+
+
+        Map<String, VPackVertexProperty> metadataMap = new HashMap<>();
         Map<String, List<Object>> pValues = new HashMap<>();
         Map<String, List<String>> pTypes = new HashMap<>();
         Map<String, List<List<ArngElementProperty>>> pProperties = new HashMap<>();
+
         Iterator<? extends Property<Object>> itty = value.properties();
         while (itty.hasNext()) {
             ArngVertexProperty<?> p = (ArngVertexProperty<?>) itty.next();
@@ -161,12 +152,16 @@ public class ArangoDBVertexVPack implements VPackSerializer<ArangoDBVertex>, VPa
                 properties.add(nps);
             }
         }
+
+
         for (String k : pValues.keySet()) {
             context.serialize(builder, k, pValues.get(k));
             TinkerPopMetadata md = metadataMap.get(k);
             md.type = pTypes.get(k);
             md.properties = pProperties.get(k);
         }
+
+
         builder.add(TINKERPOP_METADATA_KEY, ValueType.OBJECT);
         for (String k : metadataMap.keySet()) {
             context.serialize(builder, k, metadataMap.get(k));
@@ -174,6 +169,7 @@ public class ArangoDBVertexVPack implements VPackSerializer<ArangoDBVertex>, VPa
         builder.close();
         builder.close();
     }
+
 
     @Override
     public ArangoDBVertex deserialize(VPackSlice parent, VPackSlice vpack, VPackDeserializationContext context) throws VPackException {

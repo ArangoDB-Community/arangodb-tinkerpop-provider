@@ -22,7 +22,7 @@ import java.util.NoSuchElementException;
 /**
  * Implementation of {@link Property} for ArangoDB elements (Edges and VertexProperties)
  *
- * @param <V> the property value type
+ * @param <V> the property baseValue type
  *
  * @author Horacio Hoyos Rodriguez (https://www.york.ac.uk)
  */
@@ -37,20 +37,14 @@ public class ArngElementProperty<V> implements ElementProperty<V> {
 
     protected ArngElement element;
 
-    /** The value of the property */
+    /** The baseValue of the property */
 
     protected V value;
-
-    /** The canonical name of the value's Java type */
-
-    protected String type;
-
 
     public ArngElementProperty(String key, V value, ArngElement element) {
         this.key = key;
         this.value = value;
         this.element = element;
-        this.type = value == null ? null : value.getClass().getCanonicalName();
     }
 
     @Override

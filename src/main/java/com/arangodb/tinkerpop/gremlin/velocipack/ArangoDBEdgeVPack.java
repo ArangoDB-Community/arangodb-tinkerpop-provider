@@ -1,30 +1,33 @@
 package com.arangodb.tinkerpop.gremlin.velocipack;
 
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBEdge;
+import com.arangodb.tinkerpop.gremlin.structure.ArngDocument;
+import com.arangodb.tinkerpop.gremlin.structure.ArngEdge;
 import com.arangodb.tinkerpop.gremlin.structure.properties.ArngElementProperty;
-import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
 import com.arangodb.velocypack.*;
+import com.arangodb.velocypack.exception.VPackBuilderException;
 import com.arangodb.velocypack.exception.VPackException;
-import com.arangodb.velocypack.exception.VPackParserException;
 import org.apache.tinkerpop.gremlin.structure.Property;
 import org.apache.tinkerpop.gremlin.structure.VertexProperty;
+import org.apache.tinkerpop.gremlin.structure.util.ElementHelper;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.*;
 
 /**
  * The ArangoDBEdgeVPack is a specialized VPackSerializer/Deserializer that can traverse the edges's elementProperties
- * and store both their values and additional required Tinkerpop metadata: their expected Java types. For edges the
- * cardinality is always {@link VertexProperty.Cardinality#single} and no nested elementProperties are allowed. In order to
- * avoid breaking the expectations of the serialized documents, the Tinkerpop metadata is stored separately under the
- * "!tinkerpop" property. This allows reusing existing collections with Tinkerpop and quering the documents via AQL
- * without having to worry about the Tinkerpop metadata. The property's value is stored with the property in the root
- * JSON object using a single value.
- *
- * We use the following JSON structure to persist the Tinkerpop metadata. For each property we have a value that
- * captures the type. Note that the <i>type</i> and <i>elementProperties</i> values
- * are arrays so we can persist type and nested elementProperties for each of the property's values.
+ * and store both their values and additional required Tinkerpop metadata: their expected Java types. For
+ * {@link org.apache.tinkerpop.gremlin.structure.Edge}s and {@link VertexProperty}s the cardinality is always
+ * {@link VertexProperty.Cardinality#single} and no nested properties are allowed.
+ * <p>
+ * In order to avoid breaking the expectations of the serialized documents (i.e. to allow reuse of exising graphs), the
+ * Tinkerpop metadata is stored separately under the "!tinkerpop" property. This allows existing documents to be used
+ * transparently as well as existing AQL queries that rely on previously defined attribtues.
+ * <p>
+ * The property's baseValue is stored with the property in the root JSON object using a single baseValue. The only additional
+ * metadata stored is the actual java type of the baseValue.
+ * <p>
+ * We use the following JSON structure to persist the Tinkerpop metadata. For each property we have a baseValue that
+ * captures the type.
  * <p>
  * <pre>{@code
  *   {
@@ -52,7 +55,7 @@ import java.util.*;
  * }
  * }</pre>
  */
-public class ArangoDBEdgeVPack implements VPackSerializer<ArangoDBEdge>, VPackDeserializer<ArangoDBEdge> {
+public class ArangoDBEdgeVPack implements VPackSerializer<ArngEdge>, VPackDeserializer<ArngEdge> {
 
     public static final String TINKERPOP_METADATA_KEY = "!tinkerpop";
 
@@ -60,22 +63,20 @@ public class ArangoDBEdgeVPack implements VPackSerializer<ArangoDBEdge>, VPackDe
     public void serialize(
         VPackBuilder builder,
         String attribute,
-        ArangoDBEdge value,
+        ArngEdge value,
         VPackSerializationContext context) throws VPackException {
 
-        builder.add(attribute, ValueType.OBJECT);
-        if (value.handle() != null) {
-            builder.add("handle", value.handle());
+        try (VPackElement element = new VPackElement(builder)) {
+            element.startObject(attribute);
+            element.addEdgeAttributes(value);
+
+
+        } catch (Exception e) {
+            throw new VPackBuilderException(e);
         }
-        if (value.primaryKey() != null) {
-            builder.add("primaryKey", value.primaryKey());
-        }
-        if (value._from() != null) {
-            builder.add("_from", value._from());
-        }
-        if (value._to() != null) {
-            builder.add("_to", value._to());
-        }
+
+
+
         Map<String, String> pTypes = new HashMap<>();
         Iterator<? extends Property<Object>> itty = value.properties();
         while (itty.hasNext()) {
@@ -91,9 +92,11 @@ public class ArangoDBEdgeVPack implements VPackSerializer<ArangoDBEdge>, VPackDe
         builder.close();
     }
 
+
+
     @Override
     public ArangoDBEdge deserialize(VPackSlice parent, VPackSlice vpack, VPackDeserializationContext context) throws VPackException {
-        final ArangoDBEdge edge = new ArangoDBEdge();
+
         VPackSlice temp = vpack.get(TINKERPOP_METADATA_KEY);
         Iterator<Map.Entry<String, VPackSlice>> it = temp.objectIterator();
         Map<String, String> pTypes = new HashMap<>();
@@ -101,36 +104,39 @@ public class ArangoDBEdgeVPack implements VPackSerializer<ArangoDBEdge>, VPackDe
             Map.Entry<String, VPackSlice> entry = it.next();
             pTypes.put(entry.getKey(), context.deserialize(entry.getValue(), String.class));
         }
-        // FIXME We KNOW the keys we want, so we wan use a constructor, not reflection!
         it = vpack.objectIterator();
-        List<Property<?>> properties = new ArrayList<>();
+        String _id = null;
+        String _key = null;
+        String _rev = null;
+        String label = null;
+        List<Object> keyValues = new ArrayList<>();
         while (it.hasNext()) {
             Map.Entry<String, VPackSlice> entry = it.next();
             String key = entry.getKey();
             if (key.equals(TINKERPOP_METADATA_KEY)) {
                 continue;
             }
-            else if (key.startsWith("_")) {
-                Method method = null;
-                try {
-                    method = edge.getClass().getMethod(key, String.class);
-                } catch (NoSuchMethodException e) {
-                    throw new VPackParserException(e);
-                }
-                try {
-                    method.invoke(edge, entry.getValue().getAsString());
-                } catch (IllegalAccessException | InvocationTargetException e) {
-                    throw new VPackParserException(e);
-                }
+            switch(key) {
+                case "_id":
+                    _id = entry.getValue().getAsString();
+                    label = _id.split("/")[1];
+                    break;
+                case "_key":
+                    _key = entry.getValue().getAsString();
+                    break;
+                case "_rev":
+                    _rev = entry.getValue().getAsString();
+                    break;
+                default:
+                    keyValues.add(key);
+                    keyValues.add(new JavaPrmitiveType(
+                                context.deserialize(entry.getValue(), Object.class)
+                            ).getCorretctPrimitive(pTypes.get(key)));
             }
-            else {
-                Object rawValue = context.deserialize(entry.getValue(), Object.class);
-                Object v = ArangoDBUtil.getCorretctPrimitive(rawValue, pTypes.get(key));
-                ArngElementProperty<Object> p = new ArngElementProperty<>(key, v, edge);
-                properties.add(p);
-            }
+
         }
-        edge.attachProperties(properties);
+        ArangoDBEdge edge = new ArangoDBEdge(_id, _key, _rev, label);
+        ElementHelper.attachProperties(edge, keyValues.toArray());
         return edge;
     }
 

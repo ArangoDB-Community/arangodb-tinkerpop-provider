@@ -269,7 +269,7 @@ public class ArngDatabaseClient implements DatabaseClient {
 //	 * Get a document from the database. The method is generic so we it can be used to retrieve
 //	 * vertices, elementProperties or variables.
 //	 *
-//	 * @param <V> 					the value type
+//	 * @param <V> 					the baseValue type
 //	 * @param id            		the id of the document (should be a valid ArangoDB handle)
 //	 * @param docClass 				the returned document class
 //	 * @return the document
@@ -419,7 +419,7 @@ public class ArngDatabaseClient implements DatabaseClient {
 //	/**
 //	 * Get an edge from the graph.
 //	 *
-//	 * @param <V> 					the value type
+//	 * @param <V> 					the baseValue type
 //	 * @param id            		the id (name) of the edge
 //	 * @param label 			the label from which the edge is retrieved
 //	 * @param edgeClass 			the edge's specialised class
@@ -537,7 +537,7 @@ public class ArngDatabaseClient implements DatabaseClient {
 //	 * @param document              the document
 //	 * @param edgeLabelsFilter      a list of edge types to follow
 //	 * @param direction             a direction
-//	 * @param propertyFilter 		filter the neighbours on the given property:value values
+//	 * @param propertyFilter 		filter the neighbours on the given property:baseValue values
 //	 * @param resultType 			the result type
 //	 * @return ArangoDBBaseQuery	the query object
 //	 */
@@ -571,7 +571,7 @@ public class ArngDatabaseClient implements DatabaseClient {
 //	 * @param <T> 					the generic type
 //	 * @param document              the document
 //	 * @param edgeLabelsFilter      a list of edge types to follow
-//	 * @param propertyFilter 		Filter the neighbours on the given property:value values
+//	 * @param propertyFilter 		Filter the neighbours on the given property:baseValue values
 //	 * @param propertyType 			the property type
 //	 * @return ArangoDBBaseQuery	the query object
 //	 */

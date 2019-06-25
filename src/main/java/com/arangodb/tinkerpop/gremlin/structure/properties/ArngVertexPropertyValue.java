@@ -2,6 +2,8 @@ package com.arangodb.tinkerpop.gremlin.structure.properties;
 
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBVertex;
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBVertex.CantAddValueToSinglePropertyException;
+import com.arangodb.tinkerpop.gremlin.velocipack.ArngVPackVertexProperty;
+import com.arangodb.tinkerpop.gremlin.velocipack.VPackVertexProperty;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
 import org.apache.tinkerpop.gremlin.structure.VertexProperty;
 
@@ -106,6 +108,29 @@ public class ArngVertexPropertyValue<V> implements VertexPropertyValue<V> {
         }
         multiValue.remove(value);
         return multiValue.isEmpty();
+    }
+
+    @Override
+    public VPackVertexProperty preSerialize() {
+        VPackVertexProperty result = null;
+        switch(cardinality) {
+            case set:
+            case list:
+                for (ArngVertexProperty p : multiValue) {
+                    if (result == null) {
+                        result = new ArngVPackVertexProperty(cardinality, singleValue);
+                    }
+                    else {
+                        result = result.addPropertyInformation(p);
+                    }
+                }
+                break;
+            case single:
+            default: {
+                result = new ArngVPackVertexProperty(cardinality, singleValue);
+            }
+        }
+        return result;
     }
 
 

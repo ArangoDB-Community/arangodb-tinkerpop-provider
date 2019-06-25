@@ -44,7 +44,10 @@ public interface ElementProperties {
      * @see Element#property(String, Object)
      * @param element               the element that owns the property
      */
-    <V> Property<V> property(String key, V value, ArngElement element);
+    <V> Property<V> property(
+            ArngElement element,
+            String key,
+            V value);
 
     /**
      * @see Element#values(String...)

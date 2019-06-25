@@ -19,7 +19,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * The ArangoDB property filter class constructs AQL segments for comparing a document property
- * with a given value.
+ * with a given baseValue.
  *
  * @author Achim Brandt (http://www.triagens.de)
  * @author Johannes Gocke (http://www.triagens.de)
@@ -103,12 +103,12 @@ public class ArangoDBPropertyFilter {
 	}
 
 	/**
-	 * Constructs the the AQL segment for each property filter and adds the required name-value
+	 * Constructs the the AQL segment for each property filter and adds the required name-baseValue
 	 * entries to the bind parameters map.
 	 *
 	 * @param prefix 			the iterator/variable to which the property filter will be applied
 	 * @param filterSegments 	the list to populate with the AQL segments
-	 * @param bindVars 			the map to populate with the name-value bindings
+	 * @param bindVars 			the map to populate with the name-baseValue bindings
 	 */
 	
 	public void addAqlSegments(
@@ -170,7 +170,7 @@ public class ArangoDBPropertyFilter {
 	 *
 	 * @param bindVars the bind vars
 	 * @param propertyName the property name
-	 * @param value the value
+	 * @param value the baseValue
 	 * @return the string
 	 */
 	
@@ -213,7 +213,7 @@ public class ArangoDBPropertyFilter {
 		
 		public final String key;
 		
-		/** The value. */
+		/** The baseValue. */
 		
 		public final Object value;
 		
@@ -225,7 +225,7 @@ public class ArangoDBPropertyFilter {
 		 * Instantiates a new property container.
 		 *
 		 * @param key the name
-		 * @param value the value
+		 * @param value the baseValue
 		 * @param compare the compare
 		 */
 		public PropertyContainer(final String key, final Object value, final Compare compare) {
