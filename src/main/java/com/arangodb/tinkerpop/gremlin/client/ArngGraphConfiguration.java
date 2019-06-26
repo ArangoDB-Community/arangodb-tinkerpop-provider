@@ -17,7 +17,6 @@ import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil.edgeDefinitionString;
 
 /**
  * An implementaiton of {@link GraphConfiguration} for an ArngGraph.
@@ -95,8 +94,8 @@ public class ArngGraphConfiguration implements GraphConfiguration {
             return new ArangoDB.Builder().loadProperties(targetStream)
                     .registerDeserializer(ArangoDBVertex.class, vertexVpack)
                     .registerSerializer(ArangoDBVertex.class, vertexVpack)
-                    .registerDeserializer(ArangoDBEdge.class, edgeVPack)
-                    .registerSerializer(ArangoDBEdge.class, edgeVPack)
+                    //.registerDeserializer(ArangoDBEdge.class, edgeVPack)
+                    //.registerSerializer(ArangoDBEdge.class, edgeVPack)
                     .build();
         } catch (IOException e) {
            throw new IllegalStateException("Error writing to the output stream when creating drivier.", e);
@@ -190,7 +189,7 @@ public class ArngGraphConfiguration implements GraphConfiguration {
                     throw new ArangoDBGraphException(String.format("The 'to' collections dont match for edge definition %s", existing.getCollection()));
                 }
             } else {
-                throw new ArangoDBGraphException(String.format("The graph has a surplus edge definition %s", edgeDefinitionString(existing)));
+                throw new ArangoDBGraphException(String.format("The graph has a surplus edge definition")); // TODO %s", edgeDefinitionString(existing)));
             }
         }
     }

@@ -32,9 +32,9 @@ public class ArangoDBGraphProvider extends AbstractGraphProvider {
         add(ArangoDBEdge.class);
         add(ArangoDBGraph.class);
         add(ArangoDBGraphVariables.class);
-		add(ArangoDBEdgeProperty.class);
+		//add(ArangoDBEdgeProperty.class);
         add(ArngElementProperty.class);
-		add(ArangoDBPropertyProperty.class);
+		//add(ArangoDBPropertyProperty.class);
         add(ArangoDBVertex.class);
         add(ArngVertexProperty.class);
     }};
@@ -207,19 +207,19 @@ public class ArangoDBGraphProvider extends AbstractGraphProvider {
 
 	@Override
 	public void clear(Graph graph, Configuration configuration) throws Exception {
-		ArngDatabaseClient client;
-		if (graph ==null) {
-			Configuration arangoConfig = configuration.subset(ArangoDBGraph.PROPERTY_KEY_PREFIX);
-			Properties arangoProperties = ConfigurationConverter.getProperties(arangoConfig);
-			client = new ArngDatabaseClient(arangoProperties, "tinkerpop", true, null);
-			client.deleteGraph(arangoConfig.getString(ArangoDBGraph.PROPERTY_KEY_GRAPH_NAME));
-		}
-		else {
-			ArangoDBGraph agraph = (ArangoDBGraph) graph;
-			client = agraph.getDatabaseClient();
-			client.clear(agraph);
-			agraph.close();
-		}
+//		ArngDatabaseClient client;
+//		if (graph ==null) {
+//			Configuration arangoConfig = configuration.subset(ArangoDBGraph.PROPERTY_KEY_PREFIX);
+//			Properties arangoProperties = ConfigurationConverter.getProperties(arangoConfig);
+//			client = new ArngDatabaseClient(arangoProperties, "tinkerpop", true, null);
+//			client.deleteGraph(arangoConfig.getString(ArangoDBGraph.PROPERTY_KEY_GRAPH_NAME));
+//		}
+//		else {
+//			ArangoDBGraph agraph = (ArangoDBGraph) graph;
+//			client = agraph.getDatabaseClient();
+//			client.clear(agraph);
+//			agraph.close();
+//		}
 		
 	}
 

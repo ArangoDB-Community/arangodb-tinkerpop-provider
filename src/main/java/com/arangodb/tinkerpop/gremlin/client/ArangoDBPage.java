@@ -12,8 +12,8 @@ public class ArangoDBPage<EType extends BaseArngDocument> implements Iterator<ET
     final private String startId;
     final private int pageSize;
     final private String collection;
-    final private LoadingCache<String, EType> vertices;
-    final private Class<EType> eType;
+    //final private LoadingCache<String, EType> vertices;
+    //final private Class<EType> eType;
 
     public ArangoDBPage(String startId, int pageSize, String collection) {
         this.startId = startId;
@@ -49,7 +49,8 @@ public class ArangoDBPage<EType extends BaseArngDocument> implements Iterator<ET
                         "and the document primaryKey separated by /.");
             }
             assert keyInfo[1].equals(collection);
-            return graph.getDatabaseClient().getElement(keyInfo[0], keyInfo[1], eType);
+            //return graph.getDatabaseClient().getElement(keyInfo[0], keyInfo[1], eType);
+            return null;
         }
 
     }

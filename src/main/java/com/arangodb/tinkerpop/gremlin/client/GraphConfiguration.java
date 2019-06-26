@@ -148,7 +148,7 @@ public interface GraphConfiguration {
 
     Collection<String> dbEdgeCollections();
 
-    void checkGraphForErrors(ArangoGraph databaseGraph, GraphCreateOptions options) throws EdgeDefinitions.MalformedRelationException, ArngGraphConfiguration.MalformedRelationException;
+    void checkGraphForErrors(ArangoGraph databaseGraph, GraphCreateOptions options) throws ArngGraphConfiguration.MalformedRelationException;
 
     void createGraph(String graphName, GraphCreateOptions options);
 

@@ -67,15 +67,15 @@ public class ClientTest {
 	public void setUp() throws Exception {
 
 		configuration = new PropertiesConfiguration();
-		configuration.setProperty(ArangoDBGraph.PROPERTY_KEY_PREFIX + "." + ArangoDBGraph.PROPERTY_KEY_DB_NAME, "tinkerpop");
-		configuration.setProperty(ArangoDBGraph.PROPERTY_KEY_PREFIX + "." + ArangoDBGraph.PROPERTY_KEY_GRAPH_NAME, "standard");
-		configuration.setProperty(ArangoDBGraph.PROPERTY_KEY_PREFIX + "." + "arangodb.hosts", "127.0.0.1:8529");
-		configuration.setProperty(ArangoDBGraph.PROPERTY_KEY_PREFIX + "." + "arangodb.user", "gremlin");
-		configuration.setProperty(ArangoDBGraph.PROPERTY_KEY_PREFIX + "." + "arangodb.password", "gremlin");
-		configuration.setProperty(ArangoDBGraph.PROPERTY_KEY_PREFIX + "." + ArangoDBGraph.PROPERTY_KEY_SHOULD_PREFIX_COLLECTION_NAMES, shouldPrefixCollectionWithGraphName);
+//		configuration.setProperty(ArangoDBGraph.PROPERTY_KEY_PREFIX + "." + ArangoDBGraph.PROPERTY_KEY_DB_NAME, "tinkerpop");
+//		configuration.setProperty(ArangoDBGraph.PROPERTY_KEY_PREFIX + "." + ArangoDBGraph.PROPERTY_KEY_GRAPH_NAME, "standard");
+//		configuration.setProperty(ArangoDBGraph.PROPERTY_KEY_PREFIX + "." + "arangodb.hosts", "127.0.0.1:8529");
+//		configuration.setProperty(ArangoDBGraph.PROPERTY_KEY_PREFIX + "." + "arangodb.user", "gremlin");
+//		configuration.setProperty(ArangoDBGraph.PROPERTY_KEY_PREFIX + "." + "arangodb.password", "gremlin");
+//		configuration.setProperty(ArangoDBGraph.PROPERTY_KEY_PREFIX + "." + ArangoDBGraph.PROPERTY_KEY_SHOULD_PREFIX_COLLECTION_NAMES, shouldPrefixCollectionWithGraphName);
 		Properties arangoProperties = ConfigurationConverter.getProperties(configuration);
-		ArangoDBGraph g = new ArangoDBGraph(configuration);
-		System.out.println(g.features());
+		//ArangoDBGraph g = new ArangoDBGraph(configuration);
+//		/System.out.println(g.features());
 		// client = new ArngDatabaseClient(g, arangoProperties, "tinkerpop", 30000);
 	}
 

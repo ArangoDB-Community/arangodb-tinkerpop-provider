@@ -24,14 +24,15 @@ public class EdgeLoader extends CacheLoader<String, Edge> {
 
 		@Override
 		public Edge load(String key) {
-			return graph.getDatabaseClient().getDocument(key, ArangoDBEdge.class);
+			//return graph.getDatabaseClient().getDocument(key, ArangoDBEdge.class);
+			return null;
 		}
 
 		@Override
 		public Map<String, Edge> loadAll(Iterable<? extends String> keys) {
 			Map<String, Edge> result = new HashMap<>();
-			ArangoDBIterator<Edge> it = new ArangoDBIterator<>(graph, graph.getDatabaseClient().getGraphEdges(Lists.newArrayList(), Collections.emptyList()));
-			it.forEachRemaining(e -> result.put((String) e.id(), e));
+			//ArangoDBIterator<Edge> it = new ArangoDBIterator<>(graph, graph.getDatabaseClient().getGraphEdges(Lists.newArrayList(), Collections.emptyList()));
+			//it.forEachRemaining(e -> result.put((String) e.id(), e));
 			return result;
 		}
 

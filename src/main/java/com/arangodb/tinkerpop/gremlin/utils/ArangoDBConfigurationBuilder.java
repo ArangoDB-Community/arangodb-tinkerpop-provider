@@ -60,6 +60,13 @@ public class ArangoDBConfigurationBuilder {
 	private static final String PROPERTY_KEY_LOAD_BALANCING_STRATEGY = "arangodb.loadBalancingStrategy";
 	private static final String PROPERTY_KEY_PROTOCOL = "arangodb.protocol";
 	private static final String PROPERTY_KEY_SHOULD_PREFIX_COLLECTION_NAMES = "arangodb.shouldPrefixCollectionNames";
+	private static final String PROPERTY_KEY_DB_NAME = "graph.db";
+	private static final String PROPERTY_KEY_CREATE_DB = "graph.db.create";
+	private static final String PROPERTY_KEY_GRAPH_NAME = "graph.name";
+	private static final String PROPERTY_KEY_VERTEX_LABEL = "graph.vertex";
+	private static final String PROPERTY_KEY_EDGE_LABEL = "graph.edge";
+	private static final String PROPERTY_KEY_RELATIONS = "graph.relation";
+	private static final String PROPERTY_KEY_PREFIX_COLLECTIONS = "graph.shouldPrefixCollectionNames";
 
 	/** The db name. */
 	private String dbName = "tinkerpop";
@@ -130,10 +137,10 @@ public class ArangoDBConfigurationBuilder {
 	public BaseConfiguration build() {
 		BaseConfiguration config = new BaseConfiguration();
 		config.setListDelimiter('/');
-		config.addProperty(fullPropertyKey(ArangoDBGraph.PROPERTY_KEY_DB_NAME), dbName);
-		config.addProperty(fullPropertyKey(ArangoDBGraph.PROPERTY_KEY_GRAPH_NAME), graphName);
-		config.addProperty(fullPropertyKey(ArangoDBGraph.PROPERTY_KEY_VERTICES), vertices);
-		config.addProperty(fullPropertyKey(ArangoDBGraph.PROPERTY_KEY_EDGES), edges);
+		config.addProperty(fullPropertyKey(PROPERTY_KEY_DB_NAME), dbName);
+		config.addProperty(fullPropertyKey(PROPERTY_KEY_GRAPH_NAME), graphName);
+		config.addProperty(fullPropertyKey(PROPERTY_KEY_VERTEX_LABEL), vertices);
+		config.addProperty(fullPropertyKey(PROPERTY_KEY_EDGE_LABEL), edges);
 		List<String> rels = new ArrayList<>();
 		for (Triple<String, Set<String>, Set<String>> r : relations) {
 			// Make sure edge and vertex collections have been added
@@ -163,7 +170,7 @@ public class ArangoDBConfigurationBuilder {
 			
 		}
 		if (!rels.isEmpty()) {
-			config.addProperty(fullPropertyKey(ArangoDBGraph.PROPERTY_KEY_RELATIONS), rels.stream().collect(Collectors.joining("/")));
+			config.addProperty(fullPropertyKey(PROPERTY_KEY_RELATIONS), rels.stream().collect(Collectors.joining("/")));
 		}
 		config.addProperty(fullPropertyKey(PROPERTY_KEY_USER), user);
 		config.addProperty(fullPropertyKey(PROPERTY_KEY_PASSWORD), password);
@@ -203,7 +210,7 @@ public class ArangoDBConfigurationBuilder {
 	}
 	
 	private String fullPropertyKey(String key) {
-		return ArangoDBGraph.PROPERTY_KEY_PREFIX + "." + key;
+		return PROPERTY_KEY_PREFIX_COLLECTIONS + "." + key;
 	}
 	
 	/**

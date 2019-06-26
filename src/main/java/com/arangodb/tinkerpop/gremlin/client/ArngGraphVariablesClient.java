@@ -3,6 +3,7 @@ package com.arangodb.tinkerpop.gremlin.client;
 import com.arangodb.ArangoCursor;
 import com.arangodb.ArangoDBException;
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBGraphVariables;
+import com.arangodb.tinkerpop.gremlin.structure.ArngDocument;
 import com.google.common.base.Throwables;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
@@ -136,7 +137,11 @@ public class ArngGraphVariablesClient implements GraphVariablesClient {
         }
         variables.revision(newRev);
         cache.put("variables", variables);
-        logger.info("ArngDocument updated, new revision {}", variables.revision());
+        try {
+            logger.info("ArngDocument updated, new revision {}", variables.revision());
+        } catch (ArngDocument.ElementNotPairedException e) {
+            // pass
+        }
     }
 
 }

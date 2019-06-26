@@ -15,31 +15,31 @@ public abstract class BaseTestCase {
 	protected final String vertices = "test_vertices1";
 	protected final String edges = "test_edges1";
 
-	@Before
-	public void setUp() throws Exception {
-
-		// host name and port see: arangodb.elementProperties
-		PropertiesConfiguration configuration = new PropertiesConfiguration();
-		configuration.setProperty("arangodb.hosts", "127.0.0.1:8529");
-		configuration.setProperty("arangodb.user", "gremlin");
-		configuration.setProperty("arangodb.password", "gremlin");
-		Properties arangoProperties = ConfigurationConverter.getProperties(configuration);
-		
-		client = new ArngDatabaseClient(arangoProperties, "tinkerpop", true, null);
-		
-		client.deleteGraph(graphName);
-		client.deleteCollection(vertices);
-		client.deleteCollection(edges);
-		
-	}
-
-	@After
-	public void tearDown() {
-		
-		client.deleteCollection(vertices);
-		client.deleteCollection(edges);
-		client.deleteGraph(graphName);
-		client = null;
-	}
+//	@Before
+//	public void setUp() throws Exception {
+//
+//		// host name and port see: arangodb.elementProperties
+//		PropertiesConfiguration configuration = new PropertiesConfiguration();
+//		configuration.setProperty("arangodb.hosts", "127.0.0.1:8529");
+//		configuration.setProperty("arangodb.user", "gremlin");
+//		configuration.setProperty("arangodb.password", "gremlin");
+//		Properties arangoProperties = ConfigurationConverter.getProperties(configuration);
+//
+//		client = new ArngDatabaseClient(arangoProperties, "tinkerpop", true, null);
+//
+//		client.deleteGraph(graphName);
+//		client.deleteCollection(vertices);
+//		client.deleteCollection(edges);
+//
+//	}
+//
+//	@After
+//	public void tearDown() {
+//
+//		client.deleteCollection(vertices);
+//		client.deleteCollection(edges);
+//		client.deleteGraph(graphName);
+//		client = null;
+//	}
 
 }

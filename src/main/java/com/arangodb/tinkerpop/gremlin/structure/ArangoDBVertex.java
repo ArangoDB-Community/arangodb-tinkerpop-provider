@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 
 /**
@@ -51,6 +52,9 @@ public class ArangoDBVertex extends BaseArngDocument implements ArngVertex {
 	}
 
 	private static final Logger logger = LoggerFactory.getLogger(ArangoDBVertex.class);
+
+	// TODO Move to ONE place
+	private static final Pattern DOCUMENT_KEY = Pattern.compile("^[A-Za-z0-9_:\\.@()\\+,=;\\$!\\*'%-]*");
 
 	/** All property access is delegated to the property manager */
 
@@ -161,7 +165,7 @@ public class ArangoDBVertex extends BaseArngDocument implements ArngVertex {
 		if (ElementHelper.getIdValue(keyValues).isPresent()) {
         	Object id = ElementHelper.getIdValue(keyValues).get();
         	if (graph().features().edge().willAllowId(id)) {
-	        	Matcher m = ArangoDBUtil.DOCUMENT_KEY.matcher((String)id);
+	        	Matcher m = DOCUMENT_KEY.matcher((String)id);
         		if (!m.matches()) {
         			throw new ArangoDBGraphException(String.format("Given id (%s) has unsupported characters.", id));
             	}

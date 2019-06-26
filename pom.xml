@@ -1,184 +1,197 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-	<modelVersion>4.0.0</modelVersion>
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
 
-	<groupId>org.arangodb</groupId>
-	<artifactId>arangodb-tinkerpop-provider</artifactId>
-	<version>2.0.2</version>
+  <groupId>org.arangodb</groupId>
+  <artifactId>arangodb-tinkerpop-provider</artifactId>
+  <version>2.0.2</version>
   <packaging>jar</packaging>
 
-	<name>ArangoDB-TinkerPop-Provider</name>
-	<description>An implementation of the Tinkerpop Provider OLTP for ArangoDB</description>
-	<url>https://github.com/ArangoDB-Community</url>
+  <name>ArangoDB-TinkerPop-Provider</name>
+  <description>An implementation of the Tinkerpop Provider OLTP for ArangoDB</description>
+  <url>https://github.com/ArangoDB-Community</url>
 
-	<licenses>
-		<license>
-			<name>Apache License 2.0</name>
-			<url>http://www.apache.org/licenses/LICENSE-2.0</url>
-			<distribution>repo</distribution>
-		</license>
-	</licenses>
+  <licenses>
+    <license>
+      <name>Apache License 2.0</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
 
-	<properties>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<arangodb-java-driver.version>5.0.0</arangodb-java-driver.version>
-		<tinkerpop.version>3.3.3</tinkerpop.version>
-		<junit.version>4.12</junit.version>
-		<logback-classic.version>1.1.3</logback-classic.version>
-		<commons-lang3.version>3.4</commons-lang3.version>
-	</properties>
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <arangodb-java-driver.version>5.0.0</arangodb-java-driver.version>
+    <tinkerpop.version>3.3.3</tinkerpop.version>
+    <junit.version>5.4.2</junit.version>
+    <mockito.version>2.28.2</mockito.version>
+    <logback-classic.version>1.1.3</logback-classic.version>
+    <commons-lang3.version>3.4</commons-lang3.version>
+  </properties>
 
-	<dependencies>
-		<dependency>
-			<groupId>com.arangodb</groupId>
-			<artifactId>arangodb-java-driver</artifactId>
-			<version>${arangodb-java-driver.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.tinkerpop</groupId>
-			<artifactId>gremlin-core</artifactId>
-			<version>${tinkerpop.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.commons</groupId>
-			<artifactId>commons-lang3</artifactId>
-			<version>${commons-lang3.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>com.google.guava</groupId>
-			<artifactId>guava</artifactId>
-			<version>27.0.1-jre</version>
-		</dependency>
-		<dependency>
-			<groupId>com.google.code.gson</groupId>
-			<artifactId>gson</artifactId>
-			<version>2.8.5</version>
-		</dependency>
+  <dependencies>
+    <dependency>
+      <groupId>com.arangodb</groupId>
+      <artifactId>arangodb-java-driver</artifactId>
+      <version>${arangodb-java-driver.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.tinkerpop</groupId>
+      <artifactId>gremlin-core</artifactId>
+      <version>${tinkerpop.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-lang3</artifactId>
+      <version>${commons-lang3.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+      <version>27.0.1-jre</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.code.gson</groupId>
+      <artifactId>gson</artifactId>
+      <version>2.8.5</version>
+    </dependency>
 
-		<!--TEST -->
-		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-			<version>${junit.version}</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.tinkerpop</groupId>
-			<artifactId>gremlin-test</artifactId>
-			<version>${tinkerpop.version}</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>ch.qos.logback</groupId>
-			<artifactId>logback-classic</artifactId>
-			<version>${logback-classic.version}</version>
-			<type>jar</type>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.mockito</groupId>
-			<artifactId>mockito-core</artifactId>
-			<version>2.13.0</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.hamcrest</groupId>
-			<artifactId>hamcrest-all</artifactId>
-			<version>1.3</version>
-			<scope>test</scope>
-		</dependency>
-	</dependencies>
+    <!--TEST -->
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-api</artifactId>
+      <version>${junit.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-engine</artifactId>
+      <version>${junit.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.tinkerpop</groupId>
+      <artifactId>gremlin-test</artifactId>
+      <version>${tinkerpop.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>ch.qos.logback</groupId>
+      <artifactId>logback-classic</artifactId>
+      <version>${logback-classic.version}</version>
+      <type>jar</type>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-core</artifactId>
+      <version>${mockito.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-junit-jupiter</artifactId>
+      <version>${mockito.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.hamcrest</groupId>
+      <artifactId>hamcrest-all</artifactId>
+      <version>1.3</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
 
-	<developers>
-		<developer>
-			<id>gschwab</id>
-			<name>gschwab</name>
-			<url>https://github.com/gschwab</url>
-		</developer>
-		<developer>
-			<id>scottashton</id>
-			<name>scottashton</name>
-			<url>https://github.com/scottashton</url>
-		</developer>
-		<developer>
-			<id>a-brandt</id>
-			<name>a-brandt</name>
-			<url>https://github.com/a-brandt</url>
-		</developer>
-		<developer>
-			<id>arcanefoam</id>
-			<name>Horacio Hoyos Rodriguez</name>
-			<url>https://github.com/arcanefoam</url>
-		</developer>
-	</developers>
+  <developers>
+    <developer>
+      <id>gschwab</id>
+      <name>gschwab</name>
+      <url>https://github.com/gschwab</url>
+    </developer>
+    <developer>
+      <id>scottashton</id>
+      <name>scottashton</name>
+      <url>https://github.com/scottashton</url>
+    </developer>
+    <developer>
+      <id>a-brandt</id>
+      <name>a-brandt</name>
+      <url>https://github.com/a-brandt</url>
+    </developer>
+    <developer>
+      <id>arcanefoam</id>
+      <name>Horacio Hoyos Rodriguez</name>
+      <url>https://github.com/arcanefoam</url>
+    </developer>
+  </developers>
 
-	<profiles>
-		<profile>
-			<id>doclint-java8-disable</id>
-			<activation>
-				<jdk>[1.8,)</jdk>
-			</activation>
-			<properties>
-				<javadoc.opts>-Xdoclint:none</javadoc.opts>
-			</properties>
-		</profile>
+  <profiles>
+    <profile>
+      <id>doclint-java8-disable</id>
+      <activation>
+        <jdk>[1.8,)</jdk>
+      </activation>
+      <properties>
+        <javadoc.opts>-Xdoclint:none</javadoc.opts>
+      </properties>
+    </profile>
 
-		<profile>
-			<id>release</id>
-			<build>
-				<plugins>
-					<plugin>
-						<groupId>org.apache.maven.plugins</groupId>
-						<artifactId>maven-source-plugin</artifactId>
-						<version>2.4</version>
-						<executions>
-							<execution>
-								<goals>
-									<goal>jar</goal>
-								</goals>
-							</execution>
-						</executions>
-					</plugin>
+    <profile>
+      <id>release</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-source-plugin</artifactId>
+            <version>2.4</version>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>jar</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
 
-					<plugin>
-						<groupId>org.apache.maven.plugins</groupId>
-						<artifactId>maven-javadoc-plugin</artifactId>
-						<version>3.0.1</version>
-						<executions>
-							<execution>
-								<id>attach-javadocs</id>
-								<goals>
-									<goal>jar</goal>
-								</goals>
-								<configuration>
-									<additionalparam>${javadoc.opts}</additionalparam>
-								</configuration>
-							</execution>
-						</executions>
-					</plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <version>3.0.1</version>
+            <executions>
+              <execution>
+                <id>attach-javadocs</id>
+                <goals>
+                  <goal>jar</goal>
+                </goals>
+                <configuration>
+                  <additionalparam>${javadoc.opts}</additionalparam>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
 
-					<plugin>
-						<groupId>org.apache.maven.plugins</groupId>
-						<artifactId>maven-gpg-plugin</artifactId>
-						<version>1.5</version>
-						<executions>
-							<execution>
-								<id>sign-artifacts</id>
-								<phase>verify</phase>
-								<goals>
-									<goal>sign</goal>
-								</goals>
-							</execution>
-						</executions>
-					</plugin>
-				</plugins>
-			</build>
-		</profile>
-	</profiles>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <version>1.5</version>
+            <executions>
+              <execution>
+                <id>sign-artifacts</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 
-	<build>
+  <build>
     <pluginManagement>
       <plugins>
         <plugin>
@@ -188,54 +201,63 @@
         </plugin>
       </plugins>
     </pluginManagement>
-		<plugins>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.8.0</version>
-				<configuration>
-					<source>1.8</source>
-					<target>1.8</target>
-					<compilerArgument />
-				</configuration>
-			</plugin>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.8.0</version>
+        <configuration>
+          <source>1.8</source>
+          <target>1.8</target>
+          <compilerArgument/>
+        </configuration>
+      </plugin>
 
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <version>3.0.0-M3</version>
+        <dependencies>
+          <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-surefire-provider</artifactId>
+            <version>1.0.1</version>
+          </dependency>
+        </dependencies>
         <configuration>
           <environmentVariables>
-						<!-- Needs to be provided in a single line -->
-            <GREMLIN_TESTS>org.apache.tinkerpop.gremlin.algorithm.generator.CommunityGeneratorTest,org.apache.tinkerpop.gremlin.algorithm.generator.DistributionGeneratorTest,org.apache.tinkerpop.gremlin.structure.EdgeTest,org.apache.tinkerpop.gremlin.structure.FeatureSupportTest,org.apache.tinkerpop.gremlin.structure.GraphConstructionTest,org.apache.tinkerpop.gremlin.structure.GraphTest,org.apache.tinkerpop.gremlin.structure.io.IoCustomTest,org.apache.tinkerpop.gremlin.structure.io.IoGraphTest,org.apache.tinkerpop.gremlin.structure.io.IoPropertyTest,org.apache.tinkerpop.gremlin.structure.io.IoTest,org.apache.tinkerpop.gremlin.structure.io.IoVertexTest,org.apache.tinkerpop.gremlin.structure.PropertyTest,org.apache.tinkerpop.gremlin.structure.VariablesTest,org.apache.tinkerpop.gremlin.structure.VertexPropertyTest</GREMLIN_TESTS>
+            <!-- Needs to be provided in a single line -->
+            <GREMLIN_TESTS>
+              org.apache.tinkerpop.gremlin.algorithm.generator.CommunityGeneratorTest,org.apache.tinkerpop.gremlin.algorithm.generator.DistributionGeneratorTest,org.apache.tinkerpop.gremlin.structure.EdgeTest,org.apache.tinkerpop.gremlin.structure.FeatureSupportTest,org.apache.tinkerpop.gremlin.structure.GraphConstructionTest,org.apache.tinkerpop.gremlin.structure.GraphTest,org.apache.tinkerpop.gremlin.structure.io.IoCustomTest,org.apache.tinkerpop.gremlin.structure.io.IoGraphTest,org.apache.tinkerpop.gremlin.structure.io.IoPropertyTest,org.apache.tinkerpop.gremlin.structure.io.IoTest,org.apache.tinkerpop.gremlin.structure.io.IoVertexTest,org.apache.tinkerpop.gremlin.structure.PropertyTest,org.apache.tinkerpop.gremlin.structure.VariablesTest,org.apache.tinkerpop.gremlin.structure.VertexPropertyTest
+            </GREMLIN_TESTS>
           </environmentVariables>
         </configuration>
       </plugin>
 
-			<plugin>
-				<groupId>org.sonatype.plugins</groupId>
-				<artifactId>nexus-staging-maven-plugin</artifactId>
-				<version>1.6.7</version>
-				<extensions>true</extensions>
-				<configuration>
-					<serverId>ossrh</serverId>
-					<nexusUrl>https://oss.sonatype.org/</nexusUrl>
-					<autoReleaseAfterClose>true</autoReleaseAfterClose>
-				</configuration>
-			</plugin>
+      <plugin>
+        <groupId>org.sonatype.plugins</groupId>
+        <artifactId>nexus-staging-maven-plugin</artifactId>
+        <version>1.6.7</version>
+        <extensions>true</extensions>
+        <configuration>
+          <serverId>ossrh</serverId>
+          <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+          <autoReleaseAfterClose>true</autoReleaseAfterClose>
+        </configuration>
+      </plugin>
 
-		</plugins>
-	</build>
+    </plugins>
+  </build>
 
-	<scm>
-		<url>https://github.com/ArangoDB-Community/arangodb-tinkerpop-provider</url>
-		<connection>scm:git:https://github.com/ArangoDB-Community/arangodb-tinkerpop-provider.git</connection>
-		<developerConnection>scm:git:git@github.com:ArangoDB-Community/arangodb-tinkerpop-provider.git</developerConnection>
-	</scm>
+  <scm>
+    <url>https://github.com/ArangoDB-Community/arangodb-tinkerpop-provider</url>
+    <connection>scm:git:https://github.com/ArangoDB-Community/arangodb-tinkerpop-provider.git</connection>
+    <developerConnection>scm:git:git@github.com:ArangoDB-Community/arangodb-tinkerpop-provider.git</developerConnection>
+  </scm>
 
-	<organization>
-		<name>The University of York - Department of Computer Science</name>
-		<url>https://www.cs.york.ac.uk</url>
-	</organization>
+  <organization>
+    <name>The University of York - Department of Computer Science</name>
+    <url>https://www.cs.york.ac.uk</url>
+  </organization>
 
 </project>

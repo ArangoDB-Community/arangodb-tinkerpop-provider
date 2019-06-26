@@ -24,14 +24,15 @@ public class VertexLoader extends CacheLoader<String, Vertex> {
 
 	@Override
 	public Vertex load(String key) {
-		return graph.getDatabaseClient().getVertex(key, ArangoDBVertex.class);
+		//return graph.getDatabaseClient().getVertex(key, ArangoDBVertex.class);
+		return null;
 	}
 
 	@Override
 	public Map<String, Vertex> loadAll(Iterable<? extends String> keys) {
 		Map<String, Vertex> result = new HashMap<>();
-		ArangoDBIterator<Vertex> it = new ArangoDBIterator<>(graph, graph.getDatabaseClient().getGraphVertices(Lists.newArrayList(), Collections.emptyList()));
-		it.forEachRemaining(v -> result.put((String) v.id(), v));
+		//ArangoDBIterator<Vertex> it = new ArangoDBIterator<>(graph, graph.getDatabaseClient().getGraphVertices(Lists.newArrayList(), Collections.emptyList()));
+		//it.forEachRemaining(v -> result.put((String) v.id(), v));
 		return result;
 	}
 

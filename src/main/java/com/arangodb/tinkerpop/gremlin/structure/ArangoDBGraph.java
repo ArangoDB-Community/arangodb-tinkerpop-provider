@@ -12,6 +12,7 @@ import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import com.arangodb.ArangoDatabase;
@@ -111,13 +112,13 @@ import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
  * <p>
  * The list of allowed settings is:
  * <ul>
- *   <li>  graphClient.db 								// The name of the databaseClient
- *   <li>  graphClient.db.create							// Create the DB if not found
- *   <li>  graphClient.name 								// The name of the graphClient
- *   <li>  graphClient.vertex 							// The name of a vertices label
- *   <li>  graphClient.edge 								// The name of an edges label
- *   <li>  graphClient.relation 							// The allowed from/to relations for edges
- *   <li>  graphClient.shouldPrefixCollectionNames 		// Boolean flag, true if Vertex and Edge collections will be prefixed with graphClient name
+ *   <li>  graph.db 								// The name of the databaseClient
+ *   <li>  graph.db.create							// Create the DB if not found
+ *   <li>  graph.name 								// The name of the graphClient
+ *   <li>  graph.vertex 							// The name of a vertices label
+ *   <li>  graph.edge 								// The name of an edges label
+ *   <li>  graph.relation 							// The allowed from/to relations for edges
+ *   <li>  graph.shouldPrefixCollectionNames 		// Boolean flag, true if Vertex and Edge collections will be prefixed with graphClient name
  *   <li>  arangodb.hosts
  *   <li>  arangodb.timeout
  *   <li>  arangodb.user
@@ -631,6 +632,9 @@ public class ArangoDBGraph implements ArngGraph {
 		}
 	}
 
+	// TODO Move to ONE place
+	private static final Pattern DOCUMENT_KEY = Pattern.compile("^[A-Za-z0-9_:\\.@()\\+,=;\\$!\\*'%-]*");
+
 	@Override
 	public Vertex addVertex(Object... keyValues) {
 		logger.info("Creating vertex in graphClient with keyValues: {}", keyValues);
@@ -661,7 +665,7 @@ public class ArangoDBGraph implements ArngGraph {
 
 					}
 				}
-				Matcher m = ArangoDBUtil.DOCUMENT_KEY.matcher((String)id);
+				Matcher m = DOCUMENT_KEY.matcher((String)id);
 				if (!m.matches()) {
 					throw new ArangoDBGraphException(String.format("Given id (%s) has unsupported characters.", id));
 				}
@@ -709,7 +713,8 @@ public class ArangoDBGraph implements ArngGraph {
 			logger.error("Error computing vertices", e);
 			throw new IllegalStateException(e);
 		}
-		return new ArangoDBIterator<Vertex>(this, getDatabaseClient().getGraphVertices(ids, collections));
+		//return new ArangoDBIterator<Vertex>(this, getDatabaseClient().getGraphVertices(ids, collections));
+		return null;
 	}
 
 
@@ -730,7 +735,8 @@ public class ArangoDBGraph implements ArngGraph {
 				})
 				.map(id -> id == null ? (String)id : id.toString())
 				.collect(Collectors.toList());
-		return new ArangoDBIterator<Edge>(this, getDatabaseClient().getGraphEdges(ids, collections));
+		//return new ArangoDBIterator<Edge>(this, getDatabaseClient().getGraphEdges(ids, collections));
+		return null;
 	}
 
 
@@ -784,7 +790,7 @@ public class ArangoDBGraph implements ArngGraph {
 
 	@Override
 	public Collection<String> vertexCollections() {
-		return vertexCollections.stream().map(arangoConfig::getDBCollectionName).collect(Collectors.toList();
+		return vertexCollections.stream().map(arangoConfig::getDBCollectionName).collect(Collectors.toList());
 	}
 
 	/**
@@ -795,7 +801,7 @@ public class ArangoDBGraph implements ArngGraph {
 
 	@Override
 	public Collection<String> edgeCollections() {
-		return edgeCollections.stream().map(arangoConfig::getDBCollectionName).collect(Collectors.toList();
+		return edgeCollections.stream().map(arangoConfig::getDBCollectionName).collect(Collectors.toList());
 	}
 
 	@Override

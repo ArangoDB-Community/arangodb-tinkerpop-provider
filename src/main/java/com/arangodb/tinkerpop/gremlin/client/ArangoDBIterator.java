@@ -50,9 +50,9 @@ public class ArangoDBIterator<IType> implements Iterator<IType> {
 	@Override
 	public IType next() {
 		BaseArngDocument next = (BaseArngDocument) delegate.next();
-		next.graph(graph);
-		next.label(graph.getPrefixedCollectioName(next.label));
-		next.setPaired(true);
+		//next.graph(graph);
+		//next.label(graph.getPrefixedCollectioName(next.label));
+		//next.setPaired(true);
 		return (IType) next;
 	}
 	

@@ -9,7 +9,10 @@ import org.apache.tinkerpop.gremlin.structure.VertexProperty;
 
 import java.util.*;
 
-
+/**
+ * An implementation of {@link VertexPropertyValue} to be used with {@link ArangoDBVertex}.
+ * @param <V>
+ */
 public class ArngVertexPropertyValue<V> implements VertexPropertyValue<V> {
 
     private final VertexProperty.Cardinality cardinality;
@@ -121,7 +124,7 @@ public class ArngVertexPropertyValue<V> implements VertexPropertyValue<V> {
                         result = new ArngVPackVertexProperty(cardinality, singleValue);
                     }
                     else {
-                        result = result.addPropertyInformation(p);
+                        result = result.addVertexProperty(p);
                     }
                 }
                 break;
