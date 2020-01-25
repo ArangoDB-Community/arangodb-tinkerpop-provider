@@ -682,10 +682,12 @@ public class ArangoDBGraph implements Graph {
         List<String> relations) {
 
 		if (StringUtils.isBlank(db)) {
-            throw new ArangoDBGraphException(String.format("The provided argument can not be empty/null: %s", db));
+            throw new ArangoDBGraphException("The db name can not be empty/null. Check that your configuration file " +
+					"has a 'graph.db' setting.");
 		}
 		if (StringUtils.isBlank(name)) {
-            throw new ArangoDBGraphException(String.format("The provided argument can not be empty/null: %s", name));
+            throw new ArangoDBGraphException("The graph name can not be empty/null. Check that your configuration file " +
+					"has a 'graph.name' name setting.");
 		}
 		if (CollectionUtils.isEmpty(edges)) {
 			logger.warn("Empty edges collection(s), the default 'edge' collection will be used.");
