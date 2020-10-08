@@ -59,7 +59,6 @@ public class ArangoDBConfigurationBuilder {
 	private static final String PROPERTY_KEY_ACQUIRE_HOST_LIST = "arangodb.acquireHostList";
 	private static final String PROPERTY_KEY_LOAD_BALANCING_STRATEGY = "arangodb.loadBalancingStrategy";
 	private static final String PROPERTY_KEY_PROTOCOL = "arangodb.protocol";
-	private static final String PROPERTY_KEY_SHOULD_PREFIX_COLLECTION_NAMES = "arangodb.shouldPrefixCollectionNames";
 
 	/** The db name. */
 	private String dbName = "tinkerpop";
@@ -195,7 +194,7 @@ public class ArangoDBConfigurationBuilder {
 			config.addProperty(fullPropertyKey(PROPERTY_KEY_HOSTS), hosts.stream().collect(Collectors.joining(",")));
 		}
 		if(shouldPrefixCollectionNames != null){
-			config.addProperty(fullPropertyKey(PROPERTY_KEY_SHOULD_PREFIX_COLLECTION_NAMES), shouldPrefixCollectionNames);
+			config.addProperty(fullPropertyKey(ArangoDBGraph.PROPERTY_KEY_SHOULD_PREFIX_COLLECTION_NAMES), shouldPrefixCollectionNames);
 		}
 
 		config.addProperty(Graph.GRAPH, ArangoDBGraph.class.getName());
