@@ -598,10 +598,25 @@ public class ArangoDBGraph implements Graph {
 
         if (graph.exists()) {
             ArangoDBUtil.checkGraphForErrors(prefVCols, prefECols, edgeDefinitions, graph, options);
-            ArangoDBGraphVariables iter = client.getGraphVariables();
-            if (iter == null) {
-            	throw new ArangoDBGraphException("Existing graph does not have a Variables collection");
-            }
+            ArangoDBGraphVariables variables = null;
+            try {
+				variables = client.getGraphVariables();
+			} catch (NullPointerException ex) {
+				logger.warn("Existing graph missing Graph Variables collection ({}), will attempt to create one.", GRAPH_VARIABLES_COLLECTION);
+			}
+            if (variables == null) {
+				variables = new ArangoDBGraphVariables(name, GRAPH_VARIABLES_COLLECTION, this);
+				try {
+					client.insertGraphVariables(variables);
+				} catch (ArangoDBGraphException ex) {
+					throw new ArangoDBGraphException(
+							String.format(
+									"Unable to add graph variables collection (%s) to existing graph. %s",
+									ex.getMessage(),
+									GRAPH_VARIABLES_COLLECTION)
+							, ex);
+				}
+			}
         }
         else {
         	graph = client.createGraph(name, edgeDefinitions, options);

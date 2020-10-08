@@ -325,6 +325,7 @@ public class ArangoDBUtil {
         		throw new ArangoDBGraphException(String.format("The graph has a surplus edge definition %s", edgeDefinitionString(existing)));
         	}
         }
+
 	}
 
 	private static void checkGraphVertexCollections(List<String> verticesCollectionNames, ArangoGraph graph, GraphCreateOptions options) {
