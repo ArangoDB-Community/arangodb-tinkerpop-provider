@@ -67,7 +67,7 @@ public abstract class ArangoDBBaseDocument {
      * Instantiates a new Arango DB base document. The document's collection is assigned by requesting the graph to
      * prefix the collection.
      *
-     * @param key 			        the key to assign to the docuement
+     * @param key 			        the key to assign to the document
      * @param label                 the document label
      * @param graph                 the graph that contains the document
      */

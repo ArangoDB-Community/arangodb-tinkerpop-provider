@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.3] - 2020-11-16
+
+### Fixed
+- #68 Create Graph Variables collection if not present
+- Bump junit from 4.12 to 4.13.1 
+
 ## [2.0.2] - 2019-03-22
 
 ### Added

@@ -68,7 +68,7 @@ import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
  * </pre>
  * <p>
  * To define the schema, (EdgeCollections in ArangoDB world) three properties can be used:
- * <tt>graph.vertex</tt>, <tt>graph.edge</tt> and <tt>graph.relation</tt>. The graph.vertex and
+ * <code>graph.vertex</code>, <code>graph.edge</code> and <code>graph.relation</code>. The graph.vertex and
  * graph.edge properties allow definition of the ArangoDB collections used to store nodes and edges
  * respectively. The relations property is used to describe the allowed edge-node relations. For
  * simple graphs, only one graph.vertex and graph.edge properties need to be provided. In this case
@@ -851,8 +851,8 @@ public class ArangoDBGraph implements Graph {
 
 	/**
 	 * Return the collection name correctly prefixed according to the shouldPrefixCollectionNames flag
-	 * @param collectionName
-	 * @return
+	 * @param collectionName the collection name
+	 * @return the Collection name prefixed
 	 */
 	public String getPrefixedCollectioName(String collectionName) {
 		if (GRAPH_VARIABLES_COLLECTION.equals(collectionName)) {

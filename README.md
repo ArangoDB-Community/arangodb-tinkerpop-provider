@@ -24,7 +24,7 @@ To add the provider to your project via maven you need to add the following depe
   <dependency>
     <groupId>org.arangodb</groupId>
     <artifactId>arangodb-tinkerpop-provider</artifactId>
-    <version>2.0.2</version>
+    <version>2.0.3</version>
   </dependency>
     ....
 </dependencies>

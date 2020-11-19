@@ -52,9 +52,10 @@ public class ArangoDBGraphVariables extends ArangoDBBaseDocument implements Grap
     /**
      * Instantiates a new Arango DB graph variables.
      *
-	 * @param graph the graph
+	 * @param key 			        the key to assign to the document
+	 * @param label                 the document label
+	 * @param graph                 the graph that contains the document
 	 */
-
     public ArangoDBGraphVariables(String key, String label, ArangoDBGraph graph) {
         super(key, label, graph);
     }

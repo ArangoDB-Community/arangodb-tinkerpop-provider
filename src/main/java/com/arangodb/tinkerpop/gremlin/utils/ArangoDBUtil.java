@@ -259,6 +259,7 @@ public class ArangoDBUtil {
 	 *
 	 * @param graphName 		the graph name
 	 * @param collectionName 	the collection name
+	 * @param shouldPrefixWithGraphName flag to indicate if the name should be prefixed
 	 * @return 					the unique collection name
 	 */
 	@Deprecated
@@ -450,9 +451,10 @@ public class ArangoDBUtil {
     /**
      * Gets the correct primitive.
      *
-     * @param <V> 		the value type
      * @param value		the value
-     * @return the 		correct Java primitive
+     * @param valueClass the exoected class of the value
+     * @param <V> 		the value type
+	 * @return the 		correct Java primitive
      */
     
     @SuppressWarnings("unchecked")
@@ -581,8 +583,8 @@ public class ArangoDBUtil {
 
 	/**
 	 * Translate a Gremlin direction to Arango direction
-	 * @param direction
-	 * @return
+	 * @param direction the direction to translate
+	 * @return the ArangoDBQueryBuilder.Direction that represents the gremlin direction
 	 */
 	public static ArangoDBQueryBuilder.Direction getArangoDirectionFromGremlinDirection(final Direction direction) {
 		switch (direction) {

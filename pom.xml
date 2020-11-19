@@ -6,8 +6,8 @@
 
 	<groupId>org.arangodb</groupId>
 	<artifactId>arangodb-tinkerpop-provider</artifactId>
-	<version>2.0.2</version>
-  <packaging>jar</packaging>
+	<version>2.0.3</version>
+    <packaging>jar</packaging>
 
 	<name>ArangoDB-TinkerPop-Provider</name>
 	<description>An implementation of the Tinkerpop Provider OLTP for ArangoDB</description>
@@ -24,7 +24,7 @@
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<arangodb-java-driver.version>5.0.0</arangodb-java-driver.version>
-		<tinkerpop.version>3.3.3</tinkerpop.version>
+		<tinkerpop.version>3.3.11</tinkerpop.version>
 		<junit.version>4.13.1</junit.version>
 		<logback-classic.version>1.1.3</logback-classic.version>
 		<commons-lang3.version>3.4</commons-lang3.version>
@@ -132,7 +132,7 @@
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-source-plugin</artifactId>
-						<version>2.4</version>
+						<version>3.2.1</version>
 						<executions>
 							<execution>
 								<goals>
@@ -145,7 +145,7 @@
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-javadoc-plugin</artifactId>
-						<version>3.0.1</version>
+						<version>3.2.0</version>
 						<executions>
 							<execution>
 								<id>attach-javadocs</id>
@@ -154,6 +154,7 @@
 								</goals>
 								<configuration>
 									<additionalparam>${javadoc.opts}</additionalparam>
+									<source>8</source>
 								</configuration>
 							</execution>
 						</executions>
@@ -162,7 +163,7 @@
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-gpg-plugin</artifactId>
-						<version>1.5</version>
+						<version>1.6</version>
 						<executions>
 							<execution>
 								<id>sign-artifacts</id>
@@ -206,7 +207,7 @@
         <version>3.0.0-M3</version>
         <configuration>
           <environmentVariables>
-						<!-- Needs to be provided in a single line -->
+			<!-- Needs to be provided in a single line -->
             <GREMLIN_TESTS>org.apache.tinkerpop.gremlin.algorithm.generator.CommunityGeneratorTest,org.apache.tinkerpop.gremlin.algorithm.generator.DistributionGeneratorTest,org.apache.tinkerpop.gremlin.structure.EdgeTest,org.apache.tinkerpop.gremlin.structure.FeatureSupportTest,org.apache.tinkerpop.gremlin.structure.GraphConstructionTest,org.apache.tinkerpop.gremlin.structure.GraphTest,org.apache.tinkerpop.gremlin.structure.io.IoCustomTest,org.apache.tinkerpop.gremlin.structure.io.IoGraphTest,org.apache.tinkerpop.gremlin.structure.io.IoPropertyTest,org.apache.tinkerpop.gremlin.structure.io.IoTest,org.apache.tinkerpop.gremlin.structure.io.IoVertexTest,org.apache.tinkerpop.gremlin.structure.PropertyTest,org.apache.tinkerpop.gremlin.structure.VariablesTest,org.apache.tinkerpop.gremlin.structure.VertexPropertyTest</GREMLIN_TESTS>
           </environmentVariables>
         </configuration>
@@ -215,7 +216,7 @@
 			<plugin>
 				<groupId>org.sonatype.plugins</groupId>
 				<artifactId>nexus-staging-maven-plugin</artifactId>
-				<version>1.6.7</version>
+				<version>1.6.8</version>
 				<extensions>true</extensions>
 				<configuration>
 					<serverId>ossrh</serverId>
@@ -234,8 +235,8 @@
 	</scm>
 
 	<organization>
-		<name>The University of York - Department of Computer Science</name>
-		<url>https://www.cs.york.ac.uk</url>
+		<name>Kinori Tech</name>
+		<url>http://kinori.tech</url>
 	</organization>
 
 </project>
