@@ -8,7 +8,7 @@ An implementation of the [Apache TinkerPop OLTP Provider](https://tinkerpop.apac
 
 This Provider supports:
 * Apache TinkerPop 3.3
-* ArangoDB 3.3+ (via ArangoDB Java Driver 5.0.0).
+* ArangoDB 3.11+ (via ArangoDB Java Driver 7.16.0).
 
 ## ArangoDB
 
