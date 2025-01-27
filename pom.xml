@@ -23,7 +23,7 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<arangodb-java-driver.version>5.0.0</arangodb-java-driver.version>
+		<arangodb-java-driver.version>7.16.0</arangodb-java-driver.version>
 		<tinkerpop.version>3.3.11</tinkerpop.version>
 		<junit.version>4.13.1</junit.version>
 		<logback-classic.version>1.2.13</logback-classic.version>

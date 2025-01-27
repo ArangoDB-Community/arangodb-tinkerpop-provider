@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.tinkerpop.gremlin.structure.Graph;
 import org.apache.tinkerpop.gremlin.structure.util.GraphVariableHelper;
 import org.apache.tinkerpop.gremlin.structure.util.StringFactory;
@@ -38,7 +39,8 @@ public class ArangoDBGraphVariables extends ArangoDBBaseDocument implements Grap
     }
 
     /** The key:value store for properties. */
-    
+
+	@JsonProperty
     private final Map<String, Object> store = new HashMap<>(4);
     
     /**

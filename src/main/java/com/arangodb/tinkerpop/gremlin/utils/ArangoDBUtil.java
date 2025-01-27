@@ -20,9 +20,6 @@ import com.arangodb.tinkerpop.gremlin.client.ArangoDBGraphException;
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBQueryBuilder;
 import com.arangodb.tinkerpop.gremlin.structure.*;
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBElementProperty.ElementHasProperty;
-import com.arangodb.velocypack.VPack;
-import com.arangodb.velocypack.VPackSlice;
-import com.arangodb.velocypack.exception.VPackParserException;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -35,6 +32,8 @@ import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.tinkerpop.gremlin.structure.Direction;
 import org.slf4j.Logger;
@@ -54,7 +53,11 @@ public class ArangoDBUtil {
 	/** The Logger. */
 	
 	private static final Logger logger = LoggerFactory.getLogger(ArangoDBUtil.class);
-    
+
+	/** Utiliy mapper for conversions. **/
+
+	private static final ObjectMapper mapper = new ObjectMapper();
+
 	/**
 	 * The prefix to denote that a collection is a hidden collection.
 	 */
@@ -464,12 +467,14 @@ public class ArangoDBUtil {
     		case "java.lang.Float":
 	    		{
 	    			if (value instanceof Double) {
-	    				double dv = (Double) value;
-	    				return (float) dv;
+						return ((Double) value).floatValue();
 	    			}
-	    			else if (value instanceof Long) {
-	    				return ((Long) value) * 1.0f;
-	    			}
+					else if (value instanceof Long) {
+						return ((Long) value).floatValue();
+					}
+					else if (value instanceof Integer) {
+						return ((Integer) value).floatValue();
+					}
 	    			else {
 	    				logger.debug("Add conversion for " + value.getClass().getName() + " to " + valueClass);
 	    			}
@@ -480,9 +485,12 @@ public class ArangoDBUtil {
     			if (value instanceof Double) {
     				return value;
     			}
-    			else if (value instanceof Long) {
-    				return ((Long) value) * 1.0;
-    			}
+				else if (value instanceof Long) {
+					return ((Long) value).doubleValue();
+				}
+				else if (value instanceof Integer) {
+					return ((Integer) value).doubleValue();
+				}
     			else {
     				logger.debug("Add conversion for " + value.getClass().getName() + " to " + valueClass);
     			}
@@ -496,6 +504,9 @@ public class ArangoDBUtil {
     			else if (value instanceof Double) {
     				return ((Double)value).longValue();
     			}
+				else if (value instanceof Integer) {
+					return ((Integer)value).longValue();
+				}
     			else {
     				logger.debug("Add conversion for " + value.getClass().getName() + " to " + valueClass);
     			}
@@ -504,8 +515,7 @@ public class ArangoDBUtil {
     		case "java.lang.Integer":
     		{
     			if (value instanceof Long) {
-    				long lv = (Long) value;
-    				return (int) lv;
+					return ((Long) value).intValue();
     			}
     			break;
     		}
@@ -567,14 +577,12 @@ public class ArangoDBUtil {
     	         .forEach(i -> sr[i] = (String) sarray.get(i));
 				return sr;
     		default:
-    			VPack vpack = new VPack.Builder().build();
-    			VPackSlice slice = vpack.serialize(value);
 				Object result;
 				try {
-					result = vpack.deserialize(slice, Class.forName(valueClass));
+					result = mapper.convertValue(value, Class.forName(valueClass));
 					return result;
-				} catch (VPackParserException | ClassNotFoundException e1) {
-					logger.warn("Type not deserializable using VPack", e1);
+				} catch (IllegalArgumentException | ClassNotFoundException e1) {
+					logger.warn("Type not deserializable", e1);
 				}
 				logger.debug("Add conversion for " + value.getClass().getName() + " to " + valueClass);
     	}

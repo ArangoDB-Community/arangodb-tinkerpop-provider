@@ -8,10 +8,6 @@
 
 package com.arangodb.tinkerpop.gremlin.client;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -189,15 +185,9 @@ public class ArangoDBGraphClient {
 		throws ArangoDBGraphException {	
 		logger.info("Initiating the ArangoDb Client");
 		this.graph = graph;
-		ByteArrayOutputStream os = new ByteArrayOutputStream();
-		try {
-			properties.store(os, null);
-			InputStream targetStream = new ByteArrayInputStream(os.toByteArray());
-			driver = new ArangoDB.Builder().loadProperties(targetStream)
-					.build();
-		} catch (IOException e) {
-			throw new ArangoDBGraphException("Unable to read properties", e);
-		}
+		driver = new ArangoDB.Builder()
+				.loadProperties(new ArangoConfigMap(properties))
+				.build();
 		db = driver.db(dbname);
 		if (createDatabase) {
 			if (!db.exists()) {
@@ -239,7 +229,6 @@ public class ArangoDBGraphClient {
 				db.clearQueryCache();
 			}
 		}
-		if (driver != null) driver.shutdown();
 	}
 	
 	/**
@@ -429,14 +418,18 @@ public class ArangoDBGraphClient {
 
 	public void insertEdge(ArangoDBBaseEdge edge) {
 		logger.debug("Insert edge {} in {} ", edge, graph.name());
+		EdgeEntity insertEntity;
 		try {
-			db.graph(graph.name())
+			insertEntity = db.graph(graph.name())
 					.edgeCollection(edge.collection())
 					.insertEdge(edge);
 		} catch (ArangoDBException e) {
 			logger.error("Failed to insert edge: {}", e.getErrorMessage());
 			throw ArangoDBExceptions.getArangoDBException(e);
 		}
+		edge._id(insertEntity.getId());
+		edge._key(insertEntity.getKey());
+		edge._rev(insertEntity.getRev());
 		edge.setPaired(true);
 	}
 	
@@ -512,7 +505,7 @@ public class ArangoDBGraphClient {
 			CollectionEntity ce = db.createCollection(document.collection());
 			System.out.println(ce.getStatus());
 		}
-		DocumentCreateEntity<ArangoDBGraphVariables> vertexEntity;
+		DocumentCreateEntity<?> vertexEntity;
 		try {
 			vertexEntity = gVars.insertDocument(document);
 		} catch (ArangoDBException e) {
@@ -922,7 +915,7 @@ public class ArangoDBGraphClient {
 		throws ArangoDBGraphException {
 		logger.debug("Executing AQL query ({}) against db, with bind vars: {}", query, bindVars);
 		try {
-			return db.query(query, bindVars, aqlQueryOptions, type);
+			return db.query(query, type, bindVars, aqlQueryOptions);
 		} catch (ArangoDBException e) {
 			logger.error("Error executing query", e);
             throw ArangoDBExceptions.getArangoDBException(e);
