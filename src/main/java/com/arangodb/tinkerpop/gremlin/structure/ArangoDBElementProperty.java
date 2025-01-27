@@ -8,14 +8,10 @@
 
 package com.arangodb.tinkerpop.gremlin.structure;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.Optional;
 
-import com.arangodb.tinkerpop.gremlin.client.ArangoDBQueryBuilder;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.tinkerpop.gremlin.structure.Property;
-import org.apache.tinkerpop.gremlin.structure.VertexProperty;
 import org.apache.tinkerpop.gremlin.structure.util.ElementHelper;
 import org.apache.tinkerpop.gremlin.structure.util.StringFactory;
 
@@ -59,16 +55,19 @@ public abstract class ArangoDBElementProperty<V> extends ArangoDBBaseDocument im
     }
 	
 	/** The property name. */
-    
+
+    @JsonProperty
 	protected String name;
 
     /** The property value. */
-	
+
+    @JsonProperty
     protected V value;
     
     /** The property type */
-    
-    protected String valutType;
+
+    @JsonProperty
+    protected String valueType;
 
 
     /**
@@ -91,7 +90,7 @@ public abstract class ArangoDBElementProperty<V> extends ArangoDBBaseDocument im
 	    super(key, label, owner.graph());
         this.name = name;
         this.value = value;
-        this.valutType = value.getClass().getCanonicalName();
+        this.valueType = value.getClass().getCanonicalName();
     }
 
     /**
@@ -133,7 +132,7 @@ public abstract class ArangoDBElementProperty<V> extends ArangoDBBaseDocument im
 	@SuppressWarnings("unchecked")
 	@Override
 	public V value() throws NoSuchElementException {
-        return (V) ArangoDBUtil.getCorretctPrimitive(value, valutType);
+        return (V) ArangoDBUtil.getCorretctPrimitive(value, valueType);
 	}
 	
 	/**

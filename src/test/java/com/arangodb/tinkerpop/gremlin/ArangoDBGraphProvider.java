@@ -58,8 +58,11 @@ public class ArangoDBGraphProvider extends AbstractGraphProvider {
 		Class<?> test,
 		String testMethodName,
 		GraphData loadGraphWith) {
-		ArangoDBConfigurationBuilder builder = new ArangoDBConfigurationBuilder();
-		builder.graph(graphName);
+		ArangoDBConfigurationBuilder builder = new ArangoDBConfigurationBuilder()
+				.arangoHosts("127.0.0.1:8529")
+				.arangoUser("root")
+				.arangoPassword("test")
+				.graph(graphName);
 		if (loadGraphWith != null) {
 			switch(loadGraphWith) {
 			case CLASSIC:

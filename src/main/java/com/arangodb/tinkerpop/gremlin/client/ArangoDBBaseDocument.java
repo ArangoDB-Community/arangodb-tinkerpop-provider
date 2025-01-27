@@ -8,9 +8,12 @@
 
 package com.arangodb.tinkerpop.gremlin.client;
 
-import com.arangodb.entity.DocumentField;
+import com.arangodb.serde.jackson.Id;
+import com.arangodb.serde.jackson.Key;
+import com.arangodb.serde.jackson.Rev;
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBGraph;
-import com.arangodb.velocypack.annotations.Expose;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * The ArangoDB BaseBaseDocument provides the internal fields required for the driver to correctly
@@ -23,37 +26,37 @@ public abstract class ArangoDBBaseDocument {
 
     /** ArangoDB internal id. */
 
-    @DocumentField(DocumentField.Type.ID)
+    @Id
     protected String _id;
 
     /** ArangoDB internal revision. */
 
-    @DocumentField(DocumentField.Type.REV)
+    @Rev
     protected String _rev;
 
     /** ArangoDB internal name - mapped to TinkerPop's ID. */
 
-    @DocumentField(DocumentField.Type.KEY)
+    @Key
     protected String _key;
 
     /** The label of the document */
 
-    @Expose
+    @JsonProperty
     protected String label;
 
     /** The collection in which the element is placed. */
 
-    @Expose(serialize = false, deserialize = false)
+    @JsonIgnore
     protected String collection;
 
     /** the graph of the document. */
 
-    @Expose(serialize = false, deserialize = false)
+    @JsonIgnore
     protected ArangoDBGraph graph;
 
     /**  Flag to indicate if the element is paired to a document in the DB. */
 
-    @Expose(serialize = false, deserialize = false)
+    @JsonIgnore
     protected boolean paired = false;
 
     /**

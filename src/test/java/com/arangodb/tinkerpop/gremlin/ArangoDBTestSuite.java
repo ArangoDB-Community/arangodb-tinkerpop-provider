@@ -4,7 +4,7 @@ import org.apache.tinkerpop.gremlin.AbstractGremlinSuite;
 import org.apache.tinkerpop.gremlin.algorithm.generator.CommunityGeneratorTest;
 import org.apache.tinkerpop.gremlin.algorithm.generator.DistributionGeneratorTest;
 import org.apache.tinkerpop.gremlin.process.traversal.TraversalEngine;
-import org.apache.tinkerpop.gremlin.process.traversal.step.map.VertexTest;
+import org.apache.tinkerpop.gremlin.structure.VertexTest;
 import org.apache.tinkerpop.gremlin.structure.EdgeTest;
 import org.apache.tinkerpop.gremlin.structure.FeatureSupportTest;
 import org.apache.tinkerpop.gremlin.structure.GraphConstructionTest;

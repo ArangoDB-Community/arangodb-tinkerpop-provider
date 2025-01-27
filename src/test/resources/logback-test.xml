@@ -23,4 +23,8 @@
   <root level="INFO">
     <appender-ref ref="FILE" />
   </root>
+
+<!--  <logger name="com.arangodb.internal.net.Communication" level="debug" />-->
+<!--  <logger name="com.arangodb.tinkerpop.gremlin.structure.ArangoDBEdge" level="debug" />-->
+
 </configuration>
