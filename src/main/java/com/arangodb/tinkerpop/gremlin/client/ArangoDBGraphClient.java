@@ -20,6 +20,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import com.arangodb.config.ArangoConfigProperties;
 import com.arangodb.entity.*;
 import org.apache.tinkerpop.gremlin.structure.Direction;
 import org.apache.tinkerpop.gremlin.structure.Graph;
@@ -186,7 +187,7 @@ public class ArangoDBGraphClient {
 		logger.info("Initiating the ArangoDb Client");
 		this.graph = graph;
 		driver = new ArangoDB.Builder()
-				.loadProperties(new ArangoConfigMap(properties))
+				.loadProperties(ArangoConfigProperties.fromProperties(properties))
 				.build();
 		db = driver.db(dbname);
 		if (createDatabase) {
