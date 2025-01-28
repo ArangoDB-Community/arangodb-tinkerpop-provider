@@ -143,6 +143,7 @@ public class ArangoDBGraphProvider extends AbstractGraphProvider {
 				case "shouldGetPropertyKeysOnEdge":
 				case "shouldNotGetConcurrentModificationException":
 					builder.withEdgeCollection("friend");
+					builder.withEdgeCollection("knows");
 					break;
 				case "shouldTraverseInOutFromVertexWithMultipleEdgeLabelFilter":
 				case "shouldTraverseInOutFromVertexWithSingleEdgeLabelFilter":
@@ -169,6 +170,8 @@ public class ArangoDBGraphProvider extends AbstractGraphProvider {
 				case "shouldHaveTruncatedStringRepresentationForEdgeProperty":
 				case "shouldValidateIdEquality":
 				case "shouldValidateEquality":
+				case "shouldHaveExceptionConsistencyWhenAssigningSameIdOnEdge":
+				case "shouldAddEdgeWithUserSuppliedStringId":
 					builder.withEdgeCollection("self");
 					break;
 				case "shouldAllowRemovalFromEdgeWhenAlreadyRemoved":
@@ -198,6 +201,8 @@ public class ArangoDBGraphProvider extends AbstractGraphProvider {
 					builder.withEdgeCollection("knows");
 					builder.withEdgeCollection("created");
 					break;
+				case "shouldAddVertexWithLabel":
+					builder.withVertexCollection("person");
 				default:
 					System.out.println("case \"" + testMethodName + "\":");
 				}
