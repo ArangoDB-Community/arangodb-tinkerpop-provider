@@ -88,6 +88,7 @@ public class ArangoDBGraphProvider extends AbstractGraphProvider {
 				break;
 			case MODERN:
 				System.out.println("MODERN");
+				builder.withVertexCollection("dog");
 				builder.withVertexCollection("software");
 				builder.withVertexCollection("person");
 				builder.withEdgeCollection("knows");
@@ -237,13 +238,16 @@ public class ArangoDBGraphProvider extends AbstractGraphProvider {
 					builder.withEdgeCollection("self");
 					break;
 				case "shouldAttachWithCreateMethod":
+				case "testAttachableCreateMethod":
 					builder.withVertexCollection("person");
 					builder.withVertexCollection("project");
 					builder.withEdgeCollection("knows");
 					builder.withEdgeCollection("developedBy");
+					builder.configureEdge("knows", "person", "person");
+					builder.configureEdge("developedBy", "project", "person");
 					break;
-				case "shouldCreateVertex":
-					builder.withVertexCollection("dog");
+				case "shouldConstructReferenceVertex":
+					builder.withVertexCollection("blah");
 					break;
 				default:
 					System.out.println("case \"" + testMethodName + "\":");
