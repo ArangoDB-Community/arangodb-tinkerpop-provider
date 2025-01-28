@@ -137,6 +137,24 @@ public class ArangoDBGraphProvider extends AbstractGraphProvider {
 			else if(testMethodName.startsWith("shouldReadWriteDetachedVertexNoEdges")) {
 				builder.withEdgeCollection("friends");
 			}
+			else if (testMethodName.startsWith("shouldReadWriteDetachedEdge")) {
+				builder.withVertexCollection("person");
+				builder.withEdgeCollection("friend");
+			}
+			else if (testMethodName.startsWith("shouldReadWriteDetachedEdgeAsReference")) {
+				builder.withVertexCollection("person");
+				builder.withEdgeCollection("friend");
+			}
+			else if (testMethodName.startsWith("shouldReadWriteEdge")) {
+				builder.withVertexCollection("person");
+				builder.withEdgeCollection("friend");
+			}
+			else if (testMethodName.startsWith("shouldThrowOnGraphEdgeSetPropertyStandard")) {
+				builder.withEdgeCollection("self");
+			}
+			else if (testMethodName.startsWith("shouldThrowOnGraphAddEdge")) {
+				builder.withEdgeCollection("self");
+			}
 			else {
 				// Perhaps change for startsWith, but then it would be more verbose. Perhaps a set?
 				switch (testMethodName) {
@@ -203,6 +221,30 @@ public class ArangoDBGraphProvider extends AbstractGraphProvider {
 					break;
 				case "shouldAddVertexWithLabel":
 					builder.withVertexCollection("person");
+					break;
+				case "shouldNotAllowSetProperty":
+				case "shouldHashAndEqualCorrectly":
+				case "shouldNotAllowRemove":
+				case "shouldNotConstructNewWithSomethingAlreadyDetached":
+				case "shouldNotConstructNewWithSomethingAlreadyReferenced":
+					builder.withEdgeCollection("test");
+					break;
+				case "shouldHaveExceptionConsistencyWhenUsingNullVertex":
+					builder.withEdgeCollection("tonothing");
+					break;
+				case "shouldHandleSelfLoops":
+					builder.withVertexCollection("person");
+					builder.withEdgeCollection("self");
+					break;
+				case "shouldAttachWithCreateMethod":
+					builder.withVertexCollection("person");
+					builder.withVertexCollection("project");
+					builder.withEdgeCollection("knows");
+					builder.withEdgeCollection("developedBy");
+					break;
+				case "shouldCreateVertex":
+					builder.withVertexCollection("dog");
+					break;
 				default:
 					System.out.println("case \"" + testMethodName + "\":");
 				}
