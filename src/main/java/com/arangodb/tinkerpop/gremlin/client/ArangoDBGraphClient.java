@@ -426,7 +426,11 @@ public class ArangoDBGraphClient {
 					.insertEdge(edge);
 		} catch (ArangoDBException e) {
 			logger.error("Failed to insert edge: {}", e.getErrorMessage());
-			throw ArangoDBExceptions.getArangoDBException(e);
+			ArangoDBGraphException arangoDBException = ArangoDBExceptions.getArangoDBException(e);
+			if (arangoDBException.getErrorCode() == 1210) {
+				throw Graph.Exceptions.edgeWithIdAlreadyExists(edge._key);
+			}
+			throw arangoDBException;
 		}
 		edge._id(insertEntity.getId());
 		edge._key(insertEntity.getKey());

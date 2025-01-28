@@ -122,7 +122,7 @@ public class ArangoDBVertex extends ArangoDBBaseDocument implements Vertex {
 			throw new IllegalArgumentException(String.format("Edge label (%s)not in graph (%s) edge collections.", label, graph.name()));
 		}
 		if (inVertex == null) {
-			Graph.Exceptions.argumentCanNotBeNull("vertex");
+			throw Graph.Exceptions.argumentCanNotBeNull("vertex");
 		}
 		Object id;
 		ArangoDBEdge edge = null;

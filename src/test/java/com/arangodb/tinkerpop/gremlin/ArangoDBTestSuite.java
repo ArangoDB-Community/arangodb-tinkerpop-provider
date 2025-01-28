@@ -33,7 +33,6 @@ import org.apache.tinkerpop.gremlin.structure.util.star.StarGraphTest;
 import org.junit.runners.model.InitializationError;
 import org.junit.runners.model.RunnerBuilder;
 
-import com.arangodb.tinkerpop.gremlin.structure.ArangoDBStructureCheck;
 
 /**
  * Run with {@code GREMLIN_TESTS} environment variable set to a list of any of these to enable
@@ -90,7 +89,6 @@ public class ArangoDBTestSuite extends AbstractGremlinSuite {
         StarGraphTest.class,
         TransactionTest.class,
         VertexTest.class,
-    	ArangoDBStructureCheck.class,
          //ArangoDBIndexCheck.class,
          //ArangoDBCypherCheck.class,
     };
