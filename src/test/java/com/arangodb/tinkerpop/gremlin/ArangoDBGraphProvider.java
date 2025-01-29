@@ -16,6 +16,7 @@ import org.apache.tinkerpop.gremlin.structure.Graph;
 
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBGraphClient;
 import com.arangodb.tinkerpop.gremlin.utils.ArangoDBConfigurationBuilder;
+import org.apache.tinkerpop.gremlin.structure.VertexTest;
 
 /**
  * The Class ArangoDBGraphProvider. This provider assumes that there is a local ArangoDB running (i.e.
@@ -248,6 +249,14 @@ public class ArangoDBGraphProvider extends AbstractGraphProvider {
 					break;
 				case "shouldConstructReferenceVertex":
 					builder.withVertexCollection("blah");
+					break;
+				case "shouldHaveExceptionConsistencyWhenUsingSystemVertexLabel":
+				case "shouldHaveExceptionConsistencyWhenUsingEmptyVertexLabel":
+				case "shouldHaveExceptionConsistencyWhenUsingEmptyVertexLabelOnOverload":
+				case "shouldHaveExceptionConsistencyWhenUsingSystemVertexLabelOnOverload":
+					if (VertexTest.class.equals(test.getEnclosingClass())) {
+						builder.withVertexCollection("foo");
+					}
 					break;
 				default:
 					System.out.println("case \"" + testMethodName + "\":");
