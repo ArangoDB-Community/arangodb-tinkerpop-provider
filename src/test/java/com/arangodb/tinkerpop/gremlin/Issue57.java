@@ -2,7 +2,7 @@ package com.arangodb.tinkerpop.gremlin;
 
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBGraph;
 import com.arangodb.tinkerpop.gremlin.utils.ArangoDBConfigurationBuilder;
-import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration2.Configuration;
 
 import java.io.File;
 

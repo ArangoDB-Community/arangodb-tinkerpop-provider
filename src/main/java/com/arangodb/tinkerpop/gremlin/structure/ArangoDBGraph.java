@@ -14,8 +14,8 @@ import java.util.stream.Collectors;
 
 import com.arangodb.entity.EdgeDefinition;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.ConfigurationConverter;
+import org.apache.commons.configuration2.Configuration;
+import org.apache.commons.configuration2.ConfigurationConverter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.tinkerpop.gremlin.process.computer.GraphComputer;
 import org.apache.tinkerpop.gremlin.structure.Edge;
@@ -161,6 +161,21 @@ import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
 		test = "org.apache.tinkerpop.gremlin.structure.util.detached.DetachedGraphTest",
 		method = "testAttachableCreateMethod",
 		reason = "test creates id without label prefix")
+@Graph.OptOut(
+		test = "org.apache.tinkerpop.gremlin.structure.PropertyTest$BasicPropertyTest",
+		method = "shouldAllowNullAddVertexProperty",
+		reason = "Cannot distinguish between null and not present properties."
+)
+@Graph.OptOut(
+		test = "org.apache.tinkerpop.gremlin.structure.PropertyTest$BasicPropertyTest",
+		method = "shouldAllowNullAddVertex",
+		reason = "Cannot distinguish between null and not present properties."
+)
+@Graph.OptOut(
+		test = "org.apache.tinkerpop.gremlin.structure.PropertyTest$BasicPropertyTest",
+		method = "shouldAllowNullAddEdge",
+		reason = "Cannot distinguish between null and not present properties."
+)
 // FIXME, OptOut failing tests
 @Graph.OptOut(
 		test = "org.apache.tinkerpop.gremlin.structure.GraphTest",
@@ -175,11 +190,11 @@ import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
 		method = "shouldAllowIdAssignment",
 		reason = "FIXME")
 @Graph.OptOut(
-		test = "org.apache.tinkerpop.gremlin.structure.SerializationTest$GryoV3d0Test",
+		test = "org.apache.tinkerpop.gremlin.structure.SerializationTest$GryoV3Test",
 		method = "shouldSerializeTree",
 		reason = "FIXME")
 @Graph.OptOut(
-		test = "org.apache.tinkerpop.gremlin.structure.SerializationTest$GryoV1d0Test",
+		test = "org.apache.tinkerpop.gremlin.structure.SerializationTest$GryoV1Test",
 		method = "shouldSerializeTree",
 		reason = "FIXME")
 @Graph.OptOut(

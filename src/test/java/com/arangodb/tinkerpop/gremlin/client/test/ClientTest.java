@@ -19,8 +19,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBGraph;
-import org.apache.commons.configuration.ConfigurationConverter;
-import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.commons.configuration2.ConfigurationConverter;
+import org.apache.commons.configuration2.PropertiesConfiguration;
 import org.junit.*;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;

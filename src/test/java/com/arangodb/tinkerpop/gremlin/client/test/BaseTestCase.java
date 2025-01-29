@@ -3,8 +3,8 @@ package com.arangodb.tinkerpop.gremlin.client.test;
 import java.util.Properties;
 
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBGraphClient;
-import org.apache.commons.configuration.ConfigurationConverter;
-import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.commons.configuration2.ConfigurationConverter;
+import org.apache.commons.configuration2.PropertiesConfiguration;
 import org.junit.After;
 import org.junit.Before;
 

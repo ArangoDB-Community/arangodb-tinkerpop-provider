@@ -10,6 +10,7 @@ package com.arangodb.tinkerpop.gremlin.structure;
 
 import java.util.NoSuchElementException;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.tinkerpop.gremlin.structure.Property;
 import org.apache.tinkerpop.gremlin.structure.util.ElementHelper;
@@ -90,7 +91,7 @@ public abstract class ArangoDBElementProperty<V> extends ArangoDBBaseDocument im
 	    super(key, label, owner.graph());
         this.name = name;
         this.value = value;
-        this.valueType = value.getClass().getCanonicalName();
+        this.valueType = (value != null ? value.getClass() : Void.class).getCanonicalName();
     }
 
     /**
@@ -106,6 +107,7 @@ public abstract class ArangoDBElementProperty<V> extends ArangoDBBaseDocument im
         this(null, name, value, owner, label);
     }
 
+    @JsonIgnore
 	@Override
 	public boolean isPresent() {
 		return value != null;

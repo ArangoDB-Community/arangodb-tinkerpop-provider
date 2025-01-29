@@ -15,7 +15,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.apache.commons.configuration.BaseConfiguration;
+import org.apache.commons.configuration2.BaseConfiguration;
+import org.apache.commons.configuration2.convert.LegacyListDelimiterHandler;
 import org.apache.commons.lang3.tuple.ImmutableTriple;
 import org.apache.commons.lang3.tuple.Triple;
 import org.apache.tinkerpop.gremlin.structure.Graph;
@@ -123,12 +124,12 @@ public class ArangoDBConfigurationBuilder {
 	 * Build the configuration.
 	 *
 	 * @return a configuration that can be used to instantiate a new {@link ArangoDBGraph}.
-	 * @see ArangoDBGraph#open(org.apache.commons.configuration.Configuration)
+	 * @see ArangoDBGraph#open(org.apache.commons.configuration2.Configuration)
 	 */
 	
 	public BaseConfiguration build() {
 		BaseConfiguration config = new BaseConfiguration();
-		config.setListDelimiter('/');
+		config.setListDelimiterHandler(new LegacyListDelimiterHandler('/'));
 		config.addProperty(fullPropertyKey(ArangoDBGraph.PROPERTY_KEY_DB_NAME), dbName);
 		config.addProperty(fullPropertyKey(ArangoDBGraph.PROPERTY_KEY_GRAPH_NAME), graphName);
 		config.addProperty(fullPropertyKey(ArangoDBGraph.PROPERTY_KEY_VERTICES), vertices);

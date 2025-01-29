@@ -4,16 +4,7 @@ import org.apache.tinkerpop.gremlin.AbstractGremlinSuite;
 import org.apache.tinkerpop.gremlin.algorithm.generator.CommunityGeneratorTest;
 import org.apache.tinkerpop.gremlin.algorithm.generator.DistributionGeneratorTest;
 import org.apache.tinkerpop.gremlin.process.traversal.TraversalEngine;
-import org.apache.tinkerpop.gremlin.structure.VertexTest;
-import org.apache.tinkerpop.gremlin.structure.EdgeTest;
-import org.apache.tinkerpop.gremlin.structure.FeatureSupportTest;
-import org.apache.tinkerpop.gremlin.structure.GraphConstructionTest;
-import org.apache.tinkerpop.gremlin.structure.GraphTest;
-import org.apache.tinkerpop.gremlin.structure.PropertyTest;
-import org.apache.tinkerpop.gremlin.structure.SerializationTest;
-import org.apache.tinkerpop.gremlin.structure.TransactionTest;
-import org.apache.tinkerpop.gremlin.structure.VariablesTest;
-import org.apache.tinkerpop.gremlin.structure.VertexPropertyTest;
+import org.apache.tinkerpop.gremlin.structure.*;
 import org.apache.tinkerpop.gremlin.structure.io.IoCustomTest;
 import org.apache.tinkerpop.gremlin.structure.io.IoEdgeTest;
 import org.apache.tinkerpop.gremlin.structure.io.IoGraphTest;
@@ -59,19 +50,16 @@ public class ArangoDBTestSuite extends AbstractGremlinSuite {
      */
     private static final Class<?>[] allTests = new Class<?>[]{
     	CommunityGeneratorTest.class,
-    	// Missing
         DetachedGraphTest.class,
         DetachedEdgeTest.class,
         DetachedVertexPropertyTest.class,
         DetachedPropertyTest.class,
         DetachedVertexTest.class,
-        // Missing
-        
         DistributionGeneratorTest.class,
         EdgeTest.class,
         FeatureSupportTest.class,
         IoCustomTest.class,
-        IoEdgeTest.class,		
+        IoEdgeTest.class,
         IoGraphTest.class,
         IoVertexTest.class,
         IoPropertyTest.class,
@@ -88,6 +76,7 @@ public class ArangoDBTestSuite extends AbstractGremlinSuite {
         SerializationTest.class,
         StarGraphTest.class,
         TransactionTest.class,
+		TransactionMultiThreadedTest.class,
         VertexTest.class,
          //ArangoDBIndexCheck.class,
          //ArangoDBCypherCheck.class,
