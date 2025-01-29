@@ -6,8 +6,8 @@ import java.util.Properties;
 import java.util.Set;
 
 import com.arangodb.tinkerpop.gremlin.structure.*;
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.ConfigurationConverter;
+import org.apache.commons.configuration2.Configuration;
+import org.apache.commons.configuration2.ConfigurationConverter;
 import org.apache.tinkerpop.gremlin.AbstractGraphProvider;
 import org.apache.tinkerpop.gremlin.LoadGraphWith;
 import org.apache.tinkerpop.gremlin.LoadGraphWith.GraphData;
@@ -192,6 +192,7 @@ public class ArangoDBGraphProvider extends AbstractGraphProvider {
 				case "shouldValidateEquality":
 				case "shouldHaveExceptionConsistencyWhenAssigningSameIdOnEdge":
 				case "shouldAddEdgeWithUserSuppliedStringId":
+				case "shouldAllowNullAddEdge":
 					builder.withEdgeCollection("self");
 					break;
 				case "shouldAllowRemovalFromEdgeWhenAlreadyRemoved":
@@ -222,6 +223,7 @@ public class ArangoDBGraphProvider extends AbstractGraphProvider {
 					builder.withEdgeCollection("created");
 					break;
 				case "shouldAddVertexWithLabel":
+				case "shouldAllowNullAddVertexProperty":
 					builder.withVertexCollection("person");
 					break;
 				case "shouldNotAllowSetProperty":
@@ -257,6 +259,14 @@ public class ArangoDBGraphProvider extends AbstractGraphProvider {
 					if (VertexTest.class.equals(test.getEnclosingClass())) {
 						builder.withVertexCollection("foo");
 					}
+					break;
+				case "shouldHaveExceptionConsistencyWhenUsingNullVertexLabelOnOverload":
+				case "shouldHaveExceptionConsistencyWhenUsingNullVertexLabel":
+					builder.withVertexCollection("foo");
+					break;
+				case "shouldReadGraphMLWithCommonVertexAndEdgePropertyNames":
+					builder.withEdgeCollection("created");
+					builder.withEdgeCollection("knows");
 					break;
 				default:
 					System.out.println("case \"" + testMethodName + "\":");
