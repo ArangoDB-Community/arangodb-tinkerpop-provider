@@ -149,6 +149,18 @@ import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
 		test = "org.apache.tinkerpop.gremlin.structure.GraphTest",
 		method = "shouldRemoveEdges",
 		reason = "Test creates edges with random labels, which does not work with our schema-based approach.")
+@Graph.OptOut(
+		test = "org.apache.tinkerpop.gremlin.structure.util.detached.DetachedVertexTest",
+		method = "shouldNotEvaluateToEqualDifferentId",
+		reason = "Test creates vertex with no labels in schema-based approach")
+@Graph.OptOut(
+		test = "org.apache.tinkerpop.gremlin.structure.util.reference.ReferenceVertexTest",
+		method = "shouldNotEvaluateToEqualDifferentId",
+		reason = "Test creates vertex with no labels in schema-based approach")
+@Graph.OptOut(
+		test = "org.apache.tinkerpop.gremlin.structure.util.detached.DetachedGraphTest",
+		method = "testAttachableCreateMethod",
+		reason = "test creates id without label prefix")
 // FIXME, OptOut failing tests
 @Graph.OptOut(
 		test = "org.apache.tinkerpop.gremlin.structure.GraphTest",
@@ -163,60 +175,37 @@ import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
 		method = "shouldAllowIdAssignment",
 		reason = "FIXME")
 @Graph.OptOut(
-		test = "org.apache.tinkerpop.gremlin.structure.util.detached.DetachedVertexTest",
-		method = "shouldNotEvaluateToEqualDifferentId",
-		reason = "Test creates vertex with no labels in schema-based approach"
-)
-@Graph.OptOut(
-		test = "org.apache.tinkerpop.gremlin.structure.util.reference.ReferenceVertexTest",
-		method = "shouldNotEvaluateToEqualDifferentId",
-		reason = "Test creates vertex with no labels in schema-based approach"
-)
-@Graph.OptOut(
-		test = "org.apache.tinkerpop.gremlin.structure.util.detached.DetachedGraphTest",
-		method = "testAttachableCreateMethod",
-		reason = "test creates id without label prefix"
-)
-@Graph.OptOut(
 		test = "org.apache.tinkerpop.gremlin.structure.SerializationTest$GryoV3d0Test",
 		method = "shouldSerializeTree",
-		reason = "FIXME"
-)
+		reason = "FIXME")
 @Graph.OptOut(
 		test = "org.apache.tinkerpop.gremlin.structure.SerializationTest$GryoV1d0Test",
 		method = "shouldSerializeTree",
-		reason = "FIXME"
-)
+		reason = "FIXME")
 @Graph.OptOut(
 		test = "org.apache.tinkerpop.gremlin.structure.VertexTest$BasicVertexTest",
 		method = "shouldEvaluateEquivalentVertexHashCodeWithSuppliedIds",
-		reason = "FIXME"
-)
+		reason = "FIXME")
 @Graph.OptOut(
 		test = "org.apache.tinkerpop.gremlin.structure.VertexTest$BasicVertexTest",
 		method = "shouldEvaluateVerticesEquivalentWithSuppliedIdsViaTraversal",
-		reason = "FIXME"
-)
+		reason = "FIXME")
 @Graph.OptOut(
 		test = "org.apache.tinkerpop.gremlin.structure.util.star.StarGraphTest",
 		method = "shouldAttachWithCreateMethod",
-		reason = "FIXME"
-)
+		reason = "FIXME")
 @Graph.OptOut(
 		test = "org.apache.tinkerpop.gremlin.structure.util.star.StarGraphTest",
 		method = "shouldCopyFromGraphAToGraphB",
-		reason = "FIXME"
-)
+		reason = "FIXME")
 @Graph.OptOut(
 		test = "org.apache.tinkerpop.gremlin.structure.VertexTest$BasicVertexTest",
 		method = "shouldEvaluateVerticesEquivalentWithSuppliedIdsViaIterators",
-		reason = "FIXME"
-)
+		reason = "FIXME")
 @Graph.OptOut(
 		test = "org.apache.tinkerpop.gremlin.structure.VertexTest$AddEdgeTest",
 		method = "shouldAddEdgeWithUserSuppliedStringId",
-		reason = "FIXME"
-)
+		reason = "FIXME")
 public class ArangoDBGraph implements Graph {
 
 	/**
