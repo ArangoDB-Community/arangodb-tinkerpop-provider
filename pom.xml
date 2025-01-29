@@ -33,7 +33,7 @@
 	<dependencies>
 		<dependency>
 			<groupId>com.arangodb</groupId>
-			<artifactId>arangodb-java-driver</artifactId>
+			<artifactId>arangodb-java-driver-shaded</artifactId>
 			<version>${arangodb-java-driver.version}</version>
 		</dependency>
 		<dependency>
