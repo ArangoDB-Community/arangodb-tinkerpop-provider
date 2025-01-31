@@ -126,40 +126,39 @@ public class ArangoDBVertex extends ArangoDBBaseDocument implements Vertex {
 		Object id;
 		ArangoDBEdge edge = null;
 		if (ElementHelper.getIdValue(keyValues).isPresent()) {
-        	id = ElementHelper.getIdValue(keyValues).get();
-        	if (graph.features().edge().willAllowId(id)) {
-	        	if (id.toString().contains("/")) {
-	        		String fullId = id.toString();
-	        		String[] parts = fullId.split("/");
-	        		// The collection name is the last part of the full name
-	        		String[] collectionParts = parts[0].split("_");
+			id = ElementHelper.getIdValue(keyValues).get();
+			if (graph.features().edge().willAllowId(id)) {
+				if (id.toString().contains("/")) {
+					String fullId = id.toString();
+					String[] parts = fullId.split("/");
+					// The collection name is the last part of the full name
+					String[] collectionParts = parts[0].split("_");
 					String collectionName = collectionParts[collectionParts.length-1];
 					if (collectionName.contains(label)) {
-	        			id = parts[1];
-	        			
-	        		}
-	        	}
-        		Matcher m = ArangoDBUtil.DOCUMENT_KEY.matcher((String)id);
-        		if (m.matches()) {
-        			edge = new ArangoDBEdge(id.toString(), label, this, ((ArangoDBVertex) inVertex), graph);
-        		}
-        		else {
-            		throw new ArangoDBGraphException(String.format("Given id (%s) has unsupported characters.", id));
-            	}
-        	}
-        	else {
-        		throw Vertex.Exceptions.userSuppliedIdsOfThisTypeNotSupported();
-        	}
-        }
-		else {
-			edge = new ArangoDBEdge(graph, label, this, ((ArangoDBVertex) inVertex));
+						id = parts[1];
+
+					}
+				}
+				Matcher m = ArangoDBUtil.DOCUMENT_KEY.matcher((String)id);
+				if (m.matches()) {
+					edge = new ArangoDBEdge(id.toString(), label, (String) this.id(), (String) inVertex.id(), graph);
+				}
+				else {
+					throw new ArangoDBGraphException(String.format("Given id (%s) has unsupported characters.", id));
+				}
+			}
+			else {
+				throw Vertex.Exceptions.userSuppliedIdsOfThisTypeNotSupported();
+			}
 		}
-        // The vertex needs to exist before we can attach properties
-		graph.getClient().insertEdge(edge);
-        ElementHelper.attachProperties(edge, keyValues);
+		else {
+			edge = new ArangoDBEdge(null, label, (String) this.id(),(String)  inVertex.id(), graph);
+		}
+		// The vertex needs to exist before we can attach properties
+		edge.insert();
+		ElementHelper.attachProperties(edge, keyValues);
 		return edge;
 	}
-
 
 	@Override
 	public <V> VertexProperty<V> property(
@@ -222,7 +221,10 @@ public class ArangoDBVertex extends ArangoDBBaseDocument implements Vertex {
 		if (edgeCollections.isEmpty()) {
 			return Collections.emptyIterator();
 		}
-		return new ArangoDBIterator<>(graph, graph.getClient().getVertexEdges(this, edgeCollections, direction));
+		return graph.getClient().getVertexEdges(this, edgeCollections, direction)
+				.stream()
+				.map(it -> (Edge) new ArangoDBEdge(graph, it))
+				.iterator();
 	}
 
 

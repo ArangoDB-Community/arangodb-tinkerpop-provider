@@ -34,6 +34,8 @@ import com.arangodb.tinkerpop.gremlin.client.ArangoDBGraphException;
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBIterator;
 import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
 
+import static com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil.unsupportedIdType;
+
 /**
  * The ArangoDB graph class.
  *
@@ -142,6 +144,18 @@ import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
 @Graph.OptIn(Graph.OptIn.SUITE_PROCESS_STANDARD)
 @Graph.OptIn("com.arangodb.tinkerpop.gremlin.ArangoDBTestSuite")
 @Graph.OptOut(
+		test = "org.apache.tinkerpop.gremlin.structure.util.detached.DetachedGraphTest",
+		method = "testAttachableCreateMethod",
+		reason = "test creates id without label prefix")
+@Graph.OptOut(
+		test = "org.apache.tinkerpop.gremlin.structure.util.detached.DetachedVertexTest",
+		method = "shouldNotEvaluateToEqualDifferentId",
+		reason = "Test creates vertex with no labels in schema-based approach")
+@Graph.OptOut(
+		test = "org.apache.tinkerpop.gremlin.structure.GraphTest",
+		method = "shouldAddVertexWithUserSuppliedStringId",
+		reason = "FIXME")
+@Graph.OptOut(
 		test = "org.apache.tinkerpop.gremlin.structure.GraphTest",
 		method = "shouldRemoveVertices",
 		reason = "Test creates vertices with random labels, which does not work with our schema-based approach.")
@@ -150,44 +164,26 @@ import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
 		method = "shouldRemoveEdges",
 		reason = "Test creates edges with random labels, which does not work with our schema-based approach.")
 @Graph.OptOut(
-		test = "org.apache.tinkerpop.gremlin.structure.util.detached.DetachedVertexTest",
-		method = "shouldNotEvaluateToEqualDifferentId",
-		reason = "Test creates vertex with no labels in schema-based approach")
-@Graph.OptOut(
-		test = "org.apache.tinkerpop.gremlin.structure.util.reference.ReferenceVertexTest",
-		method = "shouldNotEvaluateToEqualDifferentId",
-		reason = "Test creates vertex with no labels in schema-based approach")
-@Graph.OptOut(
-		test = "org.apache.tinkerpop.gremlin.structure.util.detached.DetachedGraphTest",
-		method = "testAttachableCreateMethod",
-		reason = "test creates id without label prefix")
-@Graph.OptOut(
-		test = "org.apache.tinkerpop.gremlin.structure.PropertyTest$BasicPropertyTest",
-		method = "shouldAllowNullAddVertexProperty",
-		reason = "Cannot distinguish between null and not present properties."
-)
-@Graph.OptOut(
-		test = "org.apache.tinkerpop.gremlin.structure.PropertyTest$BasicPropertyTest",
-		method = "shouldAllowNullAddVertex",
-		reason = "Cannot distinguish between null and not present properties."
-)
-@Graph.OptOut(
-		test = "org.apache.tinkerpop.gremlin.structure.PropertyTest$BasicPropertyTest",
-		method = "shouldAllowNullAddEdge",
-		reason = "Cannot distinguish between null and not present properties."
-)
-// FIXME, OptOut failing tests
-@Graph.OptOut(
-		test = "org.apache.tinkerpop.gremlin.structure.GraphTest",
-		method = "shouldAddVertexWithUserSuppliedStringId",
-		reason = "FIXME")
-@Graph.OptOut(
 		test = "org.apache.tinkerpop.gremlin.structure.GraphTest",
 		method = "shouldEvaluateConnectivityPatterns",
 		reason = "FIXME")
 @Graph.OptOut(
 		test = "org.apache.tinkerpop.gremlin.structure.VertexPropertyTest$VertexPropertyAddition",
 		method = "shouldAllowIdAssignment",
+		reason = "FIXME")
+@Graph.OptOut(
+		test = "org.apache.tinkerpop.gremlin.structure.PropertyTest$BasicPropertyTest",
+		method = "shouldAllowNullAddVertexProperty",
+		reason = "FIXME"
+)
+@Graph.OptOut(
+		test = "org.apache.tinkerpop.gremlin.structure.PropertyTest$BasicPropertyTest",
+		method = "shouldAllowNullAddVertex",
+		reason = "FIXME"
+)
+@Graph.OptOut(
+		test = "org.apache.tinkerpop.gremlin.structure.util.reference.ReferenceVertexTest",
+		method = "shouldNotEvaluateToEqualDifferentId",
 		reason = "FIXME")
 @Graph.OptOut(
 		test = "org.apache.tinkerpop.gremlin.structure.SerializationTest$GryoV3Test",
@@ -198,20 +194,20 @@ import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
 		method = "shouldSerializeTree",
 		reason = "FIXME")
 @Graph.OptOut(
-		test = "org.apache.tinkerpop.gremlin.structure.VertexTest$BasicVertexTest",
-		method = "shouldEvaluateEquivalentVertexHashCodeWithSuppliedIds",
-		reason = "FIXME")
-@Graph.OptOut(
-		test = "org.apache.tinkerpop.gremlin.structure.VertexTest$BasicVertexTest",
-		method = "shouldEvaluateVerticesEquivalentWithSuppliedIdsViaTraversal",
-		reason = "FIXME")
-@Graph.OptOut(
 		test = "org.apache.tinkerpop.gremlin.structure.util.star.StarGraphTest",
 		method = "shouldAttachWithCreateMethod",
 		reason = "FIXME")
 @Graph.OptOut(
 		test = "org.apache.tinkerpop.gremlin.structure.util.star.StarGraphTest",
 		method = "shouldCopyFromGraphAToGraphB",
+		reason = "FIXME")
+@Graph.OptOut(
+		test = "org.apache.tinkerpop.gremlin.structure.VertexTest$BasicVertexTest",
+		method = "shouldEvaluateEquivalentVertexHashCodeWithSuppliedIds",
+		reason = "FIXME")
+@Graph.OptOut(
+		test = "org.apache.tinkerpop.gremlin.structure.VertexTest$BasicVertexTest",
+		method = "shouldEvaluateVerticesEquivalentWithSuppliedIdsViaTraversal",
 		reason = "FIXME")
 @Graph.OptOut(
 		test = "org.apache.tinkerpop.gremlin.structure.VertexTest$BasicVertexTest",
@@ -736,27 +732,21 @@ public class ArangoDBGraph implements Graph {
 
 	@Override
 	public Iterator<Edge> edges(Object... edgeIds) {
-		List<String> edgeCollections = new ArrayList<>();
-    	List<String> ids = Arrays.stream(edgeIds)
-        		.map(id -> {
-        			if (id instanceof ArangoDBEdge) {
-						ArangoDBEdge edge = (ArangoDBEdge) id;
-        				if (edge.isPaired()) {
-							edgeCollections.add(edge.label());
-						}
-        				else {
-							edgeCollections.add(getPrefixedCollectioName(edge.label()));
-						}
-        				return edge.id();
-        			}
-        			else {
-        				// We only support String ids
-        				return id;
-        			}
-        			})
-        		.map(id -> id == null ? (String)id : id.toString())
-        		.collect(Collectors.toList());
-		return new ArangoDBIterator<Edge>(this, getClient().getGraphEdges(ids, edgeCollections));
+		List<String> ids = Arrays.stream(edgeIds)
+				.map(id -> {
+					if (id instanceof ArangoDBEdge) {
+						return ((ArangoDBEdge) id).id();
+					} else if(id instanceof String) {
+						// We only support String ids
+						return (String) id;
+					} else {
+						throw unsupportedIdType(id);
+					}
+				})
+				.collect(Collectors.toList());
+		return getClient().getGraphEdges(ids).stream()
+				.map(it -> (Edge) new ArangoDBEdge(this, it))
+				.iterator();
 	}
 
 	@Override
@@ -853,6 +843,9 @@ public class ArangoDBGraph implements Graph {
 			return String.format("%s_%s", name, collectionName);
 		}
 		if(shouldPrefixCollectionNames) {
+			if(collectionName.startsWith(name + "_")) {
+				return collectionName;
+			}
 			return String.format("%s_%s", name, collectionName);
 		}else{
 			return collectionName;

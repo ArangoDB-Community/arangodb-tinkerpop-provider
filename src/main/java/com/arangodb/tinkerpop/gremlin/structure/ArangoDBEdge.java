@@ -1,160 +1,187 @@
-//////////////////////////////////////////////////////////////////////////////////////////
-//
-// Implementation of the TinkerPop OLTP Provider API for ArangoDB
-//
-// Copyright triAGENS GmbH Cologne and The University of York
-//
-//////////////////////////////////////////////////////////////////////////////////////////
-
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 package com.arangodb.tinkerpop.gremlin.structure;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-
-import com.arangodb.tinkerpop.gremlin.client.*;
-import org.apache.tinkerpop.gremlin.structure.Direction;
-import org.apache.tinkerpop.gremlin.structure.Edge;
-import org.apache.tinkerpop.gremlin.structure.Property;
-import org.apache.tinkerpop.gremlin.structure.Vertex;
+import com.arangodb.tinkerpop.gremlin.client.ArangoDBIterator;
+import org.apache.tinkerpop.gremlin.structure.*;
 import org.apache.tinkerpop.gremlin.structure.util.ElementHelper;
 import org.apache.tinkerpop.gremlin.structure.util.StringFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.arangodb.ArangoCursor;
-import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
+import java.util.*;
+import java.util.stream.Collectors;
+
+import static com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil.elementAlreadyRemoved;
 
 
-/**
- * The ArangoDB Edge class.
- *
- * @author Achim Brandt (http://www.triagens.de)
- * @author Johannes Gocke (http://www.triagens.de)
- * @author Guido Schwab (http://www.triagens.de)
- * @author Horacio Hoyos Rodriguez (https://www.york.ac.uk)
- */
+public class ArangoDBEdge implements Edge {
 
-public class ArangoDBEdge extends ArangoDBBaseEdge implements Edge {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ArangoDBEdge.class);
 
-	private static final Logger logger = LoggerFactory.getLogger(ArangoDBEdge.class);
+    private final ArangoDBGraph graph;
+    private final ArangoDBEdgeDocument data;
+    private boolean removed;
 
-    /**
-     * Constructor used for ArabgoDB JavaBeans de-/serialisation.
-     */
+    public ArangoDBEdge(ArangoDBGraph graph, ArangoDBEdgeDocument data) {
+        this.graph = graph;
+        this.data = data;
+        this.removed = false;
+    }
 
-	public ArangoDBEdge() { super(); }
+    public ArangoDBEdge(final String id, final String label, final String outVertexId, final String inVertexId, ArangoDBGraph graph) {
+        this.graph = graph;
+        String inferredLabel, key;
+        if (id != null) {
+            int separator = id.indexOf('/');
+            if (separator > 0) {
+                inferredLabel = id.substring(0, separator);
+                key = id.substring(separator + 1);
+            } else {
+                inferredLabel = label != null ? label : DEFAULT_LABEL;
+                key = id;
+            }
+        } else {
+            inferredLabel = label != null ? label : DEFAULT_LABEL;
+            key = null;
+        }
 
-    /**
-     * Create a new ArangoDBEdge that connects the given vertices. The edge name can be provided.
-     * @param key           		the edge name
-	 * @param label            		the edge label
-	 * @param from         		 	the source vertex
-	 * @param to            		the target vertex
-	 * @param graph         		the graph in which the edge is created
-	 */
+        if (inferredLabel.isEmpty()) {
+            throw new IllegalArgumentException("empty label");
+        }
 
-	public ArangoDBEdge(
-		String key,
-		String label,
-		ArangoDBVertex from,
-		ArangoDBVertex to,
-		ArangoDBGraph graph) {
-		super(key, label, from._id(), to._id(), graph);
-	}
+        if (key != null && key.isEmpty()) {
+            throw new IllegalArgumentException("empty key");
+        }
 
-    /**
-     * Create a new ArangoDBEdge that connects the given vertices.
-     *
-     * @param graph         		the graph in which the edge is created
-     * @param label    				the label into with the edge is created
-     * @param from          		the source vertex
-     * @param to            		the target vertex
-     */
-
-	public ArangoDBEdge(
-	    ArangoDBGraph graph,
-        String label,
-        ArangoDBVertex from,
-        ArangoDBVertex to) {
-		this(null, label, from, to, graph);
-	}
+        data = new ArangoDBEdgeDocument(inferredLabel, key, outVertexId, inVertexId);
+        removed = false;
+    }
 
     @Override
-    public Object id() {
-        return _id();
+    public String id() {
+        String key = data.getKey();
+        if (key == null) {
+            return null;
+        }
+        return graph.getPrefixedCollectioName(label()) + "/" + key;
     }
 
     @Override
     public String label() {
-        return label;
+        return data.getLabel();
     }
 
+    @Override
+    public ArangoDBGraph graph() {
+        return graph;
+    }
 
-	@Override
-	public <V> Property<V> property(
-		String key,
-		V value) {
-		logger.info("set property {} = {}", key, value);
-		ElementHelper.validateProperty(key, value);
-		Property<V> p = property(key);
-		if (!p.isPresent()) {
-            p = ArangoDBUtil.createArangoDBEdgeProperty(key, value, this);
+    public void insert() {
+        graph.getClient().insertEdge(data);
+    }
+
+    public void update() {
+        graph.getClient().updateEdge(data);
+    }
+
+    public void removeProperty(String key) {
+        if (removed) throw elementAlreadyRemoved(Edge.class, id());
+        if (data.hasProperty(key)) {
+            data.removeProperty(key);
+            update();
         }
-		else {
-			((ArangoDBEdgeProperty<V>) p).value(value);
-		}
-		return p;
-	}
+    }
 
-	@Override
-	public void remove() {
-		logger.info("removing {} from graph {}.", this._key(), graph.name());
-		if (paired) {
-			try {
-				graph.getClient().deleteEdge(this);
-			} catch (ArangoDBGraphException ex) {
+    @Override
+    @SuppressWarnings("unchecked")
+    public <V> Iterator<Property<V>> properties(final String... propertyKeys) {
+        return data.getProperties()
+                .entrySet()
+                .stream()
+                .filter(entry -> ElementHelper.keyExists(entry.getKey(), propertyKeys))
+                .map(entry -> (Property<V>) new ArangoDBProperty<>(this, entry.getKey(), entry.getValue().getValue()))
+                .collect(Collectors.toList()).iterator();
+    }
 
-			}
-		}
-	}
+    @Override
+    public <V> Property<V> property(final String key, final V value) {
+        if (removed) throw elementAlreadyRemoved(Edge.class, id());
+        LOGGER.info("set property {} = {}", key, value);
+        ElementHelper.validateProperty(key, value);
+        data.setProperty(key, value);
+        update();
+        return new ArangoDBProperty<>(this, key, value);
+    }
 
-	@Override
-	public Iterator<Vertex> vertices(Direction direction) {
-		boolean from = true;
-		boolean to = true;
-		switch(direction) {
-		case BOTH:
-			break;
-		case IN:
-			from = false;
-			break;
-		case OUT:
-			to = false;
-			break;
-		}
-		String edgeCollection = isPaired() ? label() : graph.getPrefixedCollectioName(label());
-		return new ArangoDBIterator<>(graph, graph.getClient().getEdgeVertices(_id(), edgeCollection, from, to));
-	}
-
-	@SuppressWarnings("unchecked")
-	@Override
-	public <V> Iterator<Property<V>> properties(String... propertyKeys) {
-        List<String> labels = new ArrayList<>();
-		labels.add(graph.getPrefixedCollectioName(ArangoDBGraph.ELEMENT_PROPERTIES_EDGE_COLLECTION));
-        ArangoDBPropertyFilter filter = new ArangoDBPropertyFilter();
-        for (String pk : propertyKeys) {
-            filter.has("name", pk, ArangoDBPropertyFilter.Compare.EQUAL);
+    @SuppressWarnings("unchecked")
+    @Override
+    public <V> Property<V> property(final String key) {
+        if (data.hasProperty(key)) {
+            Object value = data.getProperty(key);
+            return new ArangoDBProperty<>(this, key, (V) value);
         }
-        ArangoCursor<?> documentNeighbors = graph.getClient().getElementProperties(this, labels, filter, ArangoDBEdgeProperty.class);
-		return new ArangoDBPropertyIterator<>(graph, (ArangoCursor<ArangoDBEdgeProperty<V>>) documentNeighbors);
-	}
+        return Property.empty();
+    }
 
-	@Override
+    @Override
+    public Set<String> keys() {
+        return data.getProperties().keySet();
+    }
+
+    @Override
+    public void remove() {
+        LOGGER.info("removing {} from graph {}.", id(), graph.name());
+        graph.getClient().deleteEdge(data);
+        this.removed = true;
+    }
+
+    @Override
+    public <V> Iterator<V> values(String... propertyKeys) {
+        return Edge.super.values(propertyKeys);
+    }
+
+    @Override
     public String toString() {
-    	return StringFactory.edgeString(this);
+        return StringFactory.edgeString(this);
     }
-	
+
+    @Override
+    public Iterator<Vertex> vertices(Direction direction) {
+        if (removed) return Collections.emptyIterator();
+        List<String> ids = new ArrayList<>();
+        switch (direction) {
+            case BOTH:
+                ids.add(data.getFrom());
+                ids.add(data.getTo());
+                break;
+            case IN:
+                ids.add(data.getTo());
+                break;
+            case OUT:
+                ids.add(data.getFrom());
+                break;
+        }
+        return new ArangoDBIterator<>(graph, graph.getClient().getGraphVertices(ids, Collections.emptyList()));
+    }
+
+    @SuppressWarnings("EqualsWhichDoesntCheckParameterClass")
     @Override
     public boolean equals(final Object object) {
         return ElementHelper.areEqual(this, object);

@@ -31,7 +31,7 @@ public class ArangoDBGraphProvider extends AbstractGraphProvider {
         add(ArangoDBEdge.class);
         add(ArangoDBGraph.class);
         add(ArangoDBGraphVariables.class);
-		add(ArangoDBEdgeProperty.class);
+		add(ArangoDBProperty.class);
         add(ArangoDBElementProperty.class);
 		add(ArangoDBPropertyProperty.class);
         add(ArangoDBVertex.class);
