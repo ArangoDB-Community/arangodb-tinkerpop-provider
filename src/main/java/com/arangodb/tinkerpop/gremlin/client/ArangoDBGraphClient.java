@@ -22,6 +22,8 @@ import java.util.stream.Collectors;
 
 import com.arangodb.config.ArangoConfigProperties;
 import com.arangodb.entity.*;
+import com.arangodb.model.*;
+import com.arangodb.tinkerpop.gremlin.structure.*;
 import org.apache.tinkerpop.gremlin.structure.Direction;
 import org.apache.tinkerpop.gremlin.structure.Graph;
 import org.slf4j.Logger;
@@ -33,13 +35,7 @@ import com.arangodb.ArangoDB;
 import com.arangodb.ArangoDBException;
 import com.arangodb.ArangoDatabase;
 import com.arangodb.ArangoGraph;
-import com.arangodb.model.AqlQueryOptions;
-import com.arangodb.model.GraphCreateOptions;
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBQueryBuilder.UniqueVertices;
-import com.arangodb.tinkerpop.gremlin.structure.ArangoDBEdge;
-import com.arangodb.tinkerpop.gremlin.structure.ArangoDBGraph;
-import com.arangodb.tinkerpop.gremlin.structure.ArangoDBGraphVariables;
-import com.arangodb.tinkerpop.gremlin.structure.ArangoDBVertex;
 import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
 
 /**
@@ -381,36 +377,6 @@ public class ArangoDBGraphClient {
 	}
 	
 	/**
-	 * Get an edge from the graph.
-	 *
-	 * @param <V> 					the value type
-	 * @param id            		the id (name) of the edge
-	 * @param collection 			the collection from which the edge is retrieved
-	 * @param edgeClass 			the edge's specialised class
-	 * @return the edge
-	 * @throws ArangoDBGraphException 	If there was an error retrieving the edge
-	 */
-	
-	public <V extends ArangoDBBaseEdge> V getEdge(
-		String id,
-		String collection,
-        Class<V> edgeClass) {
-		logger.debug("Get edge {} from {}:{}", id, graph.name(), graph.getPrefixedCollectioName(collection));
-		V result;
-		try {
-			result = db.graph(graph.name())
-					.edgeCollection(graph.getPrefixedCollectioName(collection))
-					.getEdge(id, edgeClass);
-		} catch (ArangoDBException e) {
-			logger.error("Failed to retrieve edge: {}", e.getErrorMessage());
-            throw ArangoDBExceptions.getArangoDBException(e);
-		}
-		result.collection(collection);
-		result.graph(graph);
-		return result;
-	}
-
-	/**
 	 * Insert an edge in the graph. The edge is updated with the id, rev and name (if not
 	 * present)
 	 * @param edge            		the edge
@@ -436,46 +402,6 @@ public class ArangoDBGraphClient {
 		edge._key(insertEntity.getKey());
 		edge._rev(insertEntity.getRev());
 		edge.setPaired(true);
-	}
-	
-	/**
-	 * Delete an edge from the graph.
-	 * @param edge            		the edge
-	 * @throws ArangoDBGraphException 	If there was an error deleting the edge
-	 */
-
-	public void deleteEdge(ArangoDBBaseEdge edge) {
-		logger.debug("Delete edge {} in {}", edge, graph.name());
-		try {
-			db.graph(graph.name())
-			.edgeCollection(edge.collection())
-			.deleteEdge(edge._key());
-		} catch (ArangoDBException e) {
-			logger.error("Failed to delete vertex: {}", e.getErrorMessage());
-            throw ArangoDBExceptions.getArangoDBException(e);
-		}
-		edge.setPaired(false);
-	}
-	
-	/**
-	 * Update the edge in the graph.
-	 * @param edge 					the edge
-	 * @throws ArangoDBGraphException 	If there was an error updating the edge
-	 */
-	
-	public void updateEdge(ArangoDBBaseEdge edge) {
-		logger.debug("Update edge {} in {}", edge, graph.name());
-		EdgeUpdateEntity edgeEntity;
-		try {
-			edgeEntity = db.graph(graph.name())
-					.edgeCollection(edge.collection())
-					.updateEdge(edge._key(), edge);
-		} catch (ArangoDBException e) {
-			logger.error("Failed to update vertex: {}", e.getErrorMessage());
-            throw ArangoDBExceptions.getArangoDBException(e);
-		}
-		logger.info("Edge updated, new rev {}", edgeEntity.getRev());
-		edge._rev(edgeEntity.getRev());
 	}
 
 	public ArangoDBGraphVariables getGraphVariables() {
@@ -569,7 +495,7 @@ public class ArangoDBGraphClient {
 	}
 	
 	/**
-	 * Create a query to get all the edges of a vertex. 
+	 * Create a query to get all the edges of a vertex.
 	 *
 	 * @param vertex            	the vertex
 	 * @param edgeLabels        	a list of edge labels to follow, empty if all type of edges
@@ -578,27 +504,27 @@ public class ArangoDBGraphClient {
 	 * @throws ArangoDBException if there is an error executing the query
 	 */
 
-	public ArangoCursor<ArangoDBEdge> getVertexEdges(
-		ArangoDBVertex vertex,
-		List<String> edgeLabels,
-		Direction direction)
-		throws ArangoDBException {
+	public ArangoCursor<ArangoDBEdgeDocument> getVertexEdges(
+			ArangoDBVertex vertex,
+			List<String> edgeLabels,
+			Direction direction)
+			throws ArangoDBException {
 		logger.debug("Get Vertex's {}:{} Edges, in {}, from collections {}", vertex, direction, graph.name(), edgeLabels);
 		Map<String, Object> bindVars = new HashMap<>();
 		ArangoDBQueryBuilder queryBuilder = new ArangoDBQueryBuilder();
 		ArangoDBQueryBuilder.Direction arangoDirection = ArangoDBUtil.getArangoDirectionFromGremlinDirection(direction);
 		logger.debug("Creating query");
 		queryBuilder.iterateGraph(graph.name(), "v", Optional.of("e"),
-				Optional.empty(), Optional.empty(), Optional.empty(),
-				arangoDirection, vertex._id(), bindVars)
-			.graphOptions(Optional.of(UniqueVertices.NONE), Optional.empty(), true)
-			.filterSameCollections("e", edgeLabels, bindVars)
-			.ret("e");
-		
+						Optional.empty(), Optional.empty(), Optional.empty(),
+						arangoDirection, vertex._id(), bindVars)
+				.graphOptions(Optional.of(UniqueVertices.NONE), Optional.empty(), true)
+				.filterSameCollections("e", edgeLabels, bindVars)
+				.ret("e");
+
 		String query = queryBuilder.toString();
-		return executeAqlQuery(query, bindVars, null, ArangoDBEdge.class);
+		return executeAqlQuery(query, bindVars, null, ArangoDBEdgeDocument.class);
 	}
-	
+
 	/**
 	 * Get all neighbours of a document.
 	 *
@@ -708,13 +634,9 @@ public class ArangoDBGraphClient {
 	 * Get edges of a graph. If no ids are provided, get all edges.
 	 *
 	 * @param ids 					the ids to match
-	 * @param collections 			the collections to search within
 	 * @return ArangoDBBaseQuery	the query object
 	 */
-	
-	public ArangoCursor<ArangoDBEdge> getGraphEdges(
-		List<String> ids,
-		List<String> collections) {
+	public ArangoCursor<ArangoDBEdgeDocument> getGraphEdges(List<String> ids) {
 		logger.debug("Get all {} graph edges, filtered by ids: {}", graph.name(), ids);
 		Map<String, Object> bindVars = new HashMap<>();
 		ArangoDBQueryBuilder queryBuilder = new ArangoDBQueryBuilder();
@@ -725,21 +647,15 @@ public class ArangoDBGraphClient {
 			} else {
 				queryBuilder.iterateCollection("e", prefixedColNames.get(0), bindVars);
 			}
-		}
-		else {
-            if (!collections.isEmpty()) {
-                prefixedColNames = collections.stream().map(graph::getPrefixedCollectioName).collect(Collectors.toList());
-            }
-		    queryBuilder.with(prefixedColNames, bindVars)
-				    .documentsById(ids, "e", bindVars);
-			
+		} else {
+		    queryBuilder.with(prefixedColNames, bindVars).documentsById(ids, "e", bindVars);
 		}
 		queryBuilder.ret("e");
 		String query = queryBuilder.toString();
 		logger.debug("AQL {}", query);
-		return executeAqlQuery(query, bindVars, null, ArangoDBEdge.class);
+		return executeAqlQuery(query, bindVars, null, ArangoDBEdgeDocument.class);
 	}
-	
+
 	/**
 	 * Gets the edge vertices.
 	 *
@@ -1182,4 +1098,63 @@ public class ArangoDBGraphClient {
 //		}
 //	}
 
+	public void insertEdge(ArangoDBEdgeDocument edge) {
+		logger.debug("Insert edge {} in {} ", edge, graph.name());
+		EdgeEntity insertEntity;
+		String collection = graph.getPrefixedCollectioName(edge.getLabel());
+		try {
+			insertEntity = db.graph(graph.name())
+					.edgeCollection(collection)
+					.insertEdge(edge);
+		} catch (ArangoDBException e) {
+			logger.error("Failed to insert edge: {}", e.getErrorMessage());
+			ArangoDBGraphException arangoDBException = ArangoDBExceptions.getArangoDBException(e);
+			if (arangoDBException.getErrorCode() == 1210) {
+				throw Graph.Exceptions.edgeWithIdAlreadyExists(collection + "/" + edge.getKey());
+			}
+			throw arangoDBException;
+		}
+		edge.setKey(insertEntity.getKey());
+		edge.setRev(insertEntity.getRev());
+	}
+
+//	public TinkerEdgeDocument getEdge(String key, String collection) {
+//		logger.debug("Get edge {} from {}:{}", key, graph.name(), graph.getPrefixedCollectioName(collection));
+//		try {
+//			return db.graph(graph.name())
+//					.edgeCollection(graph.getPrefixedCollectioName(collection))
+//					.getEdge(key, TinkerEdgeDocument.class);
+//		} catch (ArangoDBException e) {
+//			logger.error("Failed to retrieve edge: {}", e.getErrorMessage());
+//			throw ArangoDBExceptions.getArangoDBException(e);
+//		}
+//	}
+
+	public void deleteEdge(ArangoDBEdgeDocument edge) {
+		logger.debug("Delete edge {} in {}", edge, graph.name());
+		try {
+			db.graph(graph.name())
+					.edgeCollection(graph.getPrefixedCollectioName(edge.getLabel()))
+					.deleteEdge(edge.getKey());
+		} catch (ArangoDBException e) {
+			logger.error("Failed to delete vertex: {}", e.getErrorMessage());
+			throw ArangoDBExceptions.getArangoDBException(e);
+		}
+	}
+
+	public void updateEdge(ArangoDBEdgeDocument edge) {
+		logger.debug("Update edge {} in {}", edge, graph.name());
+		EdgeUpdateEntity updateEntity;
+		try {
+			updateEntity = db.graph(graph.name())
+					.edgeCollection(graph.getPrefixedCollectioName(edge.getLabel()))
+					.replaceEdge(edge.getKey(), edge);
+		} catch (ArangoDBException e) {
+			logger.error("Failed to update vertex: {}", e.getErrorMessage());
+			throw ArangoDBExceptions.getArangoDBException(e);
+		}
+		logger.info("Edge updated, new rev {}", updateEntity.getRev());
+		edge.setKey(updateEntity.getKey());
+		edge.setRev(updateEntity.getRev());
+	}
 }
