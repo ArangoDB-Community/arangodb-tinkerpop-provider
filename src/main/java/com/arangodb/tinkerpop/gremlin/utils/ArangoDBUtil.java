@@ -14,6 +14,7 @@ import com.arangodb.ArangoGraph;
 import com.arangodb.entity.EdgeDefinition;
 import com.arangodb.entity.GraphEntity;
 import com.arangodb.model.GraphCreateOptions;
+import com.arangodb.shaded.fasterxml.jackson.databind.ObjectMapper;
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBBaseDocument;
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBGraphClient;
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBGraphException;
@@ -33,7 +34,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.tinkerpop.gremlin.structure.Direction;
 import org.slf4j.Logger;

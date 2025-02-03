@@ -8,12 +8,12 @@
 
 package com.arangodb.tinkerpop.gremlin.client;
 
-import com.arangodb.serde.jackson.Id;
-import com.arangodb.serde.jackson.Key;
-import com.arangodb.serde.jackson.Rev;
+import com.arangodb.serde.InternalId;
+import com.arangodb.serde.InternalKey;
+import com.arangodb.serde.InternalRev;
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBGraph;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.arangodb.shaded.fasterxml.jackson.annotation.JsonIgnore;
+import com.arangodb.shaded.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * The ArangoDB BaseBaseDocument provides the internal fields required for the driver to correctly
@@ -26,17 +26,17 @@ public abstract class ArangoDBBaseDocument {
 
     /** ArangoDB internal id. */
 
-    @Id
+    @InternalId
     protected String _id;
 
     /** ArangoDB internal revision. */
 
-    @Rev
+    @InternalRev
     protected String _rev;
 
     /** ArangoDB internal name - mapped to TinkerPop's ID. */
 
-    @Key
+    @InternalKey
     protected String _key;
 
     /** The label of the document */

@@ -10,8 +10,8 @@ package com.arangodb.tinkerpop.gremlin.structure;
 
 import java.util.NoSuchElementException;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.arangodb.shaded.fasterxml.jackson.annotation.JsonIgnore;
+import com.arangodb.shaded.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.tinkerpop.gremlin.structure.Property;
 import org.apache.tinkerpop.gremlin.structure.util.ElementHelper;
 import org.apache.tinkerpop.gremlin.structure.util.StringFactory;

@@ -8,8 +8,8 @@
 
 package com.arangodb.tinkerpop.gremlin.client;
 
-import com.arangodb.serde.jackson.From;
-import com.arangodb.serde.jackson.To;
+import com.arangodb.serde.InternalFrom;
+import com.arangodb.serde.InternalTo;
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBGraph;
 
 /**
@@ -24,12 +24,12 @@ public abstract class ArangoDBBaseEdge extends ArangoDBBaseDocument {
     
     /** ArangoDB internal from. */
 
-    @From
+    @InternalFrom
     private String _from;
 
     /** ArangoDB internal to. */
 
-    @To
+    @InternalTo
     private String _to;
 
     /**
