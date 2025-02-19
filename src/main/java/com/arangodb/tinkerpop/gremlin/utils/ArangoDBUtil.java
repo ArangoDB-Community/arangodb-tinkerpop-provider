@@ -15,12 +15,11 @@ import com.arangodb.entity.EdgeDefinition;
 import com.arangodb.entity.GraphEntity;
 import com.arangodb.model.GraphCreateOptions;
 import com.arangodb.shaded.fasterxml.jackson.databind.ObjectMapper;
-import com.arangodb.tinkerpop.gremlin.client.ArangoDBBaseDocument;
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBGraphClient;
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBGraphException;
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBQueryBuilder;
 import com.arangodb.tinkerpop.gremlin.structure.*;
-import com.arangodb.tinkerpop.gremlin.structure.ArangoDBElementProperty.ElementHasProperty;
+
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -381,57 +380,23 @@ public class ArangoDBUtil {
         return ed;
     }
 
-
-    /**
-     * Creates an Arango DB vertex property.
-     *
-     * @param <U> 			the generic type
-     * @param propertyName 			the name
-     * @param propertyValue 		the value
-     * @param vertex 		the vertex
-     * @return the created Arango DB vertex property
-     */
-    
-    public static <U> ArangoDBVertexProperty<U> createArangoDBVertexProperty(String propertyName, U propertyValue, ArangoDBVertex vertex) {
-        ArangoDBVertexProperty<U> p = new ArangoDBVertexProperty<>(propertyName, propertyValue, vertex);
-		insertElementAndProperty(vertex, p);
-        return p;
-    }
-
     /**
      * Creates an Arango DB vertex property.
      *
      * @param <U> 			the generic type
      * @param id 			the id
-     * @param propertyName 			the name
-     * @param propertyValue 		the value
+     * @param key 			the name
+     * @param value 		the value
      * @param vertex 		the vertex
      * @return the created Arango DB vertex property
      */
     
-    public static <U> ArangoDBVertexProperty<U> createArangoDBVertexProperty(String id, String propertyName, U propertyValue, ArangoDBVertex vertex) {
-        ArangoDBVertexProperty<U> p;
-        p = new ArangoDBVertexProperty<>(id, propertyName, propertyValue, vertex);
-		insertElementAndProperty(vertex, p);
-        return p;
-    }
-
-    /**
-     * Creates an Arango DB property property.
-     *
-     * @param <U> 				the generic type
-     * @param key 				the name
-     * @param value 			the value
-     * @param vertexProperty	the vertex property
-     * @return the created Arango DB property property
-     */
-    
-    public static <U> ArangoDBPropertyProperty<U> createArangoDBPropertyProperty(String key, U value, ArangoDBVertexProperty<?> vertexProperty) {
-        ArangoDBPropertyProperty<U> p;
-        p = new ArangoDBPropertyProperty<>(key, value, vertexProperty);
-		insertElementAndProperty(vertexProperty, p);
-        return p;
-    }
+//    public static <U> TinkerVertexProperty<U> createArangoDBVertexProperty(String id, String key, U value, ArangoDBVertex vertex) {
+//		TinkerVertexProperty<U> p;
+//        p = new TinkerVertexProperty<>(id, key, value, vertex);
+//		insertElementAndProperty(vertex, p);
+//        return p;
+//    }
 
     /**
      * Gets the correct primitive.
@@ -620,11 +585,4 @@ public class ArangoDBUtil {
 		return new IllegalStateException(String.format("Unsupported id type [%s]: %s", id.getClass().getSimpleName(), id));
 	}
 
-	private static void insertElementAndProperty(ArangoDBBaseDocument element, ArangoDBElementProperty p) {
-		ArangoDBGraph g = element.graph();
-		ArangoDBGraphClient c = g.getClient();
-		c.insertDocument(p);
-		ElementHasProperty e = p.assignToElement(element);
-		c.insertEdge(e);
-	}
 }

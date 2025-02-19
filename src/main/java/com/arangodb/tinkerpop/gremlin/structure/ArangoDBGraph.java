@@ -31,7 +31,6 @@ import com.arangodb.ArangoGraph;
 import com.arangodb.model.GraphCreateOptions;
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBGraphClient;
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBGraphException;
-import com.arangodb.tinkerpop.gremlin.client.ArangoDBIterator;
 import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
 
 import static com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil.unsupportedIdType;
@@ -618,16 +617,16 @@ public class ArangoDBGraph implements Graph {
 	public Vertex addVertex(Object... keyValues) {
         ElementHelper.legalPropertyKeyValueArray(keyValues);
         Object id;
-        String collection;
+        String label;
         if (!schemaless) {
-        	collection = ElementHelper.getLabelValue(keyValues).orElse(null);
-        	ElementHelper.validateLabel(collection);
+        	label = ElementHelper.getLabelValue(keyValues).orElse(null);
+        	ElementHelper.validateLabel(label);
         }
         else {
-        	collection = DEFAULT_VERTEX_COLLECTION;
+        	label = DEFAULT_VERTEX_COLLECTION;
         }
-        if (!vertexCollections().contains(collection)) {
-			throw new IllegalArgumentException(String.format("Vertex label (%s) not in graph (%s) vertex collections.", collection, name));
+        if (!vertexCollections().contains(label)) {
+			throw new IllegalArgumentException(String.format("Vertex label (%s) not in graph (%s) vertex collections.", label, name));
 		}
         ArangoDBVertex vertex = null;
         if (ElementHelper.getIdValue(keyValues).isPresent()) {
@@ -639,14 +638,14 @@ public class ArangoDBGraph implements Graph {
 	        		// The collection name is the last part of the full name
 	        		String[] collectionParts = parts[0].split("_");
 					String collectionName = collectionParts[collectionParts.length-1];
-					if (collectionName.contains(collection)) {
+					if (collectionName.contains(label)) {
 	        			id = parts[1];
 	        			
 	        		}
 	        	}
         		Matcher m = ArangoDBUtil.DOCUMENT_KEY.matcher((String)id);
         		if (m.matches()) {
-        			vertex = new ArangoDBVertex(id.toString(), collection, this);
+        			vertex = new ArangoDBVertex(id.toString(), label, this);
         		}
         		else {
             		throw new ArangoDBGraphException(String.format("Given id (%s) has unsupported characters.", id));
@@ -658,10 +657,10 @@ public class ArangoDBGraph implements Graph {
 
         }
         else {
-        	vertex = new ArangoDBVertex(this, collection);
+			vertex = new ArangoDBVertex(null, label, this);
         }
         // The vertex needs to exist before we can attach properties
-        client.insertDocument(vertex);
+		vertex.insert();
         ElementHelper.attachProperties(vertex, keyValues);
         return vertex;
 	}
@@ -813,21 +812,22 @@ public class ArangoDBGraph implements Graph {
 
 	@Override
 	public Iterator<Vertex> vertices(Object... vertexIds) {
-    	List<String> vertexCollections = new ArrayList<>();
-    	List<String> ids = Arrays.stream(vertexIds)
-        		.map(id -> {
-        			if (id instanceof Vertex) {
-        				vertexCollections.add(((Vertex)id).label());
-        				return ((Vertex)id).id();
-        			}
-        			else {
-        				// We only support String ids
-        				return id;
-        			}
-        			})
-        		.map(id -> id == null ? (String)id : id.toString())
-        		.collect(Collectors.toList());
-		return new ArangoDBIterator<>(this, getClient().getGraphVertices(ids, vertexCollections));
+		List<String> vertexCollections = new ArrayList<>();
+		List<String> ids = Arrays.stream(vertexIds)
+				.map(id -> {
+					if (id instanceof Vertex) {
+						vertexCollections.add(((Vertex) id).label());
+						return ((Vertex) id).id();
+					} else {
+						// We only support String ids
+						return id;
+					}
+				})
+				.map(id -> id == null ? (String) id : id.toString())
+				.collect(Collectors.toList());
+		return getClient().getGraphVertices(ids, vertexCollections).stream()
+				.map(it -> (Vertex) new ArangoDBVertex(this, it))
+				.iterator();
 	}
 
 	/**
