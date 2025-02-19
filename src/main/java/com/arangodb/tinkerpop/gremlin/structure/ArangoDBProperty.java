@@ -59,6 +59,8 @@ public final class ArangoDBProperty<V> implements Property<V> {
     public void remove() {
         if (element instanceof ArangoDBEdge) {
             ((ArangoDBEdge) element).removeProperty(key);
+        } else if (element instanceof ArangoDBVertexProperty) {
+            ((ArangoDBVertexProperty) element).removeProperty(key);
         } else {
             throw new UnsupportedOperationException("Property " + this.key() + " is not an Edge");
         }

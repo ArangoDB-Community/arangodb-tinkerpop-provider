@@ -18,7 +18,6 @@
  */
 package com.arangodb.tinkerpop.gremlin.structure;
 
-import com.arangodb.tinkerpop.gremlin.client.ArangoDBIterator;
 import org.apache.tinkerpop.gremlin.structure.*;
 import org.apache.tinkerpop.gremlin.structure.util.ElementHelper;
 import org.apache.tinkerpop.gremlin.structure.util.StringFactory;
@@ -36,10 +35,10 @@ public class ArangoDBEdge implements Edge {
     private static final Logger LOGGER = LoggerFactory.getLogger(ArangoDBEdge.class);
 
     private final ArangoDBGraph graph;
-    private final ArangoDBEdgeDocument data;
+    private final ArangoDBEdgeData data;
     private boolean removed;
 
-    public ArangoDBEdge(ArangoDBGraph graph, ArangoDBEdgeDocument data) {
+    public ArangoDBEdge(ArangoDBGraph graph, ArangoDBEdgeData data) {
         this.graph = graph;
         this.data = data;
         this.removed = false;
@@ -70,7 +69,7 @@ public class ArangoDBEdge implements Edge {
             throw new IllegalArgumentException("empty key");
         }
 
-        data = new ArangoDBEdgeDocument(inferredLabel, key, outVertexId, inVertexId);
+        data = new ArangoDBEdgeData(inferredLabel, key, outVertexId, inVertexId);
         removed = false;
     }
 
@@ -94,10 +93,12 @@ public class ArangoDBEdge implements Edge {
     }
 
     public void insert() {
+        if (removed) throw elementAlreadyRemoved(Edge.class, id());
         graph.getClient().insertEdge(data);
     }
 
     public void update() {
+        if (removed) throw elementAlreadyRemoved(Edge.class, id());
         graph.getClient().updateEdge(data);
     }
 
@@ -112,11 +113,9 @@ public class ArangoDBEdge implements Edge {
     @Override
     @SuppressWarnings("unchecked")
     public <V> Iterator<Property<V>> properties(final String... propertyKeys) {
-        return data.getProperties()
-                .entrySet()
-                .stream()
+        return data.properties()
                 .filter(entry -> ElementHelper.keyExists(entry.getKey(), propertyKeys))
-                .map(entry -> (Property<V>) new ArangoDBProperty<>(this, entry.getKey(), entry.getValue().getValue()))
+                .map(entry -> (Property<V>) new ArangoDBProperty<>(this, entry.getKey(), entry.getValue()))
                 .collect(Collectors.toList()).iterator();
     }
 
@@ -142,7 +141,7 @@ public class ArangoDBEdge implements Edge {
 
     @Override
     public Set<String> keys() {
-        return data.getProperties().keySet();
+        return data.keys();
     }
 
     @Override
@@ -178,7 +177,9 @@ public class ArangoDBEdge implements Edge {
                 ids.add(data.getFrom());
                 break;
         }
-        return new ArangoDBIterator<>(graph, graph.getClient().getGraphVertices(ids, Collections.emptyList()));
+        return graph.getClient().getGraphVertices(ids, Collections.emptyList()).stream()
+                .map(it -> (Vertex) new ArangoDBVertex(graph, it))
+                .iterator();
     }
 
     @SuppressWarnings("EqualsWhichDoesntCheckParameterClass")
