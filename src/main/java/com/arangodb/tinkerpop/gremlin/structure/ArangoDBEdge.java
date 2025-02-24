@@ -61,14 +61,6 @@ public class ArangoDBEdge implements Edge {
             key = null;
         }
 
-        if (inferredLabel.isEmpty()) {
-            throw new IllegalArgumentException("empty label");
-        }
-
-        if (key != null && key.isEmpty()) {
-            throw new IllegalArgumentException("empty key");
-        }
-
         data = new ArangoDBEdgeData(inferredLabel, key, outVertexId, inVertexId);
         removed = false;
     }
@@ -141,7 +133,7 @@ public class ArangoDBEdge implements Edge {
 
     @Override
     public Set<String> keys() {
-        return data.keys();
+        return data.getProperties().keySet();
     }
 
     @Override

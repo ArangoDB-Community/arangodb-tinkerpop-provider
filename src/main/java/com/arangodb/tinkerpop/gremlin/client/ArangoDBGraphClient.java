@@ -291,37 +291,6 @@ public class ArangoDBGraphClient {
         }
     }
 
-    /**
-     * Get a document from the database. The method is generic so we it can be used to retrieve
-     * vertices, properties or variables.
-     *
-     * @param <V> 					the value type
-     * @param id                    the id of the document (should be a valid ArangoDB _id)
-     * @param collection            the collection from which the document is retrieved
-     * @param docClass                the returned document class
-     * @return the document
-     * @throws ArangoDBGraphException    If there was an error retrieving the document
-     */
-
-    public <V extends ArangoDBBaseDocument> V getDocument(
-            String id,
-            String collection,
-            Class<V> docClass) {
-        logger.debug("Get document with id {} from {}:{}", id, graph.name(), collection);
-        V result;
-        try {
-            result = db.graph(graph.name())
-                    .vertexCollection(collection)
-                    .getVertex(id, docClass);
-        } catch (ArangoDBException e) {
-            logger.error("Failed to retrieve vertex: {}", e.getErrorMessage());
-            throw new ArangoDBGraphException("Failed to retrieve vertex.", e);
-        }
-        result.collection(collection);
-        result.graph(graph);
-        return result;
-    }
-
     public ArangoDBGraphVariables getGraphVariables() {
         logger.debug("Get graph variables");
         ArangoDBGraphVariables result;

@@ -7,16 +7,16 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-public class ArangoDBVertexPropertyData extends PropertyValue {
+public class ArangoDBVertexPropertyData extends ArangoDBPropertyData implements PropertiesContainer {
     private final String id;
-    private final Map<String, PropertyValue> properties;
+    private final Map<String, ArangoDBPropertyData> properties;
 
     @JsonCreator
-    public ArangoDBVertexPropertyData(
+    ArangoDBVertexPropertyData(
             @JsonProperty("id") String id,
             @JsonProperty("value") Object value,
             @JsonProperty("valueType") String valueType,
-            @JsonProperty("properties") Map<String, PropertyValue> properties) {
+            @JsonProperty("properties") Map<String, ArangoDBPropertyData> properties) {
         super(value, valueType);
         this.id = id;
         this.properties = properties;
@@ -32,24 +32,8 @@ public class ArangoDBVertexPropertyData extends PropertyValue {
         return id;
     }
 
-    public Map<String, PropertyValue> getProperties() {
+    public Map<String, ArangoDBPropertyData> getProperties() {
         return properties;
-    }
-
-    public void setProperty(String key, Object value) {
-        properties.put(key, new PropertyValue(value));
-    }
-
-    public boolean hasProperty(String key) {
-        return properties.containsKey(key);
-    }
-
-    public void removeProperty(String key) {
-        properties.remove(key);
-    }
-
-    public Object getProperty(String key) {
-        return properties.get(key).getValue();
     }
 
     @Override

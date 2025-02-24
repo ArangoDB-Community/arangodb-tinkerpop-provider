@@ -32,7 +32,6 @@ public class ArangoDBGremlinPlugin extends AbstractGremlinPlugin {
         try {
             IMPORTS = DefaultImportCustomizer.build().addClassImports(
                     ArangoDBBaseDocument.class,
-                    ArangoDBBaseEdge.class,
                     ArangoDBGraphClient.class,
                     ArangoDBGraphException.class,
                     ArangoDBPropertyFilter.class,
