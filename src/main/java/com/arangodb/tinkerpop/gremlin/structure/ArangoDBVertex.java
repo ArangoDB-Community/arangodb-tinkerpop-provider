@@ -73,14 +73,6 @@ public class ArangoDBVertex implements Vertex {
             key = null;
         }
 
-        if (inferredLabel.isEmpty()) {
-            throw new IllegalArgumentException("empty label");
-        }
-
-        if (key != null && key.isEmpty()) {
-            throw new IllegalArgumentException("empty key");
-        }
-
         data = new ArangoDBVertexData(inferredLabel, key);
         removed = false;
     }

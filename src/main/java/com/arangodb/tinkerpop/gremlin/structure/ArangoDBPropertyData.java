@@ -6,13 +6,12 @@ import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
 
 import java.util.Objects;
 
-public class PropertyValue {
-
+public class ArangoDBPropertyData {
     private final Object value;
     private final String valueType;
 
     @JsonCreator
-    public PropertyValue(
+    ArangoDBPropertyData(
             @JsonProperty("value") Object value,
             @JsonProperty("valueType") String valueType
     ) {
@@ -20,7 +19,7 @@ public class PropertyValue {
         this.valueType = valueType;
     }
 
-    public PropertyValue(Object value) {
+    public ArangoDBPropertyData(Object value) {
         this.value = value;
         valueType = (value != null ? value.getClass() : Void.class).getCanonicalName();
     }
@@ -35,7 +34,7 @@ public class PropertyValue {
 
     @Override
     public String toString() {
-        return "PropertyValue{" +
+        return "ArangoDBPropertyValue{" +
                 "value=" + value +
                 ", valueType='" + valueType + '\'' +
                 '}';
@@ -44,7 +43,7 @@ public class PropertyValue {
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
-        PropertyValue that = (PropertyValue) o;
+        ArangoDBPropertyData that = (ArangoDBPropertyData) o;
         return Objects.equals(value, that.value) && Objects.equals(valueType, that.valueType);
     }
 
