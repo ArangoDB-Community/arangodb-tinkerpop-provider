@@ -1,0 +1,199 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+package com.arangodb.tinkerpop.gremlin.structure;
+
+import com.arangodb.tinkerpop.gremlin.persistence.VertexData;
+import com.arangodb.tinkerpop.gremlin.persistence.VertexPropertyData;
+import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
+import org.apache.tinkerpop.gremlin.structure.*;
+import org.apache.tinkerpop.gremlin.structure.util.ElementHelper;
+import org.apache.tinkerpop.gremlin.structure.util.StringFactory;
+import org.apache.tinkerpop.gremlin.util.iterator.IteratorUtils;
+
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static com.arangodb.tinkerpop.gremlin.structure.AdbElement.Exceptions.elementAlreadyRemoved;
+import static com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil.*;
+
+public class AdbVertex extends AdbEntityElement<List<VertexPropertyData>, VertexData> implements Vertex {
+
+    public static AdbVertex of(final String id, final String label, ArangoDBGraph graph) {
+        return new AdbVertex(graph, new VertexData(extractLabel(id, label).orElse(DEFAULT_LABEL), extractKey(id)));
+    }
+
+    public AdbVertex(ArangoDBGraph graph, VertexData data) {
+        super(graph, data);
+    }
+
+    @Override
+    public <V> VertexProperty<V> property(
+            final VertexProperty.Cardinality cardinality,
+            final String key,
+            final V value,
+            final Object... keyValues
+    ) {
+        if (removed()) throw elementAlreadyRemoved(id());
+        ElementHelper.legalPropertyKeyValueArray(keyValues);
+        ElementHelper.validateProperty(key, value);
+
+        Optional<VertexProperty<V>> optionalVertexProperty = ElementHelper.stageVertexProperty(this, cardinality, key, value, keyValues);
+        if (optionalVertexProperty.isPresent()) return optionalVertexProperty.get();
+
+        String idValue = ElementHelper.getIdValue(keyValues)
+                .map(it -> {
+                    if (!graph.features().vertex().properties().willAllowId(it)) {
+                        throw VertexProperty.Exceptions.userSuppliedIdsOfThisTypeNotSupported();
+                    }
+                    return it.toString();
+                })
+                .orElseGet(() -> UUID.randomUUID().toString());
+
+        VertexPropertyData prop = new VertexPropertyData(idValue, value);
+        List<VertexPropertyData> list = data.getProperties().getOrDefault(key, new ArrayList<>());
+        list.add(prop);
+        data.getProperties().put(key, list);
+
+        AdbVertexProperty<V> vertexProperty = new AdbVertexProperty<>(key, prop, this);
+        ElementHelper.attachProperties(vertexProperty, keyValues);
+        update();
+        return vertexProperty;
+    }
+
+    @Override
+    public Edge addEdge(String label, Vertex vertex, Object... keyValues) {
+        if (null == vertex) throw Graph.Exceptions.argumentCanNotBeNull("vertex");
+        if (removed() || ((AdbVertex) vertex).removed()) throw elementAlreadyRemoved(id());
+
+        ElementHelper.legalPropertyKeyValueArray(keyValues);
+        ElementHelper.validateLabel(label);
+
+        if (!graph.edgeCollections().contains(label)) {
+            throw new IllegalArgumentException(String.format("Edge label (%s)not in graph (%s) edge collections.", label, graph.name()));
+        }
+
+        String id = ArangoDBUtil.getId(graph.features().edge(), label, keyValues);
+        AdbEdge edge = AdbEdge.of(id, label, id(), (String) vertex.id(), graph);
+        edge.insert();
+        ElementHelper.attachProperties(edge, keyValues);
+        return edge;
+    }
+
+    @Override
+    protected void doRemove() {
+        edges(Direction.BOTH).forEachRemaining(Edge::remove);
+        graph.getClient().deleteVertex(this);
+    }
+
+    @Override
+    protected String stringify() {
+        return StringFactory.vertexString(this);
+    }
+
+    @Override
+    protected <V> Stream<Property<V>> toProperties(String key, List<VertexPropertyData> value) {
+        return value.stream().map(it -> createProperty(key, it));
+    }
+
+    @Override
+    protected <V> Property<V> createProperty(String key, Object value) {
+        return new AdbVertexProperty<>(key, (VertexPropertyData) value, this);
+    }
+
+    @Override
+    protected List<VertexPropertyData> toData(Object value) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Iterator<Edge> edges(Direction direction, String... edgeLabels) {
+        List<String> edgeCollections = getQueryEdgeCollections(edgeLabels);
+        // If edgeLabels was not empty but all were discarded, this means that we should
+        // return an empty iterator, i.e. no edges for that edgeLabels exist.
+        if (edgeCollections.isEmpty()) {
+            return Collections.emptyIterator();
+        }
+        return IteratorUtils.map(graph.getClient().getVertexEdges(id(), edgeCollections, direction),
+                it -> new AdbEdge(graph, it));
+    }
+
+    @Override
+    public Iterator<Vertex> vertices(Direction direction, String... edgeLabels) {
+        List<String> edgeCollections = getQueryEdgeCollections(edgeLabels);
+        // If edgeLabels was not empty but all were discarded, this means that we should
+        // return an empty iterator, i.e. no edges for that edgeLabels exist.
+        if (edgeCollections.isEmpty()) {
+            return Collections.emptyIterator();
+        }
+        return IteratorUtils.map(graph.getClient().getVertexNeighbors(id(), edgeCollections, direction),
+                it -> new AdbVertex(graph, it));
+    }
+
+    @Override
+    public void insert() {
+        graph.getClient().insertVertex(this);
+    }
+
+    @Override
+    public void update() {
+        graph.getClient().updateVertex(this);
+    }
+
+    @Override
+    public <V> VertexProperty<V> property(String key, V value) {
+        return Vertex.super.property(key, value);
+    }
+
+    @Override
+    public <V> Iterator<VertexProperty<V>> properties(String... propertyKeys) {
+        return IteratorUtils.cast(super.properties(propertyKeys));
+    }
+
+    public void removeVertexProperty(AdbVertexProperty<?> prop) {
+        Map<String, List<VertexPropertyData>> props = data.getProperties();
+        List<VertexPropertyData> pVal = props.get(prop.key());
+        if (pVal != null) {
+            if (pVal.remove(prop.data())) {
+                if (pVal.isEmpty()) {
+                    props.remove(prop.key());
+                }
+            }
+        }
+    }
+
+    /**
+     * Query will raise an exception if the edge_collection name is not in the graph, so we need to filter out
+     * edgeLabels not in the graph.
+     */
+    private List<String> getQueryEdgeCollections(String... edgeLabels) {
+        List<String> vertexCollections;
+        if (edgeLabels.length == 0) {
+            vertexCollections = graph.edgeCollections().stream().map(graph::getPrefixedCollectioName).collect(Collectors.toList());
+        } else {
+            vertexCollections = Arrays.stream(edgeLabels)
+                    .filter(el -> graph.edgeCollections().contains(el))
+                    .map(graph::getPrefixedCollectioName)
+                    .collect(Collectors.toList());
+
+        }
+        return vertexCollections;
+    }
+}

@@ -1,15 +1,14 @@
-//////////////////////////////////////////////////////////////////////////////////////////
+/// ///////////////////////////////////////////////////////////////////////////////////////
 //
 // Implementation of the TinkerPop OLTP Provider API for ArangoDB
 //
 // Copyright triAGENS GmbH Cologne and The University of York
 //
-//////////////////////////////////////////////////////////////////////////////////////////
+/// ///////////////////////////////////////////////////////////////////////////////////////
 
 package com.arangodb.tinkerpop.gremlin.structure;
 
 import java.util.*;
-import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 
 import com.arangodb.entity.EdgeDefinition;
@@ -18,10 +17,7 @@ import org.apache.commons.configuration2.Configuration;
 import org.apache.commons.configuration2.ConfigurationConverter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.tinkerpop.gremlin.process.computer.GraphComputer;
-import org.apache.tinkerpop.gremlin.structure.Edge;
-import org.apache.tinkerpop.gremlin.structure.Graph;
-import org.apache.tinkerpop.gremlin.structure.Transaction;
-import org.apache.tinkerpop.gremlin.structure.Vertex;
+import org.apache.tinkerpop.gremlin.structure.*;
 import org.apache.tinkerpop.gremlin.structure.util.ElementHelper;
 import org.apache.tinkerpop.gremlin.structure.util.StringFactory;
 import org.slf4j.Logger;
@@ -33,7 +29,7 @@ import com.arangodb.tinkerpop.gremlin.client.ArangoDBGraphClient;
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBGraphException;
 import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
 
-import static com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil.unsupportedIdType;
+import static com.arangodb.tinkerpop.gremlin.structure.AdbElement.Exceptions.unsupportedIdType;
 
 /**
  * The ArangoDB graph class.
@@ -143,124 +139,124 @@ import static com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil.unsupportedIdTyp
 @Graph.OptIn(Graph.OptIn.SUITE_PROCESS_STANDARD)
 @Graph.OptIn("com.arangodb.tinkerpop.gremlin.ArangoDBTestSuite")
 @Graph.OptOut(
-		test = "org.apache.tinkerpop.gremlin.structure.util.detached.DetachedGraphTest",
-		method = "testAttachableCreateMethod",
-		reason = "test creates id without label prefix")
+        test = "org.apache.tinkerpop.gremlin.structure.util.detached.DetachedGraphTest",
+        method = "testAttachableCreateMethod",
+        reason = "test creates id without label prefix")
 @Graph.OptOut(
-		test = "org.apache.tinkerpop.gremlin.structure.util.detached.DetachedVertexTest",
-		method = "shouldNotEvaluateToEqualDifferentId",
-		reason = "Test creates vertex with no labels in schema-based approach")
+        test = "org.apache.tinkerpop.gremlin.structure.util.detached.DetachedVertexTest",
+        method = "shouldNotEvaluateToEqualDifferentId",
+        reason = "Test creates vertex with no labels in schema-based approach")
 @Graph.OptOut(
-		test = "org.apache.tinkerpop.gremlin.structure.GraphTest",
-		method = "shouldAddVertexWithUserSuppliedStringId",
-		reason = "FIXME")
+        test = "org.apache.tinkerpop.gremlin.structure.GraphTest",
+        method = "shouldAddVertexWithUserSuppliedStringId",
+        reason = "FIXME")
 @Graph.OptOut(
-		test = "org.apache.tinkerpop.gremlin.structure.GraphTest",
-		method = "shouldRemoveVertices",
-		reason = "Test creates vertices with random labels, which does not work with our schema-based approach.")
+        test = "org.apache.tinkerpop.gremlin.structure.GraphTest",
+        method = "shouldRemoveVertices",
+        reason = "Test creates vertices with random labels, which does not work with our schema-based approach.")
 @Graph.OptOut(
-		test = "org.apache.tinkerpop.gremlin.structure.GraphTest",
-		method = "shouldRemoveEdges",
-		reason = "Test creates edges with random labels, which does not work with our schema-based approach.")
+        test = "org.apache.tinkerpop.gremlin.structure.GraphTest",
+        method = "shouldRemoveEdges",
+        reason = "Test creates edges with random labels, which does not work with our schema-based approach.")
 @Graph.OptOut(
-		test = "org.apache.tinkerpop.gremlin.structure.GraphTest",
-		method = "shouldEvaluateConnectivityPatterns",
-		reason = "FIXME")
+        test = "org.apache.tinkerpop.gremlin.structure.GraphTest",
+        method = "shouldEvaluateConnectivityPatterns",
+        reason = "FIXME")
 @Graph.OptOut(
-		test = "org.apache.tinkerpop.gremlin.structure.VertexPropertyTest$VertexPropertyAddition",
-		method = "shouldAllowIdAssignment",
-		reason = "FIXME")
+        test = "org.apache.tinkerpop.gremlin.structure.VertexPropertyTest$VertexPropertyAddition",
+        method = "shouldAllowIdAssignment",
+        reason = "FIXME")
 @Graph.OptOut(
-		test = "org.apache.tinkerpop.gremlin.structure.PropertyTest$BasicPropertyTest",
-		method = "shouldAllowNullAddVertexProperty",
-		reason = "FIXME"
+        test = "org.apache.tinkerpop.gremlin.structure.PropertyTest$BasicPropertyTest",
+        method = "shouldAllowNullAddVertexProperty",
+        reason = "FIXME"
 )
 @Graph.OptOut(
-		test = "org.apache.tinkerpop.gremlin.structure.PropertyTest$BasicPropertyTest",
-		method = "shouldAllowNullAddVertex",
-		reason = "FIXME"
+        test = "org.apache.tinkerpop.gremlin.structure.PropertyTest$BasicPropertyTest",
+        method = "shouldAllowNullAddVertex",
+        reason = "FIXME"
 )
 @Graph.OptOut(
-		test = "org.apache.tinkerpop.gremlin.structure.util.reference.ReferenceVertexTest",
-		method = "shouldNotEvaluateToEqualDifferentId",
-		reason = "FIXME")
+        test = "org.apache.tinkerpop.gremlin.structure.util.reference.ReferenceVertexTest",
+        method = "shouldNotEvaluateToEqualDifferentId",
+        reason = "FIXME")
 @Graph.OptOut(
-		test = "org.apache.tinkerpop.gremlin.structure.SerializationTest$GryoV3Test",
-		method = "shouldSerializeTree",
-		reason = "FIXME")
+        test = "org.apache.tinkerpop.gremlin.structure.SerializationTest$GryoV3Test",
+        method = "shouldSerializeTree",
+        reason = "FIXME")
 @Graph.OptOut(
-		test = "org.apache.tinkerpop.gremlin.structure.SerializationTest$GryoV1Test",
-		method = "shouldSerializeTree",
-		reason = "FIXME")
+        test = "org.apache.tinkerpop.gremlin.structure.SerializationTest$GryoV1Test",
+        method = "shouldSerializeTree",
+        reason = "FIXME")
 @Graph.OptOut(
-		test = "org.apache.tinkerpop.gremlin.structure.util.star.StarGraphTest",
-		method = "shouldAttachWithCreateMethod",
-		reason = "FIXME")
+        test = "org.apache.tinkerpop.gremlin.structure.util.star.StarGraphTest",
+        method = "shouldAttachWithCreateMethod",
+        reason = "FIXME")
 @Graph.OptOut(
-		test = "org.apache.tinkerpop.gremlin.structure.util.star.StarGraphTest",
-		method = "shouldCopyFromGraphAToGraphB",
-		reason = "FIXME")
+        test = "org.apache.tinkerpop.gremlin.structure.util.star.StarGraphTest",
+        method = "shouldCopyFromGraphAToGraphB",
+        reason = "FIXME")
 @Graph.OptOut(
-		test = "org.apache.tinkerpop.gremlin.structure.VertexTest$BasicVertexTest",
-		method = "shouldEvaluateEquivalentVertexHashCodeWithSuppliedIds",
-		reason = "FIXME")
+        test = "org.apache.tinkerpop.gremlin.structure.VertexTest$BasicVertexTest",
+        method = "shouldEvaluateEquivalentVertexHashCodeWithSuppliedIds",
+        reason = "FIXME")
 @Graph.OptOut(
-		test = "org.apache.tinkerpop.gremlin.structure.VertexTest$BasicVertexTest",
-		method = "shouldEvaluateVerticesEquivalentWithSuppliedIdsViaTraversal",
-		reason = "FIXME")
+        test = "org.apache.tinkerpop.gremlin.structure.VertexTest$BasicVertexTest",
+        method = "shouldEvaluateVerticesEquivalentWithSuppliedIdsViaTraversal",
+        reason = "FIXME")
 @Graph.OptOut(
-		test = "org.apache.tinkerpop.gremlin.structure.VertexTest$BasicVertexTest",
-		method = "shouldEvaluateVerticesEquivalentWithSuppliedIdsViaIterators",
-		reason = "FIXME")
+        test = "org.apache.tinkerpop.gremlin.structure.VertexTest$BasicVertexTest",
+        method = "shouldEvaluateVerticesEquivalentWithSuppliedIdsViaIterators",
+        reason = "FIXME")
 @Graph.OptOut(
-		test = "org.apache.tinkerpop.gremlin.structure.VertexTest$AddEdgeTest",
-		method = "shouldAddEdgeWithUserSuppliedStringId",
-		reason = "FIXME")
+        test = "org.apache.tinkerpop.gremlin.structure.VertexTest$AddEdgeTest",
+        method = "shouldAddEdgeWithUserSuppliedStringId",
+        reason = "FIXME")
 public class ArangoDBGraph implements Graph {
 
-	/**
+    /**
      * The Class ArangoDBGraphFeatures.
      */
 
-	public class ArangoDBGraphFeatures implements Features {
+    public class ArangoDBGraphFeatures implements Features {
 
-    	/**
+        /**
          * The Class ArangoDBGraphGraphFeatures.
          */
 
-    	private class ArangoDBGraphGraphFeatures implements GraphFeatures {
+        private class ArangoDBGraphGraphFeatures implements GraphFeatures {
 
 			/** The variable features. */
-			private VariableFeatures variableFeatures = new ArangoDBGraphVariables.ArangoDBGraphVariableFeatures();
+            private VariableFeatures variableFeatures = new ArangoDBGraphVariables.ArangoDBGraphVariableFeatures();
 
-			/**
-			 * Instantiates a new ArangoDB graph graph features.
-			 */
+            /**
+             * Instantiates a new ArangoDB graph graph features.
+             */
 
 			ArangoDBGraphGraphFeatures () { }
 
-			@Override
-			public boolean supportsComputer() {
-				return false;
-			}
+            @Override
+            public boolean supportsComputer() {
+                return false;
+            }
 
-			@Override
-			public boolean supportsThreadedTransactions() {
-				return false;
-			}
+            @Override
+            public boolean supportsThreadedTransactions() {
+                return false;
+            }
 
-			@Override
-			public boolean supportsTransactions() {
-				return false;
-			}
+            @Override
+            public boolean supportsTransactions() {
+                return false;
+            }
 
-			@Override
-			public VariableFeatures variables() {
-				return variableFeatures;
-			}
-		}
+            @Override
+            public VariableFeatures variables() {
+                return variableFeatures;
+            }
+        }
 
-    	/**
+        /**
          * The Class ArangoDBGraphElementFeatures.
          */
 
@@ -273,33 +269,33 @@ public class ArangoDBGraph implements Graph {
             ArangoDBGraphElementFeatures() { }
 
             @Override
-			public boolean supportsAnyIds() {
-				return false;
-			}
+            public boolean supportsAnyIds() {
+                return false;
+            }
 
-			@Override
-			public boolean supportsCustomIds() {
-				return false;
-			}
+            @Override
+            public boolean supportsCustomIds() {
+                return false;
+            }
 
-			@Override
-			public boolean supportsNumericIds() {
-				return false;
-			}
+            @Override
+            public boolean supportsNumericIds() {
+                return false;
+            }
 
-			@Override
-			public boolean supportsUuidIds() {
-				/*	We can not use Java Objects as keys, ergo we can not support UUID and Integer
+            @Override
+            public boolean supportsUuidIds() {
+                /*	We can not use Java Objects as keys, ergo we can not support UUID and Integer
 				 *  the string representation of these is fine for ArangoDB, which makes the test
 				 *  complain because it expects the actual class to be deserialized. We can test
 				 *  to see if a string is accepted for deserialization.
 				 *  TODO As with properties, a way to support this is to store the id value class
 				 */
-				return false;
-			}
+                return false;
+            }
         }
 
-		/**
+        /**
          * The Class ArangoDBGraphVertexFeatures.
          */
 
@@ -307,7 +303,7 @@ public class ArangoDBGraph implements Graph {
 
 		    /** The vertex property features. */
 
-    		private final VertexPropertyFeatures vertexPropertyFeatures = new ArangoDBGraphVertexPropertyFeatures();
+            private final VertexPropertyFeatures vertexPropertyFeatures = new ArangoDBGraphVertexPropertyFeatures();
 
             /**
              * Instantiates a new ArangoDB graph vertex features.
@@ -316,20 +312,20 @@ public class ArangoDBGraph implements Graph {
             ArangoDBGraphVertexFeatures () { }
 
 
-			@Override
+            @Override
             public VertexPropertyFeatures properties() {
                 return vertexPropertyFeatures;
             }
         }
 
-    	/**
+        /**
          * The Class ArangoDBGraphEdgeFeatures.
          */
         public class ArangoDBGraphEdgeFeatures extends ArangoDBGraphElementFeatures implements EdgeFeatures {
 
 		    /** The edge property features. */
 
-    		private final EdgePropertyFeatures edgePropertyFeatures = new ArangoDBGraphEdgePropertyFeatures();
+            private final EdgePropertyFeatures edgePropertyFeatures = new ArangoDBGraphEdgePropertyFeatures();
 
             /**
              * Instantiates a new ArangoDB graph edge features.
@@ -349,37 +345,37 @@ public class ArangoDBGraph implements Graph {
 
         private class ArangoDBGraphVertexPropertyFeatures implements VertexPropertyFeatures {
 
-		    /**
-    		 * Instantiates a new ArangoDB graph vertex property features.
-    		 */
+            /**
+             * Instantiates a new ArangoDB graph vertex property features.
+             */
 
     		ArangoDBGraphVertexPropertyFeatures() { }
 
-    		@Override
-			public boolean supportsAnyIds() {
-				return false;
-			}
+            @Override
+            public boolean supportsAnyIds() {
+                return false;
+            }
 
-			@Override
-			public boolean supportsCustomIds() {
-				return false;
-			}
+            @Override
+            public boolean supportsCustomIds() {
+                return false;
+            }
 
-			@Override
-			public boolean supportsNumericIds() {
-				return false;
-			}
+            @Override
+            public boolean supportsNumericIds() {
+                return false;
+            }
 
-			@Override
-			public boolean supportsUuidIds() {
-				/*	We can not use Java Objects as keys, ergo we can not support UUID and Integer
+            @Override
+            public boolean supportsUuidIds() {
+                /*	We can not use Java Objects as keys, ergo we can not support UUID and Integer
 				 *  the string representation of these is fine for ArangoDB, which makes the test
 				 *  complain because it expects the actual class to be deserialized. We can test
 				 *  to see if a string is accepted for deserialization.
 				 *  TODO As with properties, a way to support this is to store the id value class
 				 */
-				return false;
-			}
+                return false;
+            }
         }
 
         /**
@@ -387,16 +383,16 @@ public class ArangoDBGraph implements Graph {
          */
         private class ArangoDBGraphEdgePropertyFeatures implements EdgePropertyFeatures {
 
-		    /**
-    		 * Instantiates a new ArangoDB graph edge property features.
-    		 */
+            /**
+             * Instantiates a new ArangoDB graph edge property features.
+             */
 
     		ArangoDBGraphEdgePropertyFeatures() { }
         }
 
 		/** The graph features. */
 
-    	protected GraphFeatures graphFeatures = new ArangoDBGraphGraphFeatures();
+        protected GraphFeatures graphFeatures = new ArangoDBGraphGraphFeatures();
 
         /** The vertex features. */
 
@@ -407,29 +403,29 @@ public class ArangoDBGraph implements Graph {
         protected EdgeFeatures edgeFeatures = new ArangoDBGraphEdgeFeatures();
 
         @Override
-		public EdgeFeatures edge() {
-			return edgeFeatures;
-		}
+        public EdgeFeatures edge() {
+            return edgeFeatures;
+        }
 
         @Override
-		public GraphFeatures graph() {
-			return graphFeatures;
-		}
+        public GraphFeatures graph() {
+            return graphFeatures;
+        }
 
         @Override
-		public String toString() {
-			return StringFactory.featureString(this);
-		}
+        public String toString() {
+            return StringFactory.featureString(this);
+        }
 
         @Override
-		public VertexFeatures vertex() {
-			return vertexFeatures;
-		}
+        public VertexFeatures vertex() {
+            return vertexFeatures;
+        }
     }
 
 	/** The Logger. */
 
-	private static final Logger logger = LoggerFactory.getLogger(ArangoDBGraph.class);
+    private static final Logger logger = LoggerFactory.getLogger(ArangoDBGraph.class);
 
     /** The properties name CONFIG_CONF. */
 
@@ -457,431 +453,392 @@ public class ArangoDBGraph implements Graph {
 
 	/** The properties name CONFIG_SHOULD_PREFIX_COLLECTION_NAMES **/
 
-	public static final String PROPERTY_KEY_SHOULD_PREFIX_COLLECTION_NAMES = "graph.shouldPrefixCollectionNames";
+    public static final String PROPERTY_KEY_SHOULD_PREFIX_COLLECTION_NAMES = "graph.shouldPrefixCollectionNames";
 
 	/** The Constant DEFAULT_VERTEX_COLLECTION. */
 
-	public static final String DEFAULT_VERTEX_COLLECTION = "vertex";
+    public static final String DEFAULT_VERTEX_COLLECTION = "vertex";
 
 	/** The Constant DEFAULT_VERTEX_COLLECTION. */
 
-	public static final String DEFAULT_EDGE_COLLECTION = "edge";
+    public static final String DEFAULT_EDGE_COLLECTION = "edge";
 
 	/** The Constant GRAPH_VARIABLES_COLLECTION. */
 
-	public static final String GRAPH_VARIABLES_COLLECTION = "TINKERPOP-GRAPH-VARIABLES";
+    public static final String GRAPH_VARIABLES_COLLECTION = "TINKERPOP-GRAPH-VARIABLES";
 
 	/** The Constant ELEMENT_PROPERTIES_COLLECTION. */
 
-	public static final String ELEMENT_PROPERTIES_COLLECTION = "ELEMENT-PROPERTIES";
+    public static final String ELEMENT_PROPERTIES_COLLECTION = "ELEMENT-PROPERTIES";
 
 	/** The Constant ELEMENT_PROPERTIES_EDGE_COLLECTION. */
 
-	public static final String ELEMENT_PROPERTIES_EDGE_COLLECTION = "ELEMENT-HAS-PROPERTIES";
+    public static final String ELEMENT_PROPERTIES_EDGE_COLLECTION = "ELEMENT-HAS-PROPERTIES";
 
-	public static Set<String> GRAPH_COLLECTIONS = new HashSet<>(Arrays.asList(ELEMENT_PROPERTIES_EDGE_COLLECTION, ELEMENT_PROPERTIES_COLLECTION));
+    public static Set<String> GRAPH_COLLECTIONS = new HashSet<>(Arrays.asList(ELEMENT_PROPERTIES_EDGE_COLLECTION, ELEMENT_PROPERTIES_COLLECTION));
 
 	/** The features. */
 
-	private final Features FEATURES = new ArangoDBGraphFeatures();
+    private final Features FEATURES = new ArangoDBGraphFeatures();
 
 	/** A ArangoDBGraphClient to handle the connection to the Database. */
 
-	private ArangoDBGraphClient client = null;
+    private ArangoDBGraphClient client = null;
 
 	/** The name. */
 
-	private String name;
+    private String name;
 
 	/** The vertex collections. */
 
-	private final List<String> vertexCollections;
+    private final List<String> vertexCollections;
 
 	/** The edge collections. */
 
-	private final List<String> edgeCollections;
+    private final List<String> edgeCollections;
 
 	/** The relations. */
 
-	private final List<String> relations;
+    private final List<String> relations;
 
 	/**  Flat to indicate that the graph has no schema. */
 
-	private boolean schemaless = false;
+    private boolean schemaless = false;
 
 	/** The configuration. */
 
-	private Configuration configuration;
+    private Configuration configuration;
 
 
 	/** If collection names should be prefixed with graph name */
-	private final boolean shouldPrefixCollectionNames;
+    private final boolean shouldPrefixCollectionNames;
 
 
     /**
      * Create a new ArangoDBGraph from the provided configuration.
      *
-     * @param configuration		the Apache Commons configuration
-     * @return 					the Arango DB graph
+     * @param configuration the Apache Commons configuration
+     * @return the Arango DB graph
      */
 
     public static ArangoDBGraph open(Configuration configuration) {
-		return new ArangoDBGraph(configuration);
-	}
+        return new ArangoDBGraph(configuration);
+    }
 
-	/**
-	 * Creates a Graph (simple configuration).
-	 *
-	 * @param configuration 	the Apache Commons configuration
-	 */
+    /**
+     * Creates a Graph (simple configuration).
+     *
+     * @param configuration the Apache Commons configuration
+     */
 
-	public ArangoDBGraph(Configuration configuration) {
+    public ArangoDBGraph(Configuration configuration) {
 
-		logger.info("Creating new ArangoDB Graph from configuration");
-		Configuration arangoConfig = configuration.subset(PROPERTY_KEY_PREFIX);
-		vertexCollections = arangoConfig.getList(PROPERTY_KEY_VERTICES).stream()
-				.map(String.class::cast)
-				.collect(Collectors.toList());
-		edgeCollections = arangoConfig.getList(PROPERTY_KEY_EDGES).stream()
-				.map(String.class::cast)
-				.collect(Collectors.toList());
-		relations = arangoConfig.getList(PROPERTY_KEY_RELATIONS).stream()
-				.map(String.class::cast)
-				.collect(Collectors.toList());
-		name = arangoConfig.getString(PROPERTY_KEY_GRAPH_NAME);
-		checkValues(arangoConfig.getString(PROPERTY_KEY_DB_NAME), name, vertexCollections, edgeCollections, relations);
-		if (CollectionUtils.isEmpty(vertexCollections)) {
-			schemaless = true;
-			vertexCollections.add(DEFAULT_VERTEX_COLLECTION);
-		}
-		if (CollectionUtils.isEmpty(edgeCollections)) {
-			edgeCollections.add(DEFAULT_EDGE_COLLECTION);
-		}
-		shouldPrefixCollectionNames = arangoConfig.getBoolean(PROPERTY_KEY_SHOULD_PREFIX_COLLECTION_NAMES, true);
+        logger.info("Creating new ArangoDB Graph from configuration");
+        Configuration arangoConfig = configuration.subset(PROPERTY_KEY_PREFIX);
+        vertexCollections = arangoConfig.getList(PROPERTY_KEY_VERTICES).stream()
+                .map(String.class::cast)
+                .collect(Collectors.toList());
+        edgeCollections = arangoConfig.getList(PROPERTY_KEY_EDGES).stream()
+                .map(String.class::cast)
+                .collect(Collectors.toList());
+        relations = arangoConfig.getList(PROPERTY_KEY_RELATIONS).stream()
+                .map(String.class::cast)
+                .collect(Collectors.toList());
+        name = arangoConfig.getString(PROPERTY_KEY_GRAPH_NAME);
+        checkValues(arangoConfig.getString(PROPERTY_KEY_DB_NAME), name, vertexCollections, edgeCollections, relations);
+        if (CollectionUtils.isEmpty(vertexCollections)) {
+            schemaless = true;
+            vertexCollections.add(DEFAULT_VERTEX_COLLECTION);
+        }
+        if (CollectionUtils.isEmpty(edgeCollections)) {
+            edgeCollections.add(DEFAULT_EDGE_COLLECTION);
+        }
+        shouldPrefixCollectionNames = arangoConfig.getBoolean(PROPERTY_KEY_SHOULD_PREFIX_COLLECTION_NAMES, true);
 
-		Properties arangoProperties = ConfigurationConverter.getProperties(arangoConfig);
-		int batchSize = 0;
-		client = new ArangoDBGraphClient(this, arangoProperties, arangoConfig.getString(PROPERTY_KEY_DB_NAME),
-				batchSize, shouldPrefixCollectionNames);
+        Properties arangoProperties = ConfigurationConverter.getProperties(arangoConfig);
+        int batchSize = 0;
+        client = new ArangoDBGraphClient(this, arangoProperties, arangoConfig.getString(PROPERTY_KEY_DB_NAME),
+                batchSize, shouldPrefixCollectionNames);
 
-		ArangoGraph graph = client.getArangoGraph();
-        GraphCreateOptions options = new  GraphCreateOptions();
+        ArangoGraph graph = client.getArangoGraph();
+        GraphCreateOptions options = new GraphCreateOptions();
         // FIXME Cant be in orphan collections because it will be deleted with graph?
         // options.orphanCollections(GRAPH_VARIABLES_COLLECTION);
-		final List<String> prefVCols = vertexCollections.stream().map(this::getPrefixedCollectioName).collect(Collectors.toList());
-		final List<String> prefECols = edgeCollections.stream().map(this::getPrefixedCollectioName).collect(Collectors.toList());
-		final List<EdgeDefinition> edgeDefinitions = new ArrayList<>();
-		if (relations.isEmpty()) {
-			logger.info("No relations, creating default ones.");
-			edgeDefinitions.addAll(ArangoDBUtil.createDefaultEdgeDefinitions(prefVCols, prefECols));
-		} else {
-			for (String value : relations) {
-				EdgeDefinition ed = ArangoDBUtil.relationPropertyToEdgeDefinition(this, value);
-				edgeDefinitions.add(ed);
-			}
-		}
-		edgeDefinitions.add(ArangoDBUtil.createPropertyEdgeDefinitions(this, prefVCols, prefECols));
+        final List<String> prefVCols = vertexCollections.stream().map(this::getPrefixedCollectioName).collect(Collectors.toList());
+        final List<String> prefECols = edgeCollections.stream().map(this::getPrefixedCollectioName).collect(Collectors.toList());
+        final List<EdgeDefinition> edgeDefinitions = new ArrayList<>();
+        if (relations.isEmpty()) {
+            logger.info("No relations, creating default ones.");
+            edgeDefinitions.addAll(ArangoDBUtil.createDefaultEdgeDefinitions(prefVCols, prefECols));
+        } else {
+            for (String value : relations) {
+                EdgeDefinition ed = ArangoDBUtil.relationPropertyToEdgeDefinition(this, value);
+                edgeDefinitions.add(ed);
+            }
+        }
+        edgeDefinitions.add(ArangoDBUtil.createPropertyEdgeDefinitions(this, prefVCols, prefECols));
 
         if (graph.exists()) {
             ArangoDBUtil.checkGraphForErrors(prefVCols, prefECols, edgeDefinitions, graph, options);
             ArangoDBGraphVariables variables = null;
             try {
-				variables = client.getGraphVariables();
-			} catch (NullPointerException ex) {
-				logger.warn("Existing graph missing Graph Variables collection ({}), will attempt to create one.", GRAPH_VARIABLES_COLLECTION);
-			}
+                variables = client.getGraphVariables();
+            } catch (NullPointerException ex) {
+                logger.warn("Existing graph missing Graph Variables collection ({}), will attempt to create one.", GRAPH_VARIABLES_COLLECTION);
+            }
             if (variables == null) {
-				variables = new ArangoDBGraphVariables(name, GRAPH_VARIABLES_COLLECTION, this);
-				try {
-					client.insertGraphVariables(variables);
-				} catch (ArangoDBGraphException ex) {
-					throw new ArangoDBGraphException(
-							String.format(
-									"Unable to add graph variables collection (%s) to existing graph. %s",
-									ex.getMessage(),
-									GRAPH_VARIABLES_COLLECTION)
-							, ex);
-				}
-			}
+                variables = new ArangoDBGraphVariables(name, GRAPH_VARIABLES_COLLECTION, this);
+                try {
+                    client.insertGraphVariables(variables);
+                } catch (ArangoDBGraphException ex) {
+                    throw new ArangoDBGraphException(
+                            String.format(
+                                    "Unable to add graph variables collection (%s) to existing graph. %s",
+                                    ex.getMessage(),
+                                    GRAPH_VARIABLES_COLLECTION)
+                            , ex);
+                }
+            }
+        } else {
+            graph = client.createGraph(name, edgeDefinitions, options);
+            this.name = graph.name();
+            ArangoDBGraphVariables variables = new ArangoDBGraphVariables(name, GRAPH_VARIABLES_COLLECTION, this);
+            client.insertGraphVariables(variables);
         }
-        else {
-        	graph = client.createGraph(name, edgeDefinitions, options);
-        	this.name = graph.name();
-			ArangoDBGraphVariables variables = new ArangoDBGraphVariables(name, GRAPH_VARIABLES_COLLECTION, this);
-			client.insertGraphVariables(variables);
-		}
-		this.configuration = configuration;
-	}
+        this.configuration = configuration;
+    }
 
     @Override
-	public Vertex addVertex(Object... keyValues) {
+    public Vertex addVertex(Object... keyValues) {
         ElementHelper.legalPropertyKeyValueArray(keyValues);
-        Object id;
         String label;
         if (!schemaless) {
-        	label = ElementHelper.getLabelValue(keyValues).orElse(null);
-        	ElementHelper.validateLabel(label);
-        }
-        else {
-        	label = DEFAULT_VERTEX_COLLECTION;
+            label = ElementHelper.getLabelValue(keyValues).orElse(null);
+            ElementHelper.validateLabel(label);
+        } else {
+            label = DEFAULT_VERTEX_COLLECTION;
         }
         if (!vertexCollections().contains(label)) {
-			throw new IllegalArgumentException(String.format("Vertex label (%s) not in graph (%s) vertex collections.", label, name));
-		}
-        ArangoDBVertex vertex = null;
-        if (ElementHelper.getIdValue(keyValues).isPresent()) {
-        	id = ElementHelper.getIdValue(keyValues).get();
-        	if (this.features().vertex().willAllowId(id)) {
-	        	if (id.toString().contains("/")) {
-	        		String fullId = id.toString();
-	        		String[] parts = fullId.split("/");
-	        		// The collection name is the last part of the full name
-	        		String[] collectionParts = parts[0].split("_");
-					String collectionName = collectionParts[collectionParts.length-1];
-					if (collectionName.contains(label)) {
-	        			id = parts[1];
-	        			
-	        		}
-	        	}
-        		Matcher m = ArangoDBUtil.DOCUMENT_KEY.matcher((String)id);
-        		if (m.matches()) {
-        			vertex = new ArangoDBVertex(id.toString(), label, this);
-        		}
-        		else {
-            		throw new ArangoDBGraphException(String.format("Given id (%s) has unsupported characters.", id));
-            	}
-        	}
-        	else {
-        		throw Vertex.Exceptions.userSuppliedIdsOfThisTypeNotSupported();
-        	}
+            throw new IllegalArgumentException(String.format("Vertex label (%s) not in graph (%s) vertex collections.", label, name));
+        }
 
-        }
-        else {
-			vertex = new ArangoDBVertex(null, label, this);
-        }
+        String id = ArangoDBUtil.getId(features().vertex(), label, keyValues);
+        AdbVertex vertex = AdbVertex.of(id, label, this);
+
         // The vertex needs to exist before we can attach properties
-		vertex.insert();
+        vertex.insert();
         ElementHelper.attachProperties(vertex, keyValues);
         return vertex;
-	}
+    }
 
-	/**
-	 * Check that the configuration values are sound.
-	 *
-	 * @param db the db
-	 * @param name the name
-	 * @param vertices the vertices
-	 * @param edges the edges
-	 * @param relations the relations
-	 */
+    /**
+     * Check that the configuration values are sound.
+     *
+     * @param db        the db
+     * @param name      the name
+     * @param vertices  the vertices
+     * @param edges     the edges
+     * @param relations the relations
+     */
 
-	private void checkValues(
-	    String db,
-        String name,
-        List<String> vertices,
-        List<String> edges,
-        List<String> relations) {
+    private void checkValues(
+            String db,
+            String name,
+            List<String> vertices,
+            List<String> edges,
+            List<String> relations) {
 
-		if (StringUtils.isBlank(db)) {
+        if (StringUtils.isBlank(db)) {
             throw new ArangoDBGraphException("The db name can not be empty/null. Check that your configuration file " +
-					"has a 'graph.db' setting.");
-		}
-		if (StringUtils.isBlank(name)) {
+                    "has a 'graph.db' setting.");
+        }
+        if (StringUtils.isBlank(name)) {
             throw new ArangoDBGraphException("The graph name can not be empty/null. Check that your configuration file " +
-					"has a 'graph.name' name setting.");
-		}
-		if (CollectionUtils.isEmpty(edges)) {
-			logger.warn("Empty edges collection(s), the default 'edge' collection will be used.");
-		}
-		if ((vertices.size() > 1) && (edges.size() > 1) && CollectionUtils.isEmpty(relations)) {
-			throw new ArangoDBGraphException("If more than one vertex/edge collection is provided, relations must be defined");
-		}
-	}
+                    "has a 'graph.name' name setting.");
+        }
+        if (CollectionUtils.isEmpty(edges)) {
+            logger.warn("Empty edges collection(s), the default 'edge' collection will be used.");
+        }
+        if ((vertices.size() > 1) && (edges.size() > 1) && CollectionUtils.isEmpty(relations)) {
+            throw new ArangoDBGraphException("If more than one vertex/edge collection is provided, relations must be defined");
+        }
+    }
 
-	@Override
-	public void close() {
-		client.shutdown();
-	}
+    @Override
+    public void close() {
+        client.shutdown();
+    }
 
 
-	@Override
-	public GraphComputer compute() throws IllegalArgumentException {
+    @Override
+    public GraphComputer compute() throws IllegalArgumentException {
         throw Graph.Exceptions.graphComputerNotSupported();
-	}
+    }
 
-	@Override
-	public <C extends GraphComputer> C compute(Class<C> graphComputerClass) throws IllegalArgumentException {
-		throw new UnsupportedOperationException();
-	}
+    @Override
+    public <C extends GraphComputer> C compute(Class<C> graphComputerClass) throws IllegalArgumentException {
+        throw new UnsupportedOperationException();
+    }
 
-	@Override
-	public Configuration configuration() {
-		return configuration;
-	}
+    @Override
+    public Configuration configuration() {
+        return configuration;
+    }
 
-	/**
-	 * Edge collections.
-	 *
-	 * @return the list
-	 */
+    /**
+     * Edge collections.
+     *
+     * @return the list
+     */
 
-	public List<String> edgeCollections() {
-		return Collections.unmodifiableList(edgeCollections);
-	}
+    public List<String> edgeCollections() {
+        return Collections.unmodifiableList(edgeCollections);
+    }
 
-	@Override
-	public Iterator<Edge> edges(Object... edgeIds) {
-		List<String> ids = Arrays.stream(edgeIds)
-				.map(id -> {
-					if (id instanceof ArangoDBEdge) {
-						return ((ArangoDBEdge) id).id();
-					} else if(id instanceof String) {
-						// We only support String ids
-						return (String) id;
-					} else {
-						throw unsupportedIdType(id);
-					}
-				})
-				.collect(Collectors.toList());
-		return getClient().getGraphEdges(ids).stream()
-				.map(it -> (Edge) new ArangoDBEdge(this, it))
-				.iterator();
-	}
+    @Override
+    public Iterator<Edge> edges(Object... edgeIds) {
+        return getClient().getGraphEdges(getIdValues(edgeIds)).stream()
+                .map(it -> (Edge) new AdbEdge(this, it))
+                .iterator();
+    }
 
-	@Override
-	public Features features() {
-		return FEATURES;
-	}
+    @Override
+    public Iterator<Vertex> vertices(Object... vertexIds) {
+        return getClient().getGraphVertices(getIdValues(vertexIds)).stream()
+                .map(it -> (Vertex) new AdbVertex(this, it))
+                .iterator();
+    }
 
-	/**
-	 * Returns the ArangoDBGraphClient object.
-	 *
-	 * @return the ArangoDBGraphClient object
-	 */
+    @Override
+    public Features features() {
+        return FEATURES;
+    }
 
-	public ArangoDBGraphClient getClient() {
-		return client;
-	}
+    /**
+     * Returns the ArangoDBGraphClient object.
+     *
+     * @return the ArangoDBGraphClient object
+     */
 
-	/**
-	 * Returns the identifier of the graph.
-	 *
-	 * @return the identifier of the graph
-	 */
+    public ArangoDBGraphClient getClient() {
+        return client;
+    }
 
-	public String getId() {
-		ArangoGraph graph = client.getArangoGraph();
-		return graph.getInfo().getName();
-	}
+    /**
+     * Returns the identifier of the graph.
+     *
+     * @return the identifier of the graph
+     */
 
-	/**
-	 * The graph name
-	 *
-	 * @return the name
-	 */
+    public String getId() {
+        ArangoGraph graph = client.getArangoGraph();
+        return graph.getInfo().getName();
+    }
 
-	public String name() {
-		return this.name;
-	}
+    /**
+     * The graph name
+     *
+     * @return the name
+     */
 
-	@Override
-	public Transaction tx() {
-		throw Graph.Exceptions.transactionsNotSupported();
-	}
+    public String name() {
+        return this.name;
+    }
 
-	@Override
-	public Variables variables() {
-		ArangoDBGraphVariables v = client.getGraphVariables();
-		if (v != null) {
-			v.graph(this);
-			return v;
+    @Override
+    public Transaction tx() {
+        throw Graph.Exceptions.transactionsNotSupported();
+    }
+
+    @Override
+    public Variables variables() {
+        ArangoDBGraphVariables v = client.getGraphVariables();
+        if (v != null) {
+            v.graph(this);
+            return v;
+        } else {
+            throw new ArangoDBGraphException("Existing graph does not have a Variables collection");
         }
-        else {
-        	throw new ArangoDBGraphException("Existing graph does not have a Variables collection");
+    }
+
+    /**
+     * Vertex collections.
+     *
+     * @return the list
+     */
+    public List<String> vertexCollections() {
+        return Collections.unmodifiableList(vertexCollections);
+    }
+
+    /**
+     * Return the collection name correctly prefixed according to the shouldPrefixCollectionNames flag
+     * @param collectionName the collection name
+     * @return the Collection name prefixed
+     */
+    public String getPrefixedCollectioName(String collectionName) {
+        if (GRAPH_VARIABLES_COLLECTION.equals(collectionName)) {
+            return collectionName;
         }
-	}
+        if (GRAPH_COLLECTIONS.contains(collectionName)) {
+            return String.format("%s_%s", name, collectionName);
+        }
+        if (shouldPrefixCollectionNames) {
+            if (collectionName.startsWith(name + "_")) {
+                return collectionName;
+            }
+            return String.format("%s_%s", name, collectionName);
+        } else {
+            return collectionName;
+        }
+    }
 
-	/**
-	 * Vertex collections.
-	 *
-	 * @return the list
-	 */
-	public List<String> vertexCollections() {
-		return Collections.unmodifiableList(vertexCollections);
-	}
+    @Override
+    public String toString() {
+        String vertices = vertexCollections().stream()
+                .map(vc -> String.format("\"%s\"", vc))
+                .collect(Collectors.joining(", ", "{", "}"));
+        String edges = edgeCollections().stream()
+                .map(vc -> String.format("\"%s\"", vc))
+                .collect(Collectors.joining(", ", "{", "}"));
+        String relations = relations().stream()
+                .map(vc -> String.format("\"%s\"", vc))
+                .collect(Collectors.joining(", ", "{", "}"));
+        String internal = "{"
+                + "\"name\":\"" + name() + "\","
+                + "\"vertices\":" + vertices + ","
+                + "\"edges\":" + edges + ","
+                + "\"relations\":" + relations
+                + "}";
+        return StringFactory.graphString(this, internal);
+    }
 
-	@Override
-	public Iterator<Vertex> vertices(Object... vertexIds) {
-		List<String> vertexCollections = new ArrayList<>();
-		List<String> ids = Arrays.stream(vertexIds)
-				.map(id -> {
-					if (id instanceof Vertex) {
-						vertexCollections.add(((Vertex) id).label());
-						return ((Vertex) id).id();
-					} else {
-						// We only support String ids
-						return id;
-					}
-				})
-				.map(id -> id == null ? (String) id : id.toString())
-				.collect(Collectors.toList());
-		return getClient().getGraphVertices(ids, vertexCollections).stream()
-				.map(it -> (Vertex) new ArangoDBVertex(this, it))
-				.iterator();
-	}
+    /**
+     * The graph relations.
+     *
+     * @return the collection of relations
+     */
+    private Collection<String> relations() {
+        return relations;
+    }
 
-	/**
-	 * Return the collection name correctly prefixed according to the shouldPrefixCollectionNames flag
-	 * @param collectionName the collection name
-	 * @return the Collection name prefixed
-	 */
-	public String getPrefixedCollectioName(String collectionName) {
-		if (GRAPH_VARIABLES_COLLECTION.equals(collectionName)) {
-			return collectionName;
-		}
-		if (GRAPH_COLLECTIONS.contains(collectionName)) {
-			return String.format("%s_%s", name, collectionName);
-		}
-		if(shouldPrefixCollectionNames) {
-			if(collectionName.startsWith(name + "_")) {
-				return collectionName;
-			}
-			return String.format("%s_%s", name, collectionName);
-		}else{
-			return collectionName;
-		}
-	}
+    private String getIdValue(Object id) {
+        if (id instanceof String) {
+            return (String) id;
+        } else if (id instanceof Element) {
+            return getIdValue(((Element) id).id());
+        } else {
+            throw unsupportedIdType(id);
+        }
+    }
 
-	@Override
-	public String toString() {
-		String vertices = vertexCollections().stream()
-				.map(vc -> String.format("\"%s\"", vc))
-				.collect(Collectors.joining(", ", "{", "}"));
-		String edges = edgeCollections().stream()
-				.map(vc -> String.format("\"%s\"", vc))
-				.collect(Collectors.joining(", ", "{", "}"));
-		String relations = relations().stream()
-				.map(vc -> String.format("\"%s\"", vc))
-				.collect(Collectors.joining(", ", "{", "}"));
-		String internal =  "{"
-					+ "\"name\":\"" + name() + "\","
-					+ "\"vertices\":" + vertices + ","
-					+ "\"edges\":" + edges+ ","
-					+ "\"relations\":" + relations
-				+"}";
-		return StringFactory.graphString(this, internal);
-	}
+    private List<String> getIdValues(Object[] edgeIds) {
+        return Arrays.stream(edgeIds)
+                .map(this::getIdValue)
+                .collect(Collectors.toList());
+    }
 
-	/**
-	 * The graph relations.
-	 *
-	 * @return the collection of relations
-	 */
-	private Collection<String> relations() {
-		return relations;
-	}
 
-   // TODO Decide which of these methods we want to keep
+    // TODO Decide which of these methods we want to keep
 
 //	@Override
 //	public <T extends Element> void dropKeyIndex(String name, Class<T> elementClass) {

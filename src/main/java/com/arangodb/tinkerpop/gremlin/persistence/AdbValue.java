@@ -1,4 +1,23 @@
-package com.arangodb.tinkerpop.gremlin.structure;
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+package com.arangodb.tinkerpop.gremlin.persistence;
 
 import com.arangodb.shaded.fasterxml.jackson.annotation.JsonCreator;
 import com.arangodb.shaded.fasterxml.jackson.annotation.JsonProperty;
@@ -6,12 +25,13 @@ import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
 
 import java.util.Objects;
 
-public class ArangoDBPropertyData {
+public class AdbValue {
+
     private final Object value;
     private final String valueType;
 
     @JsonCreator
-    ArangoDBPropertyData(
+    AdbValue(
             @JsonProperty("value") Object value,
             @JsonProperty("valueType") String valueType
     ) {
@@ -19,7 +39,7 @@ public class ArangoDBPropertyData {
         this.valueType = valueType;
     }
 
-    public ArangoDBPropertyData(Object value) {
+    public AdbValue(Object value) {
         this.value = value;
         valueType = (value != null ? value.getClass() : Void.class).getCanonicalName();
     }
@@ -34,7 +54,7 @@ public class ArangoDBPropertyData {
 
     @Override
     public String toString() {
-        return "ArangoDBPropertyValue{" +
+        return "AdbValue{" +
                 "value=" + value +
                 ", valueType='" + valueType + '\'' +
                 '}';
@@ -43,7 +63,7 @@ public class ArangoDBPropertyData {
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
-        ArangoDBPropertyData that = (ArangoDBPropertyData) o;
+        AdbValue that = (AdbValue) o;
         return Objects.equals(value, that.value) && Objects.equals(valueType, that.valueType);
     }
 
