@@ -23,20 +23,20 @@ import org.apache.tinkerpop.gremlin.structure.Property;
 import org.apache.tinkerpop.gremlin.structure.util.ElementHelper;
 import org.apache.tinkerpop.gremlin.structure.util.StringFactory;
 
-public class AdbProperty<V> implements Property<V> {
+public class ArangoDBProperty<V> implements Property<V> {
 
     private final String key;
     private final V value;
-    private final AdbElement<?, ?> element;
+    private final ArangoDBElement<?, ?> element;
 
-    public AdbProperty(final AdbElement<?, ?> element, final String key, final V value) {
+    public ArangoDBProperty(final ArangoDBElement<?, ?> element, final String key, final V value) {
         this.element = element;
         this.key = key;
         this.value = value;
     }
 
     @Override
-    public AdbElement<?, ?> element() {
+    public ArangoDBElement<?, ?> element() {
         return element;
     }
 

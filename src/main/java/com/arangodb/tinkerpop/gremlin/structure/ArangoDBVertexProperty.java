@@ -29,12 +29,12 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.stream.Stream;
 
-public class AdbVertexProperty<P> extends AdbElement<AdbValue, VertexPropertyData> implements VertexProperty<P> {
+public class ArangoDBVertexProperty<P> extends ArangoDBElement<AdbValue, VertexPropertyData> implements VertexProperty<P> {
 
     private final String key;
-    private final AdbVertex vertex;
+    private final ArangoDBVertex vertex;
 
-    public AdbVertexProperty(String key, VertexPropertyData data, AdbVertex vertex) {
+    public ArangoDBVertexProperty(String key, VertexPropertyData data, ArangoDBVertex vertex) {
         super(vertex.graph(), data);
         this.key = key;
         this.vertex = vertex;
@@ -48,7 +48,7 @@ public class AdbVertexProperty<P> extends AdbElement<AdbValue, VertexPropertyDat
     @Override
     @SuppressWarnings("unchecked")
     protected <V> Property<V> createProperty(String key, Object value) {
-        return new AdbProperty<>(this, key, (V) value);
+        return new ArangoDBProperty<>(this, key, (V) value);
     }
 
     @Override
@@ -78,7 +78,7 @@ public class AdbVertexProperty<P> extends AdbElement<AdbValue, VertexPropertyDat
     }
 
     @Override
-    public AdbVertex element() {
+    public ArangoDBVertex element() {
         return vertex;
     }
 

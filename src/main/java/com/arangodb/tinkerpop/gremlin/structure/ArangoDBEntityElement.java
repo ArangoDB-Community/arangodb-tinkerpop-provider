@@ -23,9 +23,9 @@ import com.arangodb.tinkerpop.gremlin.persistence.AbstractElementData;
 
 import java.util.*;
 
-public abstract class AdbEntityElement<P, D extends AbstractElementData<P>> extends AdbElement<P, D> {
+public abstract class ArangoDBEntityElement<P, D extends AbstractElementData<P>> extends ArangoDBElement<P, D> {
 
-    public AdbEntityElement(ArangoDBGraph graph, D data) {
+    public ArangoDBEntityElement(ArangoDBGraph graph, D data) {
         super(graph, data);
     }
 

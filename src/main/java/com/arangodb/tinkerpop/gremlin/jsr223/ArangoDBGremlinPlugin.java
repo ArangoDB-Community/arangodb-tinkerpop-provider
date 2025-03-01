@@ -9,7 +9,7 @@
 package com.arangodb.tinkerpop.gremlin.jsr223;
 
 import com.arangodb.tinkerpop.gremlin.persistence.*;
-import com.arangodb.tinkerpop.gremlin.structure.AdbEdge;
+import com.arangodb.tinkerpop.gremlin.structure.ArangoDBEdge;
 import org.apache.tinkerpop.gremlin.jsr223.AbstractGremlinPlugin;
 import org.apache.tinkerpop.gremlin.jsr223.DefaultImportCustomizer;
 import org.apache.tinkerpop.gremlin.jsr223.ImportCustomizer;
@@ -46,12 +46,12 @@ public class ArangoDBGremlinPlugin extends AbstractGremlinPlugin {
                             ArangoDBUtil.class,
 
                             // structure
-                            AdbEdge.class,
-                            AdbElement.class,
-                            AdbEntityElement.class,
-                            AdbProperty.class,
-                            AdbVertex.class,
-                            AdbVertexProperty.class,
+                            ArangoDBEdge.class,
+                            ArangoDBElement.class,
+                            ArangoDBEntityElement.class,
+                            ArangoDBProperty.class,
+                            ArangoDBVertex.class,
+                            ArangoDBVertexProperty.class,
                             ArangoDBGraph.class,
                             ArangoDBGraphVariables.class,
 

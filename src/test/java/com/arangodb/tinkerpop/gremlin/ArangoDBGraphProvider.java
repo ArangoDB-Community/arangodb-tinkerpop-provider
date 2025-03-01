@@ -6,7 +6,6 @@ import java.util.Properties;
 import java.util.Set;
 
 import com.arangodb.tinkerpop.gremlin.persistence.*;
-import com.arangodb.tinkerpop.gremlin.structure.AdbEdge;
 import com.arangodb.tinkerpop.gremlin.structure.*;
 import org.apache.commons.configuration2.Configuration;
 import org.apache.commons.configuration2.ConfigurationConverter;

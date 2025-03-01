@@ -16,8 +16,8 @@ import java.util.stream.Collectors;
 import com.arangodb.config.ArangoConfigProperties;
 import com.arangodb.entity.*;
 import com.arangodb.model.*;
-import com.arangodb.tinkerpop.gremlin.structure.AdbEdge;
-import com.arangodb.tinkerpop.gremlin.structure.AdbVertex;
+import com.arangodb.tinkerpop.gremlin.structure.ArangoDBEdge;
+import com.arangodb.tinkerpop.gremlin.structure.ArangoDBVertex;
 import com.arangodb.tinkerpop.gremlin.persistence.EdgeData;
 import com.arangodb.tinkerpop.gremlin.persistence.VertexData;
 import com.arangodb.tinkerpop.gremlin.structure.*;
@@ -787,7 +787,7 @@ public class ArangoDBGraphClient {
 //			throw new ArangoDBException(e);
 //		}
 //	}
-    public void insertEdge(AdbEdge edge) {
+    public void insertEdge(ArangoDBEdge edge) {
         logger.debug("Insert edge {} in {} ", edge, graph.name());
         EdgeEntity insertEntity;
         try {
@@ -805,7 +805,7 @@ public class ArangoDBGraphClient {
         edge.key(insertEntity.getKey());
     }
 
-    public void deleteEdge(AdbEdge edge) {
+    public void deleteEdge(ArangoDBEdge edge) {
         logger.debug("Delete edge {} in {}", edge, graph.name());
         try {
             db.graph(graph.name())
@@ -820,7 +820,7 @@ public class ArangoDBGraphClient {
         }
     }
 
-    public void updateEdge(AdbEdge edge) {
+    public void updateEdge(ArangoDBEdge edge) {
         logger.debug("Update edge {} in {}", edge, graph.name());
         EdgeUpdateEntity updateEntity;
         try {
@@ -841,7 +841,7 @@ public class ArangoDBGraphClient {
         String key = ArangoDBUtil.extractKey(id);
         try {
             return db.graph(graph.name())
-                    .vertexCollection(graph.getPrefixedCollectioName(col))
+                    .vertexCollection(col)
                     .getVertex(key, VertexData.class);
         } catch (ArangoDBException e) {
             logger.error("Failed to read vertex: {}", e.getErrorMessage());
@@ -849,7 +849,7 @@ public class ArangoDBGraphClient {
         }
     }
 
-    public void insertVertex(AdbVertex vertex) {
+    public void insertVertex(ArangoDBVertex vertex) {
         logger.debug("Insert vertex {} in {}", vertex, graph.name());
         VertexEntity vertexEntity;
         try {
@@ -867,7 +867,7 @@ public class ArangoDBGraphClient {
         vertex.key(vertexEntity.getKey());
     }
 
-    public void deleteVertex(AdbVertex vertex) {
+    public void deleteVertex(ArangoDBVertex vertex) {
         logger.debug("Delete vertex {} in {}", vertex, graph.name());
         try {
             db.graph(graph.name())
@@ -882,7 +882,7 @@ public class ArangoDBGraphClient {
         }
     }
 
-    public void updateVertex(AdbVertex vertex) {
+    public void updateVertex(ArangoDBVertex vertex) {
         logger.debug("Update document {} in {}", vertex, graph.name());
         VertexUpdateEntity vertexEntity;
         try {

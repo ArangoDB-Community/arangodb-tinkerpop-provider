@@ -30,13 +30,13 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public abstract class AdbElement<P, D extends ElementData<P>> implements Element {
+public abstract class ArangoDBElement<P, D extends ElementData<P>> implements Element {
 
     protected final ArangoDBGraph graph;
     protected final D data;
     private boolean removed = false;
 
-    public AdbElement(ArangoDBGraph graph, D data) {
+    public ArangoDBElement(ArangoDBGraph graph, D data) {
         this.graph = graph;
         this.data = data;
     }

@@ -31,16 +31,16 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.arangodb.tinkerpop.gremlin.structure.AdbElement.Exceptions.elementAlreadyRemoved;
+import static com.arangodb.tinkerpop.gremlin.structure.ArangoDBElement.Exceptions.elementAlreadyRemoved;
 import static com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil.*;
 
-public class AdbVertex extends AdbEntityElement<List<VertexPropertyData>, VertexData> implements Vertex {
+public class ArangoDBVertex extends ArangoDBEntityElement<List<VertexPropertyData>, VertexData> implements Vertex {
 
-    public static AdbVertex of(final String id, final String label, ArangoDBGraph graph) {
-        return new AdbVertex(graph, new VertexData(extractLabel(id, label).orElse(DEFAULT_LABEL), extractKey(id)));
+    public static ArangoDBVertex of(final String id, final String label, ArangoDBGraph graph) {
+        return new ArangoDBVertex(graph, new VertexData(extractLabel(id, label).orElse(DEFAULT_LABEL), extractKey(id)));
     }
 
-    public AdbVertex(ArangoDBGraph graph, VertexData data) {
+    public ArangoDBVertex(ArangoDBGraph graph, VertexData data) {
         super(graph, data);
     }
 
@@ -72,7 +72,7 @@ public class AdbVertex extends AdbEntityElement<List<VertexPropertyData>, Vertex
         list.add(prop);
         data.getProperties().put(key, list);
 
-        AdbVertexProperty<V> vertexProperty = new AdbVertexProperty<>(key, prop, this);
+        ArangoDBVertexProperty<V> vertexProperty = new ArangoDBVertexProperty<>(key, prop, this);
         ElementHelper.attachProperties(vertexProperty, keyValues);
         update();
         return vertexProperty;
@@ -81,7 +81,7 @@ public class AdbVertex extends AdbEntityElement<List<VertexPropertyData>, Vertex
     @Override
     public Edge addEdge(String label, Vertex vertex, Object... keyValues) {
         if (null == vertex) throw Graph.Exceptions.argumentCanNotBeNull("vertex");
-        if (removed() || ((AdbVertex) vertex).removed()) throw elementAlreadyRemoved(id());
+        if (removed() || ((ArangoDBVertex) vertex).removed()) throw elementAlreadyRemoved(id());
 
         ElementHelper.legalPropertyKeyValueArray(keyValues);
         ElementHelper.validateLabel(label);
@@ -91,7 +91,7 @@ public class AdbVertex extends AdbEntityElement<List<VertexPropertyData>, Vertex
         }
 
         String id = ArangoDBUtil.getId(graph.features().edge(), label, keyValues);
-        AdbEdge edge = AdbEdge.of(id, label, id(), (String) vertex.id(), graph);
+        ArangoDBEdge edge = ArangoDBEdge.of(id, label, id(), (String) vertex.id(), graph);
         edge.insert();
         ElementHelper.attachProperties(edge, keyValues);
         return edge;
@@ -115,7 +115,7 @@ public class AdbVertex extends AdbEntityElement<List<VertexPropertyData>, Vertex
 
     @Override
     protected <V> Property<V> createProperty(String key, Object value) {
-        return new AdbVertexProperty<>(key, (VertexPropertyData) value, this);
+        return new ArangoDBVertexProperty<>(key, (VertexPropertyData) value, this);
     }
 
     @Override
@@ -132,7 +132,7 @@ public class AdbVertex extends AdbEntityElement<List<VertexPropertyData>, Vertex
             return Collections.emptyIterator();
         }
         return IteratorUtils.map(graph.getClient().getVertexEdges(id(), edgeCollections, direction),
-                it -> new AdbEdge(graph, it));
+                it -> new ArangoDBEdge(graph, it));
     }
 
     @Override
@@ -144,7 +144,7 @@ public class AdbVertex extends AdbEntityElement<List<VertexPropertyData>, Vertex
             return Collections.emptyIterator();
         }
         return IteratorUtils.map(graph.getClient().getVertexNeighbors(id(), edgeCollections, direction),
-                it -> new AdbVertex(graph, it));
+                it -> new ArangoDBVertex(graph, it));
     }
 
     @Override
@@ -167,7 +167,7 @@ public class AdbVertex extends AdbEntityElement<List<VertexPropertyData>, Vertex
         return IteratorUtils.cast(super.properties(propertyKeys));
     }
 
-    public void removeVertexProperty(AdbVertexProperty<?> prop) {
+    public void removeVertexProperty(ArangoDBVertexProperty<?> prop) {
         Map<String, List<VertexPropertyData>> props = data.getProperties();
         List<VertexPropertyData> pVal = props.get(prop.key());
         if (pVal != null) {

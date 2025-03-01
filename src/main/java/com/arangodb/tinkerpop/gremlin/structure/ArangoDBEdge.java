@@ -31,20 +31,20 @@ import java.util.stream.Stream;
 import static com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil.*;
 
 
-public class AdbEdge extends AdbEntityElement<AdbValue, EdgeData> implements Edge {
+public class ArangoDBEdge extends ArangoDBEntityElement<AdbValue, EdgeData> implements Edge {
 
-    public static AdbEdge of(final String id, final String label, final String outVertexId, final String inVertexId, ArangoDBGraph graph) {
-        return new AdbEdge(graph, new EdgeData(extractLabel(id, label).orElse(DEFAULT_LABEL), extractKey(id), outVertexId, inVertexId));
+    public static ArangoDBEdge of(final String id, final String label, final String outVertexId, final String inVertexId, ArangoDBGraph graph) {
+        return new ArangoDBEdge(graph, new EdgeData(extractLabel(id, label).orElse(DEFAULT_LABEL), extractKey(id), outVertexId, inVertexId));
     }
 
-    public AdbEdge(ArangoDBGraph graph, EdgeData data) {
+    public ArangoDBEdge(ArangoDBGraph graph, EdgeData data) {
         super(graph, data);
     }
 
     @Override
     @SuppressWarnings("unchecked")
     protected <V> Property<V> createProperty(String key, Object value) {
-        return new AdbProperty<>(this, key, (V) value);
+        return new ArangoDBProperty<>(this, key, (V) value);
     }
 
     @Override
@@ -78,12 +78,12 @@ public class AdbEdge extends AdbEntityElement<AdbValue, EdgeData> implements Edg
 
     @Override
     public Vertex outVertex() {
-        return new AdbVertex(graph, graph.getClient().readVertex(data.getFrom()));
+        return new ArangoDBVertex(graph, graph.getClient().readVertex(data.getFrom()));
     }
 
     @Override
     public Vertex inVertex() {
-        return new AdbVertex(graph, graph.getClient().readVertex(data.getTo()));
+        return new ArangoDBVertex(graph, graph.getClient().readVertex(data.getTo()));
     }
 
     @Override

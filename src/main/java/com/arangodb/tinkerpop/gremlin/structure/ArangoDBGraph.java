@@ -29,7 +29,7 @@ import com.arangodb.tinkerpop.gremlin.client.ArangoDBGraphClient;
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBGraphException;
 import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
 
-import static com.arangodb.tinkerpop.gremlin.structure.AdbElement.Exceptions.unsupportedIdType;
+import static com.arangodb.tinkerpop.gremlin.structure.ArangoDBElement.Exceptions.unsupportedIdType;
 
 /**
  * The ArangoDB graph class.
@@ -623,7 +623,7 @@ public class ArangoDBGraph implements Graph {
         }
 
         String id = ArangoDBUtil.getId(features().vertex(), label, keyValues);
-        AdbVertex vertex = AdbVertex.of(id, label, this);
+        ArangoDBVertex vertex = ArangoDBVertex.of(id, label, this);
 
         // The vertex needs to exist before we can attach properties
         vertex.insert();
@@ -698,14 +698,14 @@ public class ArangoDBGraph implements Graph {
     @Override
     public Iterator<Edge> edges(Object... edgeIds) {
         return getClient().getGraphEdges(getIdValues(edgeIds)).stream()
-                .map(it -> (Edge) new AdbEdge(this, it))
+                .map(it -> (Edge) new ArangoDBEdge(this, it))
                 .iterator();
     }
 
     @Override
     public Iterator<Vertex> vertices(Object... vertexIds) {
         return getClient().getGraphVertices(getIdValues(vertexIds)).stream()
-                .map(it -> (Vertex) new AdbVertex(this, it))
+                .map(it -> (Vertex) new ArangoDBVertex(this, it))
                 .iterator();
     }
 
