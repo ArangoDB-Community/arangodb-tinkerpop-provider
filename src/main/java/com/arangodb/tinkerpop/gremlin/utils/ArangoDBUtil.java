@@ -15,12 +15,11 @@ import com.arangodb.entity.EdgeDefinition;
 import com.arangodb.entity.GraphEntity;
 import com.arangodb.model.GraphCreateOptions;
 import com.arangodb.shaded.fasterxml.jackson.databind.ObjectMapper;
-import com.arangodb.tinkerpop.gremlin.client.ArangoDBBaseDocument;
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBGraphClient;
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBGraphException;
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBQueryBuilder;
 import com.arangodb.tinkerpop.gremlin.structure.*;
-import com.arangodb.tinkerpop.gremlin.structure.ArangoDBElementProperty.ElementHasProperty;
+
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -36,6 +35,7 @@ import java.util.stream.IntStream;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.tinkerpop.gremlin.structure.Direction;
+import org.apache.tinkerpop.gremlin.structure.Element;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -380,76 +380,23 @@ public class ArangoDBUtil {
         return ed;
     }
 
-
-    /**
-     * Creates an Arango DB edge property.
-     *
-     * @param <U> 			the generic type
-     * @param key 			the name
-     * @param value 		the value
-     * @param edge 			the edge
-     * @return the created Arango DB edge property
-     */
-    
-    public static <U> ArangoDBEdgeProperty<U> createArangoDBEdgeProperty(
-    	String key,
-    	U value,
-    	ArangoDBEdge edge) {
-        ArangoDBEdgeProperty<U> p = new ArangoDBEdgeProperty<>(key, value, edge);
-        insertElementAndProperty(edge, p);
-        return p;
-    }
-
-    /**
-     * Creates an Arango DB vertex property.
-     *
-     * @param <U> 			the generic type
-     * @param propertyName 			the name
-     * @param propertyValue 		the value
-     * @param vertex 		the vertex
-     * @return the created Arango DB vertex property
-     */
-    
-    public static <U> ArangoDBVertexProperty<U> createArangoDBVertexProperty(String propertyName, U propertyValue, ArangoDBVertex vertex) {
-        ArangoDBVertexProperty<U> p = new ArangoDBVertexProperty<>(propertyName, propertyValue, vertex);
-		insertElementAndProperty(vertex, p);
-        return p;
-    }
-
     /**
      * Creates an Arango DB vertex property.
      *
      * @param <U> 			the generic type
      * @param id 			the id
-     * @param propertyName 			the name
-     * @param propertyValue 		the value
+     * @param key 			the name
+     * @param value 		the value
      * @param vertex 		the vertex
      * @return the created Arango DB vertex property
      */
     
-    public static <U> ArangoDBVertexProperty<U> createArangoDBVertexProperty(String id, String propertyName, U propertyValue, ArangoDBVertex vertex) {
-        ArangoDBVertexProperty<U> p;
-        p = new ArangoDBVertexProperty<>(id, propertyName, propertyValue, vertex);
-		insertElementAndProperty(vertex, p);
-        return p;
-    }
-
-    /**
-     * Creates an Arango DB property property.
-     *
-     * @param <U> 				the generic type
-     * @param key 				the name
-     * @param value 			the value
-     * @param vertexProperty	the vertex property
-     * @return the created Arango DB property property
-     */
-    
-    public static <U> ArangoDBPropertyProperty<U> createArangoDBPropertyProperty(String key, U value, ArangoDBVertexProperty<?> vertexProperty) {
-        ArangoDBPropertyProperty<U> p;
-        p = new ArangoDBPropertyProperty<>(key, value, vertexProperty);
-		insertElementAndProperty(vertexProperty, p);
-        return p;
-    }
+//    public static <U> TinkerVertexProperty<U> createArangoDBVertexProperty(String id, String key, U value, ArangoDBVertex vertex) {
+//		TinkerVertexProperty<U> p;
+//        p = new TinkerVertexProperty<>(id, key, value, vertex);
+//		insertElementAndProperty(vertex, p);
+//        return p;
+//    }
 
     /**
      * Gets the correct primitive.
@@ -541,41 +488,65 @@ public class ArangoDBUtil {
     			((ArrayList<?>)value).forEach(e -> list.add(getCorretctPrimitive(e, "")));
     			return list;
     		case "boolean[]":
-    			List<Object> barray = (List<Object>)value;
-    			boolean[] br = new boolean[barray.size()]; 
-    			IntStream.range(0, barray.size())
-    	         .forEach(i -> br[i] = (boolean) barray.get(i));
-				return br;
+				if(value instanceof List) {
+					List<Object> barray = (List<Object>)value;
+					boolean[] br = new boolean[barray.size()];
+					IntStream.range(0, barray.size())
+							.forEach(i -> br[i] = (boolean) barray.get(i));
+					return br;
+				} else {
+					return value;
+				}
     		case "double[]":
-    			List<Object> darray = (List<Object>)value;
-    			double[] dr = new double[darray.size()]; 
-    			IntStream.range(0, darray.size())
-    	         .forEach(i -> dr[i] = (double) getCorretctPrimitive(darray.get(i), "java.lang.Double"));
-				return dr;
+				if(value instanceof List) {
+					List<Object> darray = (List<Object>)value;
+					double[] dr = new double[darray.size()];
+					IntStream.range(0, darray.size())
+							.forEach(i -> dr[i] = (double) getCorretctPrimitive(darray.get(i), "java.lang.Double"));
+					return dr;
+				} else {
+					return value;
+				}
     		case "float[]":
-    			List<Object> farray = (List<Object>)value;
-    			float[] fr = new float[farray.size()]; 
-    			IntStream.range(0, farray.size())
-    	         .forEach(i -> fr[i] = (float) getCorretctPrimitive(farray.get(i), "java.lang.Float"));
-				return fr;
+				if(value instanceof List) {
+					List<Object> farray = (List<Object>)value;
+					float[] fr = new float[farray.size()];
+					IntStream.range(0, farray.size())
+							.forEach(i -> fr[i] = (float) getCorretctPrimitive(farray.get(i), "java.lang.Float"));
+					return fr;
+				} else {
+					return value;
+				}
     		case "int[]":
-    			List<Object> iarray = (List<Object>)value;
-    			int[] ir = new int[iarray.size()]; 
-    			IntStream.range(0, iarray.size())
-    	         .forEach(i -> ir[i] = (int) getCorretctPrimitive(iarray.get(i), "java.lang.Integer"));
-				return ir;
-    		case "long[]":
-    			List<Object> larray = (List<Object>)value;
-    			long[] lr = new long[larray.size()]; 
-    			IntStream.range(0, larray.size())
-    	         .forEach(i -> lr[i] = (long) getCorretctPrimitive(larray.get(i), "java.lang.Long"));
-				return lr;
+				if(value instanceof List) {
+					List<Object> iarray = (List<Object>)value;
+					int[] ir = new int[iarray.size()];
+					IntStream.range(0, iarray.size())
+							.forEach(i -> ir[i] = (int) getCorretctPrimitive(iarray.get(i), "java.lang.Integer"));
+					return ir;
+				} else {
+					return value;
+				}
+			case "long[]":
+				if(value instanceof List) {
+					List<Object> larray = (List<Object>)value;
+					long[] lr = new long[larray.size()];
+					IntStream.range(0, larray.size())
+							.forEach(i -> lr[i] = (long) getCorretctPrimitive(larray.get(i), "java.lang.Long"));
+					return lr;
+				} else {
+					return value;
+				}
     		case "java.lang.String[]":
-    			List<Object> sarray = (List<Object>)value;
-    			String[] sr = new String[sarray.size()]; 
-    			IntStream.range(0, sarray.size())
-    	         .forEach(i -> sr[i] = (String) sarray.get(i));
-				return sr;
+				if(value instanceof List) {
+					List<Object> sarray = (List<Object>)value;
+					String[] sr = new String[sarray.size()];
+					IntStream.range(0, sarray.size())
+							.forEach(i -> sr[i] = (String) sarray.get(i));
+					return sr;
+				} else {
+					return value;
+				}
     		default:
 				Object result;
 				try {
@@ -606,11 +577,12 @@ public class ArangoDBUtil {
 		return null;
 	}
 
-	private static void insertElementAndProperty(ArangoDBBaseDocument element, ArangoDBElementProperty p) {
-		ArangoDBGraph g = element.graph();
-		ArangoDBGraphClient c = g.getClient();
-		c.insertDocument(p);
-		ElementHasProperty e = p.assignToElement(element);
-		c.insertEdge(e);
+	public static IllegalStateException elementAlreadyRemoved(final Class<? extends Element> clazz, final Object id) {
+		return new IllegalStateException(String.format("%s with id %s was removed.", clazz.getSimpleName(), id));
 	}
+
+	public static IllegalStateException unsupportedIdType(final Object id) {
+		return new IllegalStateException(String.format("Unsupported id type [%s]: %s", id.getClass().getSimpleName(), id));
+	}
+
 }

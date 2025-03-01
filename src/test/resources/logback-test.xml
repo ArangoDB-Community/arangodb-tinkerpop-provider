@@ -25,7 +25,6 @@
         <appender-ref ref="STDOUT"/>
     </root>
 
-    <!--  <logger name="com.arangodb.internal.net.Communication" level="debug" />-->
-    <!--  <logger name="com.arangodb.tinkerpop.gremlin.structure.ArangoDBEdge" level="debug" />-->
+<!--      <logger name="com.arangodb.internal.net.Communication" level="debug" />-->
 
 </configuration>
