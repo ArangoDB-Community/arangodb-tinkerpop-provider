@@ -158,7 +158,12 @@ public class ArangoDBVertex extends ArangoDBEntityElement<List<VertexPropertyDat
     }
 
     @Override
-    public <V> VertexProperty<V> property(String key, V value) {
+    public <V> VertexProperty<V> property(final String key) {
+        return Vertex.super.property(key);
+    }
+
+    @Override
+    public <V> VertexProperty<V> property(final String key, final V value) {
         return Vertex.super.property(key, value);
     }
 

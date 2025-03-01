@@ -112,5 +112,10 @@ public class ArangoDBVertexProperty<P> extends ArangoDBElement<AdbValue, VertexP
     public <U> Iterator<Property<U>> properties(String... propertyKeys) {
         return IteratorUtils.cast(super.properties(propertyKeys));
     }
+
+    @Override
+    public String label() {
+        return VertexProperty.super.label();
+    }
 }
 
