@@ -20,36 +20,39 @@
 package com.arangodb.tinkerpop.gremlin.structure;
 
 import com.arangodb.tinkerpop.gremlin.persistence.PersistentData;
+import org.apache.tinkerpop.gremlin.structure.Element;
 
-import java.util.*;
+import java.util.Optional;
 
-public abstract class ArangoDBEntityElement<P, D extends PersistentData<P>> extends ArangoDBElement<P, D> {
+public interface ArangoDBPersistentElement extends Element {
 
-    public ArangoDBEntityElement(ArangoDBGraph graph, D data) {
-        super(graph, data);
+    @Override
+    ArangoDBGraph graph();
+
+    PersistentData data();
+
+    default String key() {
+        return data().getKey();
+    }
+
+    default void key(String key) {
+        data().setKey(key);
     }
 
     @Override
-    public String id() {
+    default String label() {
+        return data().getLabel();
+    }
+
+    @SuppressWarnings("resource")
+    default String collection() {
+        return graph().getPrefixedCollectioName(label());
+    }
+
+    @Override
+    default String id() {
         return Optional.ofNullable(key())
                 .map(it -> collection() + '/' + it)
                 .orElse(label());
-    }
-
-    public String key() {
-        return data.getKey();
-    }
-
-    public void key(String key) {
-        data.setKey(key);
-    }
-
-    @Override
-    public String label() {
-        return data.getLabel();
-    }
-
-    public String collection() {
-        return graph.getPrefixedCollectioName(label());
     }
 }

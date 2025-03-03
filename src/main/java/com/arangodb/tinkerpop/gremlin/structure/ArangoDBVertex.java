@@ -29,12 +29,11 @@ import org.apache.tinkerpop.gremlin.util.iterator.IteratorUtils;
 
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static com.arangodb.tinkerpop.gremlin.structure.ArangoDBElement.Exceptions.elementAlreadyRemoved;
 import static com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil.*;
 
-public class ArangoDBVertex extends ArangoDBEntityElement<List<VertexPropertyData>, VertexData> implements Vertex {
+public class ArangoDBVertex extends ArangoDBElement<VertexPropertyData, VertexData> implements Vertex, ArangoDBPersistentElement {
 
     public static ArangoDBVertex of(final String id, final String label, ArangoDBGraph graph) {
         return new ArangoDBVertex(graph, new VertexData(extractLabel(id, label).orElse(DEFAULT_LABEL), extractKey(id)));
@@ -68,13 +67,12 @@ public class ArangoDBVertex extends ArangoDBEntityElement<List<VertexPropertyDat
                 .orElseGet(() -> UUID.randomUUID().toString());
 
         VertexPropertyData prop = new VertexPropertyData(idValue, value);
-        List<VertexPropertyData> list = data.getProperties().getOrDefault(key, new ArrayList<>());
-        list.add(prop);
-        data.getProperties().put(key, list);
+        data.add(key, prop);
 
         ArangoDBVertexProperty<V> vertexProperty = new ArangoDBVertexProperty<>(key, prop, this);
+        // TODO: optmize writing only once
         ElementHelper.attachProperties(vertexProperty, keyValues);
-        update();
+        doUpdate();
         return vertexProperty;
     }
 
@@ -92,7 +90,8 @@ public class ArangoDBVertex extends ArangoDBEntityElement<List<VertexPropertyDat
 
         String id = ArangoDBUtil.getId(graph.features().edge(), label, keyValues);
         ArangoDBEdge edge = ArangoDBEdge.of(id, label, id(), (String) vertex.id(), graph);
-        edge.insert();
+        // TODO: optmize writing only once
+        edge.doInsert();
         ElementHelper.attachProperties(edge, keyValues);
         return edge;
     }
@@ -109,18 +108,8 @@ public class ArangoDBVertex extends ArangoDBEntityElement<List<VertexPropertyDat
     }
 
     @Override
-    protected <V> Stream<Property<V>> toProperties(String key, List<VertexPropertyData> value) {
-        return value.stream().map(it -> createProperty(key, it));
-    }
-
-    @Override
-    protected <V> Property<V> createProperty(String key, Object value) {
-        return new ArangoDBVertexProperty<>(key, (VertexPropertyData) value, this);
-    }
-
-    @Override
-    protected List<VertexPropertyData> toData(Object value) {
-        throw new UnsupportedOperationException();
+    protected <V> Property<V> createProperty(String key, VertexPropertyData value) {
+        return new ArangoDBVertexProperty<>(key, value, this);
     }
 
     @Override
@@ -148,12 +137,12 @@ public class ArangoDBVertex extends ArangoDBEntityElement<List<VertexPropertyDat
     }
 
     @Override
-    public void insert() {
+    public void doInsert() {
         graph.getClient().insertVertex(this);
     }
 
     @Override
-    public void update() {
+    public void doUpdate() {
         graph.getClient().updateVertex(this);
     }
 
@@ -172,16 +161,10 @@ public class ArangoDBVertex extends ArangoDBEntityElement<List<VertexPropertyDat
         return IteratorUtils.cast(super.properties(propertyKeys));
     }
 
-    public void removeVertexProperty(ArangoDBVertexProperty<?> prop) {
-        Map<String, List<VertexPropertyData>> props = data.getProperties();
-        List<VertexPropertyData> pVal = props.get(prop.key());
-        if (pVal != null) {
-            if (pVal.remove(prop.data())) {
-                if (pVal.isEmpty()) {
-                    props.remove(prop.key());
-                }
-            }
-        }
+    public void removeProperty(ArangoDBVertexProperty<?> prop) {
+        if (removed()) throw ArangoDBElement.Exceptions.elementAlreadyRemoved(id());
+        data.remove(prop.key(), prop.data());
+        doUpdate();
     }
 
     /**

@@ -26,12 +26,11 @@ import org.apache.tinkerpop.gremlin.structure.util.StringFactory;
 import org.apache.tinkerpop.gremlin.util.iterator.IteratorUtils;
 
 import java.util.*;
-import java.util.stream.Stream;
 
 import static com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil.*;
 
 
-public class ArangoDBEdge extends ArangoDBEntityElement<AdbValue, EdgeData> implements Edge {
+public class ArangoDBEdge extends ArangoDBSimpleElement<EdgeData> implements Edge, ArangoDBPersistentElement {
 
     public static ArangoDBEdge of(final String id, final String label, final String outVertexId, final String inVertexId, ArangoDBGraph graph) {
         return new ArangoDBEdge(graph, new EdgeData(extractLabel(id, label).orElse(DEFAULT_LABEL), extractKey(id), outVertexId, inVertexId));
@@ -42,32 +41,16 @@ public class ArangoDBEdge extends ArangoDBEntityElement<AdbValue, EdgeData> impl
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    protected <V> Property<V> createProperty(String key, Object value) {
-        return new ArangoDBProperty<>(this, key, (V) value);
-    }
-
-    @Override
-    protected <V> Stream<Property<V>> toProperties(String key, AdbValue value) {
-        return Stream.of(createProperty(key, value.getValue()));
-    }
-
-    @Override
-    protected AdbValue toData(Object value) {
-        return new AdbValue(value);
-    }
-
-    @Override
     protected void doRemove() {
         graph.getClient().deleteEdge(this);
     }
 
     @Override
-    protected void update() {
+    protected void doUpdate() {
         graph.getClient().updateEdge(this);
     }
 
-    public void insert() {
+    public void doInsert() {
         graph.getClient().insertEdge(this);
     }
 

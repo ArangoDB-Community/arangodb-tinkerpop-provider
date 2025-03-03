@@ -20,10 +20,18 @@
 package com.arangodb.tinkerpop.gremlin.persistence;
 
 import com.arangodb.serde.*;
+import com.arangodb.shaded.fasterxml.jackson.annotation.JsonProperty;
+import org.apache.tinkerpop.gremlin.structure.util.ElementHelper;
 
 import java.util.*;
 
-public class EdgeData extends PersistentData<AdbValue> {
+public class EdgeData extends SimplePropertyData implements PersistentData {
+
+    @JsonProperty
+    private String label;
+
+    @InternalKey
+    private String key;
 
     @InternalFrom
     private String from;
@@ -31,23 +39,40 @@ public class EdgeData extends PersistentData<AdbValue> {
     @InternalTo
     private String to;
 
-    private final Map<String, AdbValue> properties = new HashMap<>();
-
     public EdgeData() {
     }
 
+    // FIXME: static factory method
     public EdgeData(
             String label,
             String key,
             String from,
             String to
     ) {
-        super(label, key);
+        ElementHelper.validateLabel(label);
+        if (key != null && key.isEmpty()) throw new IllegalArgumentException("empty key");
         Objects.requireNonNull(from, "from");
         Objects.requireNonNull(to, "to");
 
+        this.label = label;
+        this.key = key;
         this.from = from;
         this.to = to;
+    }
+
+    @Override
+    public String getLabel() {
+        return label;
+    }
+
+    @Override
+    public String getKey() {
+        return key;
+    }
+
+    @Override
+    public void setKey(String key) {
+        this.key = key;
     }
 
     public String getFrom() {
@@ -67,16 +92,12 @@ public class EdgeData extends PersistentData<AdbValue> {
     }
 
     @Override
-    public Map<String, AdbValue> getProperties() {
-        return properties;
-    }
-
-    @Override
     public String toString() {
         return "EdgeData{" +
                 "from='" + from + '\'' +
+                ", label='" + label + '\'' +
+                ", key='" + key + '\'' +
                 ", to='" + to + '\'' +
-                ", properties=" + properties +
                 ", super=" + super.toString() +
                 '}';
     }
@@ -84,13 +105,12 @@ public class EdgeData extends PersistentData<AdbValue> {
     @Override
     public boolean equals(Object o) {
         if (!(o instanceof EdgeData)) return false;
-        if (!super.equals(o)) return false;
         EdgeData edgeData = (EdgeData) o;
-        return Objects.equals(from, edgeData.from) && Objects.equals(to, edgeData.to) && Objects.equals(properties, edgeData.properties);
+        return Objects.equals(label, edgeData.label) && Objects.equals(key, edgeData.key) && Objects.equals(from, edgeData.from) && Objects.equals(to, edgeData.to);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), from, to, properties);
+        return Objects.hash(label, key, from, to);
     }
 }

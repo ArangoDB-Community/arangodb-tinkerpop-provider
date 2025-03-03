@@ -19,17 +19,14 @@
 
 package com.arangodb.tinkerpop.gremlin.structure;
 
-import com.arangodb.tinkerpop.gremlin.persistence.AdbValue;
 import com.arangodb.tinkerpop.gremlin.persistence.VertexPropertyData;
 import org.apache.tinkerpop.gremlin.structure.*;
 import org.apache.tinkerpop.gremlin.structure.util.StringFactory;
 import org.apache.tinkerpop.gremlin.util.iterator.IteratorUtils;
 
-import java.util.Iterator;
-import java.util.NoSuchElementException;
-import java.util.stream.Stream;
+import java.util.*;
 
-public class ArangoDBVertexProperty<P> extends ArangoDBElement<AdbValue, VertexPropertyData> implements VertexProperty<P> {
+public class ArangoDBVertexProperty<P> extends ArangoDBSimpleElement<VertexPropertyData> implements VertexProperty<P> {
 
     private final String key;
     private final ArangoDBVertex vertex;
@@ -43,22 +40,6 @@ public class ArangoDBVertexProperty<P> extends ArangoDBElement<AdbValue, VertexP
     @Override
     protected boolean removed() {
         return super.removed() || vertex.removed();
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    protected <V> Property<V> createProperty(String key, Object value) {
-        return new ArangoDBProperty<>(this, key, (V) value);
-    }
-
-    @Override
-    protected <V> Stream<Property<V>> toProperties(String key, AdbValue value) {
-        return Stream.of(createProperty(key, value.getValue()));
-    }
-
-    @Override
-    protected AdbValue toData(Object value) {
-        return new AdbValue(value);
     }
 
     @Override
@@ -88,19 +69,19 @@ public class ArangoDBVertexProperty<P> extends ArangoDBElement<AdbValue, VertexP
     }
 
     @Override
-    protected void update() {
-        vertex.update();
+    protected void doUpdate() {
+        vertex.doUpdate();
     }
 
     @Override
     protected void doRemove() {
-        vertex.removeVertexProperty(this);
-        vertex.update();
+        vertex.removeProperty(this);
+        vertex.doUpdate();
     }
 
     @Override
-    protected void insert() {
-        throw new UnsupportedOperationException("TODO");
+    protected void doInsert() {
+        doUpdate();
     }
 
     @Override

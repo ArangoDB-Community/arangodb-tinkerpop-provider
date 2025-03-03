@@ -28,7 +28,6 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public abstract class ArangoDBElement<P, D extends PropertyData<P>> implements Element {
 
@@ -41,21 +40,17 @@ public abstract class ArangoDBElement<P, D extends PropertyData<P>> implements E
         this.data = data;
     }
 
-    protected abstract String stringify();
+    protected abstract <V> Property<V> createProperty(String key, P value);
 
-    // properties transformers
-    protected abstract <V> Stream<Property<V>> toProperties(String key, P value);
-
-    protected abstract <V> Property<V> createProperty(String key, Object value);
-
-    protected abstract P toData(Object value);
-
-    // CRUD ops
-    protected abstract void update();
+    //region CRUD ops
+    protected abstract void doUpdate();
 
     protected abstract void doRemove();
 
-    protected abstract void insert();
+    protected abstract void doInsert();
+    //endregion
+
+    protected abstract String stringify();
 
     public D data() {
         return data;
@@ -71,16 +66,6 @@ public abstract class ArangoDBElement<P, D extends PropertyData<P>> implements E
     }
 
     @Override
-    public <V> Property<V> property(String key, V value) {
-        if (removed) throw Exceptions.elementAlreadyRemoved(id());
-        ElementHelper.validateProperty(key, value);
-        P data = toData(value);
-        setProperty(key, data);
-        update();
-        return createProperty(key, value);
-    }
-
-    @Override
     public void remove() {
         if (removed) return;
         doRemove();
@@ -90,23 +75,11 @@ public abstract class ArangoDBElement<P, D extends PropertyData<P>> implements E
     @Override
     public <V> Iterator<? extends Property<V>> properties(String... propertyKeys) {
         if (removed) return Collections.emptyIterator();
-        return data.getProperties()
-                .entrySet()
-                .stream()
+        return data.entries()
                 .filter(entry -> ElementHelper.keyExists(entry.getKey(), propertyKeys))
-                .flatMap((Map.Entry<String, P> e) -> this.<V>toProperties(e.getKey(), e.getValue()))
+                .map((Map.Entry<String, P> e) -> this.<V>createProperty(e.getKey(), e.getValue()))
                 .collect(Collectors.toList()) // avoids ConcurrentModificationException on removal from downstream
                 .iterator();
-    }
-
-    public void removeProperty(String key) {
-        if (removed) throw Exceptions.elementAlreadyRemoved(id());
-        data.getProperties().remove(key);
-        update();
-    }
-
-    private void setProperty(String key, P value) {
-        data.getProperties().put(key, value);
     }
 
     @SuppressWarnings("EqualsWhichDoesntCheckParameterClass")

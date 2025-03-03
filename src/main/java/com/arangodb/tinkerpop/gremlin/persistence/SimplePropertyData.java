@@ -19,56 +19,49 @@
 
 package com.arangodb.tinkerpop.gremlin.persistence;
 
-import com.arangodb.shaded.fasterxml.jackson.annotation.JsonCreator;
+
 import com.arangodb.shaded.fasterxml.jackson.annotation.JsonProperty;
-import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Stream;
 
-public class AdbValue {
+public class SimplePropertyData implements PropertyData<AdbValue> {
 
-    private final Object value;
-    private final String valueType;
+    @JsonProperty
+    private final Map<String, AdbValue> properties = new HashMap<>();
 
-    @JsonCreator
-    AdbValue(
-            @JsonProperty("value") Object value,
-            @JsonProperty("valueType") String valueType
-    ) {
-        this.value = value;
-        this.valueType = valueType;
+    @Override
+    public Stream<Map.Entry<String, AdbValue>> entries() {
+        return properties.entrySet().stream();
     }
 
-    public static AdbValue of(Object value) {
-        return new AdbValue(value, (value != null ? value.getClass() : Void.class).getCanonicalName());
+    @Override
+    public void add(String key, AdbValue value) {
+        properties.put(key, value);
     }
 
-    public Object getValue() {
-        return ArangoDBUtil.getCorretctPrimitive(value, valueType);
-    }
-
-    public String getValueType() {
-        return valueType;
+    public void remove(String key) {
+        properties.remove(key);
     }
 
     @Override
     public String toString() {
-        return "AdbValue{" +
-                "value=" + value +
-                ", valueType='" + valueType + '\'' +
+        return "SimplePropertyData{" +
+                "properties=" + properties +
                 '}';
     }
 
     @Override
     public boolean equals(Object o) {
-        if (!(o instanceof AdbValue)) return false;
-        AdbValue adbValue = (AdbValue) o;
-        return Objects.equals(value, adbValue.value) && Objects.equals(valueType, adbValue.valueType);
+        if (!(o instanceof SimplePropertyData)) return false;
+        SimplePropertyData that = (SimplePropertyData) o;
+        return Objects.equals(properties, that.properties);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(value, valueType);
+        return Objects.hashCode(properties);
     }
 }
-    

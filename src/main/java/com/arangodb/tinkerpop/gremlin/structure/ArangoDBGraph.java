@@ -625,8 +625,8 @@ public class ArangoDBGraph implements Graph {
         String id = ArangoDBUtil.getId(features().vertex(), label, keyValues);
         ArangoDBVertex vertex = ArangoDBVertex.of(id, label, this);
 
-        // The vertex needs to exist before we can attach properties
-        vertex.insert();
+        // TODO: optmize writing only once
+        vertex.doInsert();
         ElementHelper.attachProperties(vertex, keyValues);
         return vertex;
     }

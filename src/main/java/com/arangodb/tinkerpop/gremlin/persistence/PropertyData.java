@@ -20,7 +20,11 @@
 package com.arangodb.tinkerpop.gremlin.persistence;
 
 import java.util.Map;
+import java.util.stream.Stream;
 
-public interface PropertyData<P> {
-    Map<String, P> getProperties();
+public interface PropertyData<V> {
+
+    Stream<Map.Entry<String, V>> entries();
+
+    void add(String key, V value);
 }

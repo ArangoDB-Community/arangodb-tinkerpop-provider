@@ -21,47 +21,54 @@ package com.arangodb.tinkerpop.gremlin.persistence;
 
 import com.arangodb.shaded.fasterxml.jackson.annotation.JsonCreator;
 import com.arangodb.shaded.fasterxml.jackson.annotation.JsonProperty;
+import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Objects;
 
-public class VertexPropertyData extends AdbValue implements PropertyData<AdbValue> {
+public class VertexPropertyData extends SimplePropertyData {
 
     private final String id;
-    private final Map<String, AdbValue> properties;
+    private final Object value;
+    private final String valueType;
 
     @JsonCreator
     VertexPropertyData(
             @JsonProperty("id") String id,
             @JsonProperty("value") Object value,
-            @JsonProperty("valueType") String valueType,
-            @JsonProperty("properties") Map<String, AdbValue> properties) {
-        super(value, valueType);
+            @JsonProperty("valueType") String valueType
+//            @JsonProperty("properties") Map<String, AdbValue> properties
+    ) {
+//        super(properties);
         this.id = id;
-        this.properties = properties;
+        this.value = value;
+        this.valueType = valueType;
     }
 
+    // FIXME: static factory method
     public VertexPropertyData(String id, Object value) {
-        super(value);
         this.id = id;
-        this.properties = new HashMap<>();
+        this.value = value;
+        valueType = (value != null ? value.getClass() : Void.class).getCanonicalName();
     }
 
     public String getId() {
         return id;
     }
 
-    @Override
-    public Map<String, AdbValue> getProperties() {
-        return properties;
+    public Object getValue() {
+        return ArangoDBUtil.getCorretctPrimitive(value, valueType);
+    }
+
+    public String getValueType() {
+        return valueType;
     }
 
     @Override
     public String toString() {
         return "VertexPropertyData{" +
                 "id='" + id + '\'' +
-                ", properties=" + properties +
+                ", value=" + value +
+                ", valueType='" + valueType + '\'' +
                 ", super=" + super.toString() +
                 '}';
     }
@@ -71,11 +78,11 @@ public class VertexPropertyData extends AdbValue implements PropertyData<AdbValu
         if (!(o instanceof VertexPropertyData)) return false;
         if (!super.equals(o)) return false;
         VertexPropertyData that = (VertexPropertyData) o;
-        return Objects.equals(id, that.id) && Objects.equals(properties, that.properties);
+        return Objects.equals(id, that.id) && Objects.equals(value, that.value) && Objects.equals(valueType, that.valueType);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), id, properties);
+        return Objects.hash(super.hashCode(), id, value, valueType);
     }
 }

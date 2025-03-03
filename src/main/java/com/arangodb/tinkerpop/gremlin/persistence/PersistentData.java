@@ -19,58 +19,10 @@
 
 package com.arangodb.tinkerpop.gremlin.persistence;
 
-import com.arangodb.serde.InternalKey;
-import org.apache.tinkerpop.gremlin.structure.util.ElementHelper;
+public interface PersistentData {
+    String getLabel();
 
-import java.util.Objects;
+    String getKey();
 
-public abstract class PersistentData<V> implements PropertyData<V> {
-
-    private String label;
-    @InternalKey
-    private String key;
-
-    public PersistentData() {
-    }
-
-    public PersistentData(String label, String key) {
-        ElementHelper.validateLabel(label);
-        if (key != null && key.isEmpty()) throw new IllegalArgumentException("empty key");
-
-        this.label = label;
-        this.key = key;
-    }
-
-    public String getKey() {
-        return key;
-    }
-
-    public void setKey(String key) {
-        this.key = key;
-    }
-
-    public String getLabel() {
-        return label;
-    }
-
-    @Override
-    public String toString() {
-        return "PersistentData{" +
-                "key='" + key + '\'' +
-                ", label='" + label + '\'' +
-                '}';
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (!(o instanceof PersistentData)) return false;
-        PersistentData<?> that = (PersistentData<?>) o;
-        return Objects.equals(label, that.label) && Objects.equals(key, that.key);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(label, key);
-    }
+    void setKey(String key);
 }
-

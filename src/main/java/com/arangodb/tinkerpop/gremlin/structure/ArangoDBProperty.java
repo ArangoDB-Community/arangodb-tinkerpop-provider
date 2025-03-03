@@ -27,9 +27,9 @@ public class ArangoDBProperty<V> implements Property<V> {
 
     private final String key;
     private final V value;
-    private final ArangoDBElement<?, ?> element;
+    private final ArangoDBSimpleElement<?> element;
 
-    public ArangoDBProperty(final ArangoDBElement<?, ?> element, final String key, final V value) {
+    public ArangoDBProperty(final ArangoDBSimpleElement<?> element, final String key, final V value) {
         this.element = element;
         this.key = key;
         this.value = value;
