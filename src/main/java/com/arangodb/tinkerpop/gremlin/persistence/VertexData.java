@@ -19,9 +19,14 @@
 
 package com.arangodb.tinkerpop.gremlin.persistence;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
-public class VertexData extends AbstractElementData<List<VertexPropertyData>> {
+public class VertexData extends PersistentData<List<VertexPropertyData>> {
+
+    private final Map<String, List<VertexPropertyData>> properties = new HashMap<>();
 
     public VertexData() {
     }
@@ -31,9 +36,28 @@ public class VertexData extends AbstractElementData<List<VertexPropertyData>> {
     }
 
     @Override
+    public Map<String, List<VertexPropertyData>> getProperties() {
+        return properties;
+    }
+
+    @Override
     public String toString() {
         return "VertexData{" +
-                "super=" + super.toString() +
-                "}";
+                "properties=" + properties +
+                ", super=" + super.toString() +
+                '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof VertexData)) return false;
+        if (!super.equals(o)) return false;
+        VertexData that = (VertexData) o;
+        return Objects.equals(properties, that.properties);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), properties);
     }
 }

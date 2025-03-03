@@ -30,10 +30,10 @@ public class ArangoDBGraphProvider extends AbstractGraphProvider {
      * The Constant IMPLEMENTATIONS.
      */
     private static final Set<Class> IMPLEMENTATIONS = new HashSet<Class>() {{
-        add(AbstractElementData.class);
+        add(PersistentData.class);
         add(AdbValue.class);
         add(EdgeData.class);
-        add(ElementData.class);
+        add(PropertyData.class);
         add(VertexData.class);
         add(VertexPropertyData.class);
     }};

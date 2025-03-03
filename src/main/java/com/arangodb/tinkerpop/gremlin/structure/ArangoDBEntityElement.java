@@ -19,11 +19,11 @@
 
 package com.arangodb.tinkerpop.gremlin.structure;
 
-import com.arangodb.tinkerpop.gremlin.persistence.AbstractElementData;
+import com.arangodb.tinkerpop.gremlin.persistence.PersistentData;
 
 import java.util.*;
 
-public abstract class ArangoDBEntityElement<P, D extends AbstractElementData<P>> extends ArangoDBElement<P, D> {
+public abstract class ArangoDBEntityElement<P, D extends PersistentData<P>> extends ArangoDBElement<P, D> {
 
     public ArangoDBEntityElement(ArangoDBGraph graph, D data) {
         super(graph, data);

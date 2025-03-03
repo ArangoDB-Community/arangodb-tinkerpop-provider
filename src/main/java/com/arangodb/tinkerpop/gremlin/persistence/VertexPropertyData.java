@@ -26,7 +26,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-public class VertexPropertyData extends AdbValue implements ElementData<AdbValue> {
+public class VertexPropertyData extends AdbValue implements PropertyData<AdbValue> {
 
     private final String id;
     private final Map<String, AdbValue> properties;
@@ -68,7 +68,7 @@ public class VertexPropertyData extends AdbValue implements ElementData<AdbValue
 
     @Override
     public boolean equals(Object o) {
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof VertexPropertyData)) return false;
         if (!super.equals(o)) return false;
         VertexPropertyData that = (VertexPropertyData) o;
         return Objects.equals(id, that.id) && Objects.equals(properties, that.properties);

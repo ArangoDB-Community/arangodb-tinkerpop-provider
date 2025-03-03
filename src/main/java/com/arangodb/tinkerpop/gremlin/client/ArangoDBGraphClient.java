@@ -395,7 +395,7 @@ public class ArangoDBGraphClient {
         return getGraphDocuments(ids, prefixedColNames, EdgeData.class);
     }
 
-    private <T> ArangoCursor<T> getGraphDocuments(List<String> ids, List<String> prefixedColNames, Class<T> clazz) {
+    private <V> ArangoCursor<V> getGraphDocuments(List<String> ids, List<String> prefixedColNames, Class<V> clazz) {
         Map<String, Object> bindVars = new HashMap<>();
         ArangoDBQueryBuilder queryBuilder = new ArangoDBQueryBuilder();
         if (ids.isEmpty()) {
@@ -539,7 +539,7 @@ public class ArangoDBGraphClient {
     /**
      * Execute AQL query.
      *
-     * @param <T> 						the generic type of the returned values
+     * @param <V> 						the generic type of the returned values
      * @param query                    the query string
      * @param bindVars                    the value of the bind parameters
      * @param aqlQueryOptions            the aql query options
@@ -548,11 +548,11 @@ public class ArangoDBGraphClient {
      * @throws ArangoDBGraphException    if executing the query raised an exception
      */
 
-    public <T> ArangoCursor<T> executeAqlQuery(
+    public <V> ArangoCursor<V> executeAqlQuery(
             String query,
             Map<String, Object> bindVars,
             AqlQueryOptions aqlQueryOptions,
-            final Class<T> type)
+            final Class<V> type)
             throws ArangoDBGraphException {
         logger.debug("Executing AQL query ({}) against db, with bind vars: {}", query, bindVars);
         try {

@@ -22,21 +22,18 @@ package com.arangodb.tinkerpop.gremlin.persistence;
 import com.arangodb.serde.InternalKey;
 import org.apache.tinkerpop.gremlin.structure.util.ElementHelper;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Objects;
 
-public abstract class AbstractElementData<T> implements ElementData<T> {
+public abstract class PersistentData<V> implements PropertyData<V> {
 
     private String label;
     @InternalKey
     private String key;
-    private final Map<String, T> properties = new HashMap<>();
 
-    public AbstractElementData() {
+    public PersistentData() {
     }
 
-    public AbstractElementData(String label, String key) {
+    public PersistentData(String label, String key) {
         ElementHelper.validateLabel(label);
         if (key != null && key.isEmpty()) throw new IllegalArgumentException("empty key");
 
@@ -57,29 +54,23 @@ public abstract class AbstractElementData<T> implements ElementData<T> {
     }
 
     @Override
-    public Map<String, T> getProperties() {
-        return properties;
-    }
-
-    @Override
     public String toString() {
-        return "AbstractElementData{" +
+        return "PersistentData{" +
                 "key='" + key + '\'' +
                 ", label='" + label + '\'' +
-                ", properties=" + properties +
                 '}';
     }
 
     @Override
     public boolean equals(Object o) {
-        if (o == null || getClass() != o.getClass()) return false;
-        AbstractElementData<?> that = (AbstractElementData<?>) o;
-        return Objects.equals(key, that.key) && Objects.equals(label, that.label) && Objects.equals(properties, that.properties);
+        if (!(o instanceof PersistentData)) return false;
+        PersistentData<?> that = (PersistentData<?>) o;
+        return Objects.equals(label, that.label) && Objects.equals(key, that.key);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(key, label, properties);
+        return Objects.hash(label, key);
     }
 }
 

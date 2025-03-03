@@ -23,13 +23,15 @@ import com.arangodb.serde.*;
 
 import java.util.*;
 
-public class EdgeData extends AbstractElementData<AdbValue> {
+public class EdgeData extends PersistentData<AdbValue> {
 
     @InternalFrom
     private String from;
 
     @InternalTo
     private String to;
+
+    private final Map<String, AdbValue> properties = new HashMap<>();
 
     public EdgeData() {
     }
@@ -65,24 +67,30 @@ public class EdgeData extends AbstractElementData<AdbValue> {
     }
 
     @Override
+    public Map<String, AdbValue> getProperties() {
+        return properties;
+    }
+
+    @Override
     public String toString() {
         return "EdgeData{" +
                 "from='" + from + '\'' +
                 ", to='" + to + '\'' +
+                ", properties=" + properties +
                 ", super=" + super.toString() +
                 '}';
     }
 
     @Override
     public boolean equals(Object o) {
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof EdgeData)) return false;
         if (!super.equals(o)) return false;
-        EdgeData that = (EdgeData) o;
-        return Objects.equals(from, that.from) && Objects.equals(to, that.to);
+        EdgeData edgeData = (EdgeData) o;
+        return Objects.equals(from, edgeData.from) && Objects.equals(to, edgeData.to) && Objects.equals(properties, edgeData.properties);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), from, to);
+        return Objects.hash(super.hashCode(), from, to, properties);
     }
 }

@@ -62,9 +62,9 @@ public class AdbValue {
 
     @Override
     public boolean equals(Object o) {
-        if (o == null || getClass() != o.getClass()) return false;
-        AdbValue that = (AdbValue) o;
-        return Objects.equals(value, that.value) && Objects.equals(valueType, that.valueType);
+        if (!(o instanceof AdbValue)) return false;
+        AdbValue adbValue = (AdbValue) o;
+        return Objects.equals(value, adbValue.value) && Objects.equals(valueType, adbValue.valueType);
     }
 
     @Override

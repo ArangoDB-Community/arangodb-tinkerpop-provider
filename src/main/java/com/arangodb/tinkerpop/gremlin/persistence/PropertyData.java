@@ -21,8 +21,6 @@ package com.arangodb.tinkerpop.gremlin.persistence;
 
 import java.util.Map;
 
-public interface ElementData<T> {
-
-    Map<String, T> getProperties();
-
+public interface PropertyData<P> {
+    Map<String, P> getProperties();
 }
