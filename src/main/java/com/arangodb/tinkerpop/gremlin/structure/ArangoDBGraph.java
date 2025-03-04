@@ -163,30 +163,8 @@ import static com.arangodb.tinkerpop.gremlin.structure.ArangoDBElement.Exception
         method = "shouldEvaluateConnectivityPatterns",
         reason = "FIXME")
 @Graph.OptOut(
-        test = "org.apache.tinkerpop.gremlin.structure.VertexPropertyTest$VertexPropertyAddition",
-        method = "shouldAllowIdAssignment",
-        reason = "FIXME")
-@Graph.OptOut(
-        test = "org.apache.tinkerpop.gremlin.structure.PropertyTest$BasicPropertyTest",
-        method = "shouldAllowNullAddVertexProperty",
-        reason = "FIXME"
-)
-@Graph.OptOut(
-        test = "org.apache.tinkerpop.gremlin.structure.PropertyTest$BasicPropertyTest",
-        method = "shouldAllowNullAddVertex",
-        reason = "FIXME"
-)
-@Graph.OptOut(
         test = "org.apache.tinkerpop.gremlin.structure.util.reference.ReferenceVertexTest",
         method = "shouldNotEvaluateToEqualDifferentId",
-        reason = "FIXME")
-@Graph.OptOut(
-        test = "org.apache.tinkerpop.gremlin.structure.SerializationTest$GryoV3Test",
-        method = "shouldSerializeTree",
-        reason = "FIXME")
-@Graph.OptOut(
-        test = "org.apache.tinkerpop.gremlin.structure.SerializationTest$GryoV1Test",
-        method = "shouldSerializeTree",
         reason = "FIXME")
 @Graph.OptOut(
         test = "org.apache.tinkerpop.gremlin.structure.util.star.StarGraphTest",
