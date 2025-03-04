@@ -19,7 +19,6 @@
 
 package com.arangodb.tinkerpop.gremlin.structure;
 
-import com.arangodb.tinkerpop.gremlin.persistence.AdbValue;
 import com.arangodb.tinkerpop.gremlin.persistence.EdgeData;
 import org.apache.tinkerpop.gremlin.structure.*;
 import org.apache.tinkerpop.gremlin.structure.util.StringFactory;
@@ -33,7 +32,7 @@ import static com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil.*;
 public class ArangoDBEdge extends ArangoDBSimpleElement<EdgeData> implements Edge, ArangoDBPersistentElement {
 
     public static ArangoDBEdge of(final String id, final String label, final String outVertexId, final String inVertexId, ArangoDBGraph graph) {
-        return new ArangoDBEdge(graph, new EdgeData(extractLabel(id, label).orElse(DEFAULT_LABEL), extractKey(id), outVertexId, inVertexId));
+        return new ArangoDBEdge(graph, EdgeData.of(extractLabel(id, label).orElse(DEFAULT_LABEL), extractKey(id), outVertexId, inVertexId));
     }
 
     public ArangoDBEdge(ArangoDBGraph graph, EdgeData data) {

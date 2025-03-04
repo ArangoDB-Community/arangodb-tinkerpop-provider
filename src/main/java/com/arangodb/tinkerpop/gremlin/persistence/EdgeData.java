@@ -39,11 +39,7 @@ public class EdgeData extends SimplePropertyData implements PersistentData {
     @InternalTo
     private String to;
 
-    public EdgeData() {
-    }
-
-    // FIXME: static factory method
-    public EdgeData(
+    public static EdgeData of(
             String label,
             String key,
             String from,
@@ -54,10 +50,15 @@ public class EdgeData extends SimplePropertyData implements PersistentData {
         Objects.requireNonNull(from, "from");
         Objects.requireNonNull(to, "to");
 
-        this.label = label;
-        this.key = key;
-        this.from = from;
-        this.to = to;
+        EdgeData data = new EdgeData();
+        data.label = label;
+        data.key = key;
+        data.from = from;
+        data.to = to;
+        return data;
+    }
+
+    public EdgeData() {
     }
 
     @Override

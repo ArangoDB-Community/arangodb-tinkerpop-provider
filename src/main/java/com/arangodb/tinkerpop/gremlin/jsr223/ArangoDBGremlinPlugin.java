@@ -48,19 +48,19 @@ public class ArangoDBGremlinPlugin extends AbstractGremlinPlugin {
                             // structure
                             ArangoDBEdge.class,
                             ArangoDBElement.class,
+                            ArangoDBGraph.class,
+                            ArangoDBGraphVariables.class,
                             ArangoDBPersistentElement.class,
                             ArangoDBProperty.class,
                             ArangoDBSimpleElement.class,
                             ArangoDBVertex.class,
                             ArangoDBVertexProperty.class,
-                            ArangoDBGraph.class,
-                            ArangoDBGraphVariables.class,
 
                             // persistence
                             AdbValue.class,
                             EdgeData.class,
-                            PropertyData.class,
                             PersistentData.class,
+                            PropertyData.class,
                             SimplePropertyData.class,
                             VertexData.class,
                             VertexPropertyData.class

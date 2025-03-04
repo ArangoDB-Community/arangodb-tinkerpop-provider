@@ -36,19 +36,14 @@ public class VertexPropertyData extends SimplePropertyData {
             @JsonProperty("id") String id,
             @JsonProperty("value") Object value,
             @JsonProperty("valueType") String valueType
-//            @JsonProperty("properties") Map<String, AdbValue> properties
     ) {
-//        super(properties);
         this.id = id;
         this.value = value;
         this.valueType = valueType;
     }
 
-    // FIXME: static factory method
-    public VertexPropertyData(String id, Object value) {
-        this.id = id;
-        this.value = value;
-        valueType = (value != null ? value.getClass() : Void.class).getCanonicalName();
+    public static VertexPropertyData of(String id, Object value) {
+        return new VertexPropertyData(id, value, (value != null ? value.getClass() : Void.class).getCanonicalName());
     }
 
     public String getId() {
