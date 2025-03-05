@@ -1,11 +1,11 @@
 package com.arangodb.tinkerpop.gremlin;
 
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-import com.arangodb.tinkerpop.gremlin.persistence.*;
 import com.arangodb.tinkerpop.gremlin.structure.*;
 import org.apache.commons.configuration2.Configuration;
 import org.apache.commons.configuration2.ConfigurationConverter;
@@ -15,43 +15,17 @@ import org.apache.tinkerpop.gremlin.LoadGraphWith.GraphData;
 import org.apache.tinkerpop.gremlin.structure.Element;
 import org.apache.tinkerpop.gremlin.structure.Graph;
 
-import com.arangodb.tinkerpop.gremlin.client.ArangoDBGraphClient;
 import com.arangodb.tinkerpop.gremlin.utils.ArangoDBConfigurationBuilder;
 import org.apache.tinkerpop.gremlin.structure.VertexTest;
 
-/**
- * The Class ArangoDBGraphProvider. This provider assumes that there is a local ArangoDB running (i.e.
- * http://127.0.0.1:8529) with a tinkerpop database and a gremlin user that has Administrate permissions
- * on the db.
- */
 public class ArangoDBGraphProvider extends AbstractGraphProvider {
-
-    /**
-     * The Constant IMPLEMENTATIONS.
-     */
-    private static final Set<Class> IMPLEMENTATIONS = new HashSet<Class>() {{
-        add(PersistentData.class);
-        add(AdbValue.class);
-        add(EdgeData.class);
-        add(PropertyData.class);
-        add(VertexData.class);
-        add(VertexPropertyData.class);
-    }};
-
 
     @Override
     public Configuration newGraphConfiguration(final String graphName, final Class<?> test,
                                                final String testMethodName,
                                                final Map<String, Object> configurationOverrides,
                                                final LoadGraphWith.GraphData loadGraphWith) {
-        Configuration conf = getConfiguration(graphName, test, testMethodName, loadGraphWith);
-
-        // assign overrides but don't allow gremlin.graph setting to be overridden.  the test suite should
-        // not be able to override that.
-        configurationOverrides.entrySet().stream()
-                .filter(c -> !c.getKey().equals(Graph.GRAPH))
-                .forEach(e -> conf.setProperty(e.getKey(), e.getValue()));
-        return conf;
+        return getConfiguration(graphName, test, testMethodName, loadGraphWith);
     }
 
     private Configuration getConfiguration(
@@ -261,24 +235,29 @@ public class ArangoDBGraphProvider extends AbstractGraphProvider {
 
     @Override
     public void clear(Graph graph, Configuration configuration) throws Exception {
-        ArangoDBGraphClient client;
-        if (graph == null) {
-            Configuration arangoConfig = configuration.subset(ArangoDBGraph.PROPERTY_KEY_PREFIX);
-            Properties arangoProperties = ConfigurationConverter.getProperties(arangoConfig);
-            client = new ArangoDBGraphClient(null, arangoProperties, "tinkerpop", 0, true);
-            client.deleteGraph(arangoConfig.getString(ArangoDBGraph.PROPERTY_KEY_GRAPH_NAME));
-        } else {
-            ArangoDBGraph agraph = (ArangoDBGraph) graph;
-            client = agraph.getClient();
-            client.clear(agraph);
-            agraph.close();
+        Configuration arangoConfig = configuration.subset(ArangoDBGraph.PROPERTY_KEY_PREFIX);
+        Properties arangoProperties = ConfigurationConverter.getProperties(arangoConfig);
+        TestGraphClient client = new TestGraphClient(arangoProperties, "tinkerpop");
+        client.deleteGraph(arangoConfig.getString(ArangoDBGraph.PROPERTY_KEY_GRAPH_NAME));
+        if (graph != null) {
+            graph.close();
         }
-
     }
 
     @Override
+    @SuppressWarnings("rawtypes")
     public Set<Class> getImplementations() {
-        return IMPLEMENTATIONS;
+        return Stream.of(
+                ArangoDBEdge.class,
+                ArangoDBElement.class,
+                ArangoDBGraph.class,
+                ArangoDBGraphVariables.class,
+                ArangoDBPersistentElement.class,
+                ArangoDBProperty.class,
+                ArangoDBSimpleElement.class,
+                ArangoDBVertex.class,
+                ArangoDBVertexProperty.class
+        ).collect(Collectors.toSet());
     }
 
     @Override
@@ -292,4 +271,5 @@ public class ArangoDBGraphProvider extends AbstractGraphProvider {
     public Object convertId(Object id, Class<? extends Element> c) {
         return id.toString();
     }
+
 }

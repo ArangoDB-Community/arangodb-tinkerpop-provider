@@ -135,8 +135,8 @@ import static com.arangodb.tinkerpop.gremlin.structure.ArangoDBElement.Exception
  */
 
 @Graph.OptIn(Graph.OptIn.SUITE_STRUCTURE_STANDARD)
-@Graph.OptIn(Graph.OptIn.SUITE_STRUCTURE_INTEGRATE)
 @Graph.OptIn(Graph.OptIn.SUITE_PROCESS_STANDARD)
+@Graph.OptIn("com.arangodb.tinkerpop.gremlin.StructureIntegrateSuite")
 @Graph.OptIn("com.arangodb.tinkerpop.gremlin.ArangoDBTestSuite")
 @Graph.OptOut(
         test = "org.apache.tinkerpop.gremlin.structure.util.detached.DetachedGraphTest",
@@ -534,9 +534,7 @@ public class ArangoDBGraph implements Graph {
         shouldPrefixCollectionNames = arangoConfig.getBoolean(PROPERTY_KEY_SHOULD_PREFIX_COLLECTION_NAMES, true);
 
         Properties arangoProperties = ConfigurationConverter.getProperties(arangoConfig);
-        int batchSize = 0;
-        client = new ArangoDBGraphClient(this, arangoProperties, arangoConfig.getString(PROPERTY_KEY_DB_NAME),
-                batchSize, shouldPrefixCollectionNames);
+        client = new ArangoDBGraphClient(this, arangoProperties, arangoConfig.getString(PROPERTY_KEY_DB_NAME), shouldPrefixCollectionNames);
 
         ArangoGraph graph = client.getArangoGraph();
         GraphCreateOptions options = new GraphCreateOptions();
