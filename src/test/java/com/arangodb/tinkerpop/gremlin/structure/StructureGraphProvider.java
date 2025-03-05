@@ -158,8 +158,6 @@ public class StructureGraphProvider extends BaseGraphProvider {
                     builder.withEdgeCollection("created");
                     builder.withEdgeCollection("knows");
                     break;
-                default:
-                    System.out.println("case \"" + test.getCanonicalName() + "." + testMethodName + "\":");
             }
         }
     }

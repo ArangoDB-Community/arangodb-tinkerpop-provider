@@ -17,6 +17,8 @@ import java.util.stream.Stream;
 
 public abstract class BaseGraphProvider extends AbstractGraphProvider {
 
+    private final String dbName = getClass().getSimpleName();
+
     protected abstract void configure(ArangoDBConfigurationBuilder builder, Class<?> test, String testMethodName);
 
     @Override
@@ -32,10 +34,12 @@ public abstract class BaseGraphProvider extends AbstractGraphProvider {
             Class<?> test,
             String testMethodName,
             LoadGraphWith.GraphData loadGraphWith) {
+        System.out.println("case \"" + test.getCanonicalName() + "." + testMethodName + "\":");
         ArangoDBConfigurationBuilder builder = new ArangoDBConfigurationBuilder()
                 .arangoHosts("127.0.0.1:8529")
                 .arangoUser("root")
                 .arangoPassword("test")
+                .dataBase(dbName)
                 .graph(graphName);
         if (loadGraphWith != null) {
             switch (loadGraphWith) {
@@ -48,13 +52,24 @@ public abstract class BaseGraphProvider extends AbstractGraphProvider {
                     break;
                 case MODERN:
                     System.out.println("MODERN");
+                    builder.withVertexCollection("name");
+                    builder.withVertexCollection("vertex");
+                    builder.withVertexCollection("animal");
                     builder.withVertexCollection("dog");
                     builder.withVertexCollection("software");
                     builder.withVertexCollection("person");
                     builder.withEdgeCollection("knows");
                     builder.withEdgeCollection("created");
+                    builder.withEdgeCollection("createdBy");
+                    builder.withEdgeCollection("existsWith");
+                    builder.withEdgeCollection("codeveloper");
+                    builder.withEdgeCollection("uses");
                     builder.configureEdge("knows", "person", "person");
                     builder.configureEdge("created", "person", "software");
+                    builder.configureEdge("createdBy", "software", "person");
+                    builder.configureEdge("existsWith", "software", "software");
+                    builder.configureEdge("codeveloper", "person", "person");
+                    builder.configureEdge("uses", "person", "software");
                     break;
                 case CREW:
                     System.out.println("CREW");
@@ -69,9 +84,20 @@ public abstract class BaseGraphProvider extends AbstractGraphProvider {
                     break;
                 case GRATEFUL:
                     System.out.println("GRATEFUL");
+                    builder.withVertexCollection("vertex");
+                    builder.withVertexCollection("song");
+                    builder.withVertexCollection("artist");
+                    builder.withEdgeCollection("followedBy");
+                    builder.withEdgeCollection("sungBy");
+                    builder.withEdgeCollection("writtenBy");
+                    builder.configureEdge("followedBy", "vertex", "vertex");
+                    builder.configureEdge("sungBy", "song", "artist");
+                    builder.configureEdge("writtenBy", "song", "artist");
                     break;
                 case SINK:
                     System.out.println("SINK");
+                    builder.withEdgeCollection("link");
+                    builder.withEdgeCollection("self");
                     break;
             }
         } else {
@@ -84,7 +110,7 @@ public abstract class BaseGraphProvider extends AbstractGraphProvider {
     public void clear(Graph graph, Configuration configuration) throws Exception {
         Configuration arangoConfig = configuration.subset(ArangoDBGraph.PROPERTY_KEY_PREFIX);
         Properties arangoProperties = ConfigurationConverter.getProperties(arangoConfig);
-        TestGraphClient client = new TestGraphClient(arangoProperties, "tinkerpop");
+        TestGraphClient client = new TestGraphClient(arangoProperties, dbName);
         client.deleteGraph(arangoConfig.getString(ArangoDBGraph.PROPERTY_KEY_GRAPH_NAME));
         if (graph != null) {
             graph.close();
