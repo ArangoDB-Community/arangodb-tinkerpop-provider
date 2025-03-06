@@ -157,11 +157,7 @@ public class ArangoDBGraphClient {
 
     public void shutdown() {
         logger.debug("Shutdown");
-        if (db != null) {
-            if (db.exists()) {
-                db.clearQueryCache();
-            }
-        }
+        db.arango().shutdown();
     }
 
     /**

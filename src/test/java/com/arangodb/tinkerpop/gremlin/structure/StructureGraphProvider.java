@@ -19,21 +19,8 @@ public class StructureGraphProvider extends BaseGraphProvider {
         } else if (testMethodName.startsWith("shouldSupportUserSuppliedIds")) {
             builder.withEdgeCollection("test");
         } else if (testMethodName.startsWith("shouldSupportUUID")) {
+            builder.withVertexCollection("person");
             builder.withEdgeCollection("friend");
-        } else if (testMethodName.startsWith("shouldReadWriteVertexWithBOTHEdges")) {
-            builder.withEdgeCollection("friends");
-        } else if (testMethodName.startsWith("shouldReadWriteVertexWithINEdges")) {
-            builder.withEdgeCollection("friends");
-        } else if (testMethodName.startsWith("shouldReadWriteVertexMultiPropsNoEdges")) {
-            builder.withEdgeCollection("friends");
-        } else if (testMethodName.startsWith("shouldReadWriteDetachedVertexAsReferenceNoEdges")) {
-            builder.withEdgeCollection("friends");
-        } else if (testMethodName.startsWith("shouldReadWriteVertexNoEdges")) {
-            builder.withEdgeCollection("friends");
-        } else if (testMethodName.startsWith("shouldReadWriteVertexWithOUTEdges")) {
-            builder.withEdgeCollection("friends");
-        } else if (testMethodName.startsWith("shouldReadWriteDetachedVertexNoEdges")) {
-            builder.withEdgeCollection("friends");
         } else if (testMethodName.startsWith("shouldReadWriteDetachedEdge")) {
             builder.withVertexCollection("person");
             builder.withEdgeCollection("friend");
@@ -47,6 +34,20 @@ public class StructureGraphProvider extends BaseGraphProvider {
             builder.withEdgeCollection("self");
         } else if (testMethodName.startsWith("shouldThrowOnGraphAddEdge")) {
             builder.withEdgeCollection("self");
+        } else if (testMethodName.startsWith("shouldReadWriteVerticesNoEdgesToGryoManual") ||
+                testMethodName.startsWith("shouldReadWriteVertexWithBOTHEdges") ||
+                testMethodName.startsWith("shouldReadWriteVerticesNoEdgesToGraphSONManual") ||
+                testMethodName.startsWith("shouldReadWriteVerticesNoEdges") ||
+                testMethodName.startsWith("shouldReadWriteVertexWithINEdges") ||
+                testMethodName.startsWith("shouldReadWriteVertexMultiPropsNoEdges") ||
+                testMethodName.startsWith("shouldReadWriteDetachedVertexAsReferenceNoEdges") ||
+                testMethodName.startsWith("shouldReadWriteVertexNoEdges") ||
+                testMethodName.startsWith("shouldReadWriteVertexWithOUTEdges") ||
+                testMethodName.startsWith("shouldReadWriteDetachedVertexNoEdges")) {
+            builder.withVertexCollection("vertex");
+            builder.withVertexCollection("person");
+            builder.withEdgeCollection("friends");
+            builder.configureEdge("friends", "person", "person");
         } else {
             // Perhaps change for startsWith, but then it would be more verbose. Perhaps a set?
             switch (testMethodName) {

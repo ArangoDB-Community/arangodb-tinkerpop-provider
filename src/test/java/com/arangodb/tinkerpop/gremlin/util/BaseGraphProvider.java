@@ -96,8 +96,12 @@ public abstract class BaseGraphProvider extends AbstractGraphProvider {
                     break;
                 case SINK:
                     System.out.println("SINK");
+                    builder.withVertexCollection("loops");
+                    builder.withVertexCollection("message");
                     builder.withEdgeCollection("link");
                     builder.withEdgeCollection("self");
+                    builder.configureEdge("self", "loops", "loops");
+                    builder.configureEdge("link", "message", "message");
                     break;
             }
         } else {
@@ -111,7 +115,7 @@ public abstract class BaseGraphProvider extends AbstractGraphProvider {
         Configuration arangoConfig = configuration.subset(ArangoDBGraph.PROPERTY_KEY_PREFIX);
         Properties arangoProperties = ConfigurationConverter.getProperties(arangoConfig);
         TestGraphClient client = new TestGraphClient(arangoProperties, dbName);
-        client.deleteGraph(arangoConfig.getString(ArangoDBGraph.PROPERTY_KEY_GRAPH_NAME));
+        client.clear(arangoConfig.getString(ArangoDBGraph.PROPERTY_KEY_GRAPH_NAME));
         if (graph != null) {
             graph.close();
         }

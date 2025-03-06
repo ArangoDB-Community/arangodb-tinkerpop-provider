@@ -36,7 +36,7 @@ import static com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil.*;
 public class ArangoDBVertex extends ArangoDBElement<VertexPropertyData, VertexData> implements Vertex, ArangoDBPersistentElement {
 
     public static ArangoDBVertex of(final String id, final String label, ArangoDBGraph graph) {
-        return new ArangoDBVertex(graph, new VertexData(extractLabel(id, label).orElse(DEFAULT_LABEL), extractKey(id)));
+        return new ArangoDBVertex(graph, VertexData.of(extractLabel(id, label).orElse(DEFAULT_LABEL), extractKey(id)));
     }
 
     public ArangoDBVertex(ArangoDBGraph graph, VertexData data) {
@@ -83,13 +83,12 @@ public class ArangoDBVertex extends ArangoDBElement<VertexPropertyData, VertexDa
 
         ElementHelper.legalPropertyKeyValueArray(keyValues);
         ElementHelper.validateLabel(label);
-
-        if (!graph.edgeCollections().contains(label)) {
-            throw new IllegalArgumentException(String.format("Edge label (%s)not in graph (%s) edge collections.", label, graph.name()));
-        }
-
         String id = ArangoDBUtil.getId(graph.features().edge(), label, keyValues);
         ArangoDBEdge edge = ArangoDBEdge.of(id, label, id(), (String) vertex.id(), graph);
+        if (!graph.edgeCollections().contains(edge.label())) {
+            throw new IllegalArgumentException(String.format("Edge label (%s) not in graph (%s) edge collections.", edge.label(), graph.name()));
+        }
+
         // TODO: optmize writing only once
         edge.doInsert();
         ElementHelper.attachProperties(edge, keyValues);

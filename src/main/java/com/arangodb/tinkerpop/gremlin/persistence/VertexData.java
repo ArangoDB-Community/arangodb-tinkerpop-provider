@@ -40,11 +40,14 @@ public class VertexData implements PropertyData<VertexPropertyData>, PersistentD
     public VertexData() {
     }
 
-    public VertexData(String label, String key) {
+    public static VertexData of(String label, String key) {
         ElementHelper.validateLabel(label);
         if (key != null && key.isEmpty()) throw new IllegalArgumentException("empty key");
-        this.label = label;
-        this.key = key;
+
+        VertexData data = new VertexData();
+        data.label = label;
+        data.key = key;
+        return data;
     }
 
     @Override

@@ -11,7 +11,6 @@ public class ProcessGraphProvider extends BaseGraphProvider {
             case "g_addV_asXfirstX_repeatXaddEXnextX_toXaddVX_inVX_timesX5X_addEXnextX_toXselectXfirstXX":
                 builder.withEdgeCollection("next");
                 break;
-            case "g_V_mergeEXlabel_self_weight_05X":
             case "shouldGenerateDefaultIdOnAddEWithSpecifiedId":
             case "shouldSetIdOnAddEWithNamePropertyKeySpecifiedAndNameSuppliedAsProperty":
             case "shouldSetIdOnAddEWithIdPropertyKeySpecifiedAndNameSuppliedAsProperty":
@@ -41,7 +40,6 @@ public class ProcessGraphProvider extends BaseGraphProvider {
             case "shouldTriggerAddEdgeByPath":
             case "shouldWriteToMultiplePartitions":
             case "shouldAppendPartitionToEdge":
-            case "shouldPartitionWithAbstractLambdaChildTraversal":
             case "shouldThrowExceptionOnEInDifferentPartition":
                 builder.withEdgeCollection("self");
                 builder.withEdgeCollection("self-but-different");
@@ -59,8 +57,42 @@ public class ProcessGraphProvider extends BaseGraphProvider {
             case "g_io_readXjsonX":
             case "g_io_readXkryoX":
             case "g_io_readXxmlX":
+                builder.withVertexCollection("person");
+                builder.withVertexCollection("software");
                 builder.withEdgeCollection("knows");
                 builder.withEdgeCollection("created");
+                builder.configureEdge("knows", "person", "person");
+                builder.configureEdge("created", "person", "software");
+                break;
+            case "g_addV_propertyXlabel_personX":
+            case "g_mergeEXlabel_knows_out_marko_in_vadasX_optionXonCreate_created_YX_optionXonMatch_created_NX_exists_updated":
+            case "g_mergeEXlabel_knows_out_marko_in_vadas_weight_05X_exists":
+            case "g_V_hasXperson_name_marko_X_mergeEXlabel_knowsX_optionXonCreate_created_YX_optionXonMatch_created_NX_exists_updated":
+            case "g_mergeEXlabel_knows_out_marko_in_vadasX":
+            case "g_mergeEXlabel_knows_out_marko_in_vadasX_optionXonCreate_created_YX_optionXonMatch_created_NX_exists":
+            case "g_V_mergeEXlabel_self_weight_05X":
+            case "g_mergeE_with_outV_inV_options":
+            case "g_injectXlabel_knows_out_marko_in_vadasX_mergeE":
+                builder.withVertexCollection("person");
+                builder.withEdgeCollection("self");
+                break;
+            case "g_V_hasXname_regexXTinkerXX":
+            case "g_V_hasXname_regexXTinkerUnicodeXX":
+                builder.withVertexCollection("software");
+                break;
+            case "shouldDetachVertexWhenAdded":
+            case "shouldReferenceVertexWhenAdded":
+            case "shouldUseActualVertexWhenAdded":
+                builder.withVertexCollection("thing");
+                break;
+            case "shouldAppendPartitionToAllVertexProperties":
+                builder.withVertexCollection("person");
+                builder.withVertexCollection("vertex");
+                builder.configureEdge("edge", "person", "person");
+                break;
+            case "shouldPartitionWithAbstractLambdaChildTraversal":
+                builder.withVertexCollection("testV");
+                builder.withEdgeCollection("self");
                 break;
         }
     }
