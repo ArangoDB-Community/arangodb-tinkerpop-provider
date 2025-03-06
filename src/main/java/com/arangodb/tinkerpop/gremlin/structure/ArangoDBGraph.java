@@ -534,7 +534,7 @@ public class ArangoDBGraph implements Graph {
         shouldPrefixCollectionNames = arangoConfig.getBoolean(PROPERTY_KEY_SHOULD_PREFIX_COLLECTION_NAMES, true);
 
         Properties arangoProperties = ConfigurationConverter.getProperties(arangoConfig);
-        client = new ArangoDBGraphClient(this, arangoProperties, arangoConfig.getString(PROPERTY_KEY_DB_NAME), shouldPrefixCollectionNames);
+        client = new ArangoDBGraphClient(this, arangoProperties, arangoConfig.getString(PROPERTY_KEY_DB_NAME));
 
         ArangoGraph graph = client.getArangoGraph();
         GraphCreateOptions options = new GraphCreateOptions();

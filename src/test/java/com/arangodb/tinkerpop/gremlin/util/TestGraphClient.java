@@ -10,7 +10,12 @@ import java.util.Properties;
 public class TestGraphClient extends ArangoDBGraphClient {
 
     public TestGraphClient(Properties properties, String dbname) throws ArangoDBGraphException {
-        super(null, properties, dbname, false);
+        super(null, properties, dbname);
+        if (!db.exists()) {
+            if (!db.create()) {
+                throw new ArangoDBGraphException("Unable to crate the database " + dbname);
+            }
+        }
     }
 
     public void deleteGraph(String name) {

@@ -131,35 +131,17 @@ public class ArangoDBGraphClient {
     private final ArangoDBGraph graph;
 
     /**
-     * Create a simple graph client and connect to the provided db. If the DB does not exist, the driver will try to
-     * create one.
+     * Create a simple graph client and connect to the provided db.
      *
      * @param graph      the ArangoDB graph that uses this client
      * @param properties the ArangoDB configuration properties
      * @param dbname     the ArangoDB name to connect to or create
      * @throws ArangoDBGraphException If the db does not exist and cannot be created
      */
-
-    public ArangoDBGraphClient(ArangoDBGraph graph, Properties properties, String dbname) {
-        this(graph, properties, dbname, false);
-    }
-
-    /**
-     * Create a simple graph client and connect to the provided db. The create flag controls what is the
-     * behaviour if the db is not found
-     *
-     * @param graph          the ArangoDB graph that uses this client
-     * @param properties     the ArangoDB configuration properties
-     * @param dbname         the ArangoDB name to connect to or create
-     * @param createDatabase if true, the driver will attempt to crate the DB if it does not exist
-     * @throws ArangoDBGraphException If the db does not exist and cannot be created
-     */
-
     public ArangoDBGraphClient(
             ArangoDBGraph graph,
             Properties properties,
-            String dbname,
-            boolean createDatabase)
+            String dbname)
             throws ArangoDBGraphException {
         logger.debug("Initiating the ArangoDb Client");
         this.graph = graph;
@@ -167,30 +149,6 @@ public class ArangoDBGraphClient {
                 .loadProperties(ArangoConfigProperties.fromProperties(properties))
                 .build()
                 .db(dbname);
-        if (createDatabase) {
-            if (!db.exists()) {
-                logger.debug("DB not found, attemtping to create it.");
-                try {
-                    if (!db.create()) {
-                        throw new ArangoDBGraphException("Unable to crate the database " + dbname);
-                    }
-                } catch (ArangoDBException ex) {
-                    throw ArangoDBExceptions.getArangoDBException(ex);
-                }
-            }
-        } else {
-            boolean exists = false;
-            try {
-                exists = db.exists();
-            } catch (ArangoDBException ex) {
-                // Pass
-            }
-            if (!exists) {
-                logger.error("Database does not exist, or the user has no access");
-                throw new ArangoDBGraphException(String.format("DB not found or user has no access: %s@%s",
-                        properties.getProperty("arangodb.user"), dbname));
-            }
-        }
     }
 
     /**
