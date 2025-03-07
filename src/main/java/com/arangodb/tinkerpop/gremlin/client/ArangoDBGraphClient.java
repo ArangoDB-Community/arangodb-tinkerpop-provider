@@ -489,7 +489,7 @@ public class ArangoDBGraphClient {
         bindVars.put("graph", graph.name());
         bindVars.put("edgeCollections", edgeCollections);
         String query = "FOR v IN 1..1 " + getArangoDirectionFromGremlinDirection(direction).getAqlName() +
-                " @start GRAPH @graph OPTIONS { edgeCollections: @edgeCollections, uniqueVertices: 'global', order: 'bfs' } RETURN v";
+                " @start GRAPH @graph OPTIONS { edgeCollections: @edgeCollections, order: 'bfs' } RETURN v";
         return executeAqlQuery(query, bindVars, null, VertexData.class);
     }
 

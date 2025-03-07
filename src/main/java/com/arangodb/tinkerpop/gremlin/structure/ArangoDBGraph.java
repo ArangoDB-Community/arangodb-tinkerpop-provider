@@ -138,6 +138,7 @@ import static com.arangodb.tinkerpop.gremlin.structure.ArangoDBElement.Exception
 @Graph.OptIn(Graph.OptIn.SUITE_PROCESS_STANDARD)
 @Graph.OptIn("com.arangodb.tinkerpop.gremlin.StructureIntegrateSuite")
 @Graph.OptIn("com.arangodb.tinkerpop.gremlin.ArangoDBTestSuite")
+@Graph.OptIn("com.arangodb.tinkerpop.gremlin.custom.CustomStandardSuite")
 @Graph.OptOut(
         test = "org.apache.tinkerpop.gremlin.structure.util.detached.DetachedGraphTest",
         method = "testAttachableCreateMethod",
@@ -181,18 +182,6 @@ import static com.arangodb.tinkerpop.gremlin.structure.ArangoDBElement.Exception
 @Graph.OptOut(
         test = "org.apache.tinkerpop.gremlin.structure.VertexTest$AddEdgeTest",
         method = "shouldAddEdgeWithUserSuppliedStringId",
-        reason = "FIXME")
-@Graph.OptOut(
-        test = "org.apache.tinkerpop.gremlin.process.traversal.step.map.CountTest$Traversals",
-        method = "g_V_both_both_count",
-        reason = "FIXME")
-@Graph.OptOut(
-        test = "org.apache.tinkerpop.gremlin.process.traversal.step.map.CountTest$Traversals",
-        method = "g_V_repeatXoutX_timesX3X_count",
-        reason = "FIXME")
-@Graph.OptOut(
-        test = "org.apache.tinkerpop.gremlin.process.traversal.step.map.CountTest$Traversals",
-        method = "g_V_repeatXoutX_timesX8X_count",
         reason = "FIXME")
 public class ArangoDBGraph implements Graph {
 
