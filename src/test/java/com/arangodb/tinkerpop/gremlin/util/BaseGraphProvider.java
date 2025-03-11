@@ -1,5 +1,6 @@
 package com.arangodb.tinkerpop.gremlin.util;
 
+import com.arangodb.tinkerpop.gremlin.custom.CustomGraph;
 import com.arangodb.tinkerpop.gremlin.structure.*;
 import com.arangodb.tinkerpop.gremlin.utils.ArangoDBConfigurationBuilder;
 import org.apache.commons.configuration2.Configuration;
@@ -127,6 +128,7 @@ public abstract class BaseGraphProvider extends AbstractGraphProvider {
         return Stream.of(
                 ArangoDBEdge.class,
                 ArangoDBElement.class,
+                CustomGraph.class,
                 ArangoDBGraph.class,
                 ArangoDBGraphVariables.class,
                 ArangoDBPersistentElement.class,

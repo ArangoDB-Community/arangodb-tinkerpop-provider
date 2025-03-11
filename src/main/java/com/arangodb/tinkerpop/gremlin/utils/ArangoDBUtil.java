@@ -609,7 +609,7 @@ public class ArangoDBUtil {
                     id = parts[1];
                 }
             }
-            Matcher m = ArangoDBUtil.DOCUMENT_KEY.matcher((String) id);
+            Matcher m = ArangoDBUtil.DOCUMENT_KEY.matcher(id.toString());
             if (m.matches()) {
                 return id.toString();
             } else {

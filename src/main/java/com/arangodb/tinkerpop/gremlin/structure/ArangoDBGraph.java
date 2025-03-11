@@ -197,6 +197,11 @@ import static com.arangodb.tinkerpop.gremlin.structure.ArangoDBElement.Exception
         method = "g_mergeVXlabel_person_name_markoX_optionXonMatch_age_19X_option",
         reason = "FIXME: DE-995"
 )
+@Graph.OptOut(
+        test = "org.apache.tinkerpop.gremlin.process.traversal.step.OrderabilityTest$Traversals",
+        method = "*",
+        reason = "replaced by com.arangodb.tinkerpop.gremlin.custom.process.traversal.step.OrderabilityTest"
+)
 public class ArangoDBGraph implements Graph {
 
     /**
@@ -209,7 +214,7 @@ public class ArangoDBGraph implements Graph {
          * The Class ArangoDBGraphGraphFeatures.
          */
 
-        private class ArangoDBGraphGraphFeatures implements GraphFeatures {
+        protected class ArangoDBGraphGraphFeatures implements GraphFeatures {
 
             /**
              * The variable features.
@@ -220,7 +225,7 @@ public class ArangoDBGraph implements Graph {
              * Instantiates a new ArangoDB graph graph features.
              */
 
-            ArangoDBGraphGraphFeatures() {
+            protected ArangoDBGraphGraphFeatures() {
             }
 
             @Override
@@ -248,13 +253,13 @@ public class ArangoDBGraph implements Graph {
          * The Class ArangoDBGraphElementFeatures.
          */
 
-        private class ArangoDBGraphElementFeatures implements ElementFeatures {
+        protected class ArangoDBGraphElementFeatures implements ElementFeatures {
 
             /**
              * Instantiates a new ArangoDB graph element features.
              */
 
-            ArangoDBGraphElementFeatures() {
+            protected ArangoDBGraphElementFeatures() {
             }
 
             @Override
@@ -288,7 +293,7 @@ public class ArangoDBGraph implements Graph {
          * The Class ArangoDBGraphVertexFeatures.
          */
 
-        private class ArangoDBGraphVertexFeatures extends ArangoDBGraphElementFeatures implements VertexFeatures {
+        protected class ArangoDBGraphVertexFeatures extends ArangoDBGraphElementFeatures implements VertexFeatures {
 
             /**
              * The vertex property features.
@@ -300,7 +305,7 @@ public class ArangoDBGraph implements Graph {
              * Instantiates a new ArangoDB graph vertex features.
              */
 
-            ArangoDBGraphVertexFeatures() {
+            protected ArangoDBGraphVertexFeatures() {
             }
 
 
@@ -325,7 +330,7 @@ public class ArangoDBGraph implements Graph {
              * Instantiates a new ArangoDB graph edge features.
              */
 
-            ArangoDBGraphEdgeFeatures() {
+            protected ArangoDBGraphEdgeFeatures() {
             }
 
             @Override
@@ -338,13 +343,13 @@ public class ArangoDBGraph implements Graph {
          * The Class ArangoDBGraphVertexPropertyFeatures.
          */
 
-        private class ArangoDBGraphVertexPropertyFeatures implements VertexPropertyFeatures {
+        protected class ArangoDBGraphVertexPropertyFeatures implements VertexPropertyFeatures {
 
             /**
              * Instantiates a new ArangoDB graph vertex property features.
              */
 
-            ArangoDBGraphVertexPropertyFeatures() {
+            protected ArangoDBGraphVertexPropertyFeatures() {
             }
 
             @Override
@@ -377,13 +382,13 @@ public class ArangoDBGraph implements Graph {
         /**
          * The Class ArangoDBGraphEdgePropertyFeatures.
          */
-        private class ArangoDBGraphEdgePropertyFeatures implements EdgePropertyFeatures {
+        protected class ArangoDBGraphEdgePropertyFeatures implements EdgePropertyFeatures {
 
             /**
              * Instantiates a new ArangoDB graph edge property features.
              */
 
-            ArangoDBGraphEdgePropertyFeatures() {
+            protected ArangoDBGraphEdgePropertyFeatures() {
             }
         }
 
