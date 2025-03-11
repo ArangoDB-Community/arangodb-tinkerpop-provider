@@ -13,6 +13,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import com.arangodb.*;
 import com.arangodb.config.ArangoConfigProperties;
 import com.arangodb.entity.*;
 import com.arangodb.model.*;
@@ -27,12 +28,6 @@ import org.apache.tinkerpop.gremlin.structure.Graph;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.arangodb.ArangoCollection;
-import com.arangodb.ArangoCursor;
-import com.arangodb.ArangoDB;
-import com.arangodb.ArangoDBException;
-import com.arangodb.ArangoDatabase;
-import com.arangodb.ArangoGraph;
 import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
 
 import static com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil.getArangoDirectionFromGremlinDirection;
@@ -281,7 +276,7 @@ public class ArangoDBGraphClient {
      * @return ArangoDBBaseQuery    the query object
      */
 
-    public ArangoCursor<VertexData> getGraphVertices(final List<String> ids) {
+    public ArangoIterable<VertexData> getGraphVertices(final List<String> ids) {
         logger.debug("Get all {} graph vertices, filtered by ids: {}", graph.name(), ids);
         List<String> prefixedColNames = graph.vertexCollections().stream().map(graph::getPrefixedCollectioName).collect(Collectors.toList());
         return getGraphDocuments(ids, prefixedColNames, VertexData.class);
@@ -293,13 +288,13 @@ public class ArangoDBGraphClient {
      * @param ids the ids to match
      * @return ArangoDBBaseQuery    the query object
      */
-    public ArangoCursor<EdgeData> getGraphEdges(List<String> ids) {
+    public ArangoIterable<EdgeData> getGraphEdges(List<String> ids) {
         logger.debug("Get all {} graph edges, filtered by ids: {}", graph.name(), ids);
         List<String> prefixedColNames = graph.edgeCollections().stream().map(graph::getPrefixedCollectioName).collect(Collectors.toList());
         return getGraphDocuments(ids, prefixedColNames, EdgeData.class);
     }
 
-    private <V> ArangoCursor<V> getGraphDocuments(List<String> ids, List<String> prefixedColNames, Class<V> clazz) {
+    private <V> ArangoIterable<V> getGraphDocuments(List<String> ids, List<String> prefixedColNames, Class<V> clazz) {
         Map<String, Object> bindVars = new HashMap<>();
         ArangoDBQueryBuilder queryBuilder = new ArangoDBQueryBuilder();
         if (ids.isEmpty()) {
@@ -309,7 +304,10 @@ public class ArangoDBGraphClient {
                 queryBuilder.iterateCollection("d", prefixedColNames.get(0), bindVars);
             }
         } else {
-            queryBuilder.with(prefixedColNames, bindVars).documentsById(ids, "d", bindVars);
+            List<String> prunedIds = ids.stream()
+                    .filter(it -> prefixedColNames.contains(ArangoDBUtil.extractCollection(it)))
+                    .collect(Collectors.toList());
+            queryBuilder.with(prefixedColNames, bindVars).documentsById(prunedIds, "d", bindVars);
         }
         queryBuilder.ret("d");
         String query = queryBuilder.toString();

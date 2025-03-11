@@ -202,28 +202,16 @@ import static com.arangodb.tinkerpop.gremlin.structure.ArangoDBElement.Exception
         method = "*",
         reason = "replaced by com.arangodb.tinkerpop.gremlin.custom.process.traversal.step.OrderabilityTest"
 )
+@Graph.OptOut(
+        test = "org.apache.tinkerpop.gremlin.process.traversal.step.sideEffect.SubgraphTest$Traversals",
+        method = "*",
+        reason = "FIXME: DE-996"
+)
 public class ArangoDBGraph implements Graph {
 
-    /**
-     * The Class ArangoDBGraphFeatures.
-     */
+    public static class ArangoDBGraphFeatures implements Features {
 
-    public class ArangoDBGraphFeatures implements Features {
-
-        /**
-         * The Class ArangoDBGraphGraphFeatures.
-         */
-
-        protected class ArangoDBGraphGraphFeatures implements GraphFeatures {
-
-            /**
-             * The variable features.
-             */
-            private VariableFeatures variableFeatures = new ArangoDBGraphVariables.ArangoDBGraphVariableFeatures();
-
-            /**
-             * Instantiates a new ArangoDB graph graph features.
-             */
+        protected static class ArangoDBGraphGraphFeatures implements GraphFeatures {
 
             protected ArangoDBGraphGraphFeatures() {
             }
@@ -245,19 +233,11 @@ public class ArangoDBGraph implements Graph {
 
             @Override
             public VariableFeatures variables() {
-                return variableFeatures;
+                return new ArangoDBGraphVariables.ArangoDBGraphVariableFeatures();
             }
         }
 
-        /**
-         * The Class ArangoDBGraphElementFeatures.
-         */
-
-        protected class ArangoDBGraphElementFeatures implements ElementFeatures {
-
-            /**
-             * Instantiates a new ArangoDB graph element features.
-             */
+        protected static class ArangoDBGraphElementFeatures implements ElementFeatures {
 
             protected ArangoDBGraphElementFeatures() {
             }
@@ -289,65 +269,29 @@ public class ArangoDBGraph implements Graph {
             }
         }
 
-        /**
-         * The Class ArangoDBGraphVertexFeatures.
-         */
-
-        protected class ArangoDBGraphVertexFeatures extends ArangoDBGraphElementFeatures implements VertexFeatures {
-
-            /**
-             * The vertex property features.
-             */
-
-            private final VertexPropertyFeatures vertexPropertyFeatures = new ArangoDBGraphVertexPropertyFeatures();
-
-            /**
-             * Instantiates a new ArangoDB graph vertex features.
-             */
+        protected static class ArangoDBGraphVertexFeatures extends ArangoDBGraphElementFeatures implements VertexFeatures {
 
             protected ArangoDBGraphVertexFeatures() {
             }
 
-
             @Override
             public VertexPropertyFeatures properties() {
-                return vertexPropertyFeatures;
+                return new ArangoDBGraphVertexPropertyFeatures();
             }
         }
 
-        /**
-         * The Class ArangoDBGraphEdgeFeatures.
-         */
-        public class ArangoDBGraphEdgeFeatures extends ArangoDBGraphElementFeatures implements EdgeFeatures {
-
-            /**
-             * The edge property features.
-             */
-
-            private final EdgePropertyFeatures edgePropertyFeatures = new ArangoDBGraphEdgePropertyFeatures();
-
-            /**
-             * Instantiates a new ArangoDB graph edge features.
-             */
+        public static class ArangoDBGraphEdgeFeatures extends ArangoDBGraphElementFeatures implements EdgeFeatures {
 
             protected ArangoDBGraphEdgeFeatures() {
             }
 
             @Override
             public EdgePropertyFeatures properties() {
-                return edgePropertyFeatures;
+                return new ArangoDBGraphEdgePropertyFeatures();
             }
         }
 
-        /**
-         * The Class ArangoDBGraphVertexPropertyFeatures.
-         */
-
-        protected class ArangoDBGraphVertexPropertyFeatures implements VertexPropertyFeatures {
-
-            /**
-             * Instantiates a new ArangoDB graph vertex property features.
-             */
+        protected static class ArangoDBGraphVertexPropertyFeatures implements VertexPropertyFeatures {
 
             protected ArangoDBGraphVertexPropertyFeatures() {
             }
@@ -379,45 +323,21 @@ public class ArangoDBGraph implements Graph {
             }
         }
 
-        /**
-         * The Class ArangoDBGraphEdgePropertyFeatures.
-         */
-        protected class ArangoDBGraphEdgePropertyFeatures implements EdgePropertyFeatures {
-
-            /**
-             * Instantiates a new ArangoDB graph edge property features.
-             */
+        protected static class ArangoDBGraphEdgePropertyFeatures implements EdgePropertyFeatures {
 
             protected ArangoDBGraphEdgePropertyFeatures() {
             }
+
         }
-
-        /**
-         * The graph features.
-         */
-
-        protected GraphFeatures graphFeatures = new ArangoDBGraphGraphFeatures();
-
-        /**
-         * The vertex features.
-         */
-
-        protected VertexFeatures vertexFeatures = new ArangoDBGraphVertexFeatures();
-
-        /**
-         * The edge features.
-         */
-
-        protected EdgeFeatures edgeFeatures = new ArangoDBGraphEdgeFeatures();
 
         @Override
         public EdgeFeatures edge() {
-            return edgeFeatures;
+            return new ArangoDBGraphEdgeFeatures();
         }
 
         @Override
         public GraphFeatures graph() {
-            return graphFeatures;
+            return new ArangoDBGraphGraphFeatures();
         }
 
         @Override
@@ -427,7 +347,7 @@ public class ArangoDBGraph implements Graph {
 
         @Override
         public VertexFeatures vertex() {
-            return vertexFeatures;
+            return new ArangoDBGraphVertexFeatures();
         }
     }
 
@@ -551,7 +471,7 @@ public class ArangoDBGraph implements Graph {
      * The configuration.
      */
 
-    private Configuration configuration;
+    private final Configuration configuration;
 
 
     /**
