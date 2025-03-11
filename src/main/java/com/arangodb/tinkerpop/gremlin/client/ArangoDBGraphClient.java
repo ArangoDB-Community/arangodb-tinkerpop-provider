@@ -21,6 +21,7 @@ import com.arangodb.tinkerpop.gremlin.structure.ArangoDBVertex;
 import com.arangodb.tinkerpop.gremlin.persistence.EdgeData;
 import com.arangodb.tinkerpop.gremlin.persistence.VertexData;
 import com.arangodb.tinkerpop.gremlin.structure.*;
+import org.apache.tinkerpop.gremlin.process.traversal.util.TraversalInterruptedException;
 import org.apache.tinkerpop.gremlin.structure.Direction;
 import org.apache.tinkerpop.gremlin.structure.Graph;
 import org.slf4j.Logger;
@@ -76,8 +77,14 @@ public class ArangoDBGraphClient {
          * @param ex the ex
          * @return The ArangoDBClientException
          */
-
+        // FIXME: match errors on code and error num instead of pattern matching on message string
         public static ArangoDBGraphException getArangoDBException(ArangoDBException ex) {
+            if (ex.getCause() instanceof InterruptedException) {
+                TraversalInterruptedException ie = new TraversalInterruptedException();
+                ie.initCause(ex);
+                throw ie;
+            }
+
             String errorMessage = ex.getMessage();
             Matcher m = ERROR_CODE.matcher(errorMessage);
             if (m.matches()) {
