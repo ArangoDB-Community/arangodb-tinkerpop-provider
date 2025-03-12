@@ -1,12 +1,25 @@
 package com.arangodb.tinkerpop.gremlin.structure;
 
+import com.arangodb.tinkerpop.gremlin.TestGraph;
 import com.arangodb.tinkerpop.gremlin.util.BaseGraphProvider;
 
 import com.arangodb.tinkerpop.gremlin.utils.ArangoDBConfigurationBuilder;
+import org.apache.commons.configuration2.Configuration;
+import org.apache.tinkerpop.gremlin.LoadGraphWith;
+import org.apache.tinkerpop.gremlin.structure.Graph;
 import org.apache.tinkerpop.gremlin.structure.VertexTest;
+
+import java.util.Map;
 
 public class StructureGraphProvider extends BaseGraphProvider {
 
+    @Override
+    public Configuration newGraphConfiguration(String graphName, Class<?> test, String testMethodName, Map<String, Object> configurationOverrides, LoadGraphWith.GraphData loadGraphWith) {
+        Configuration conf = super.newGraphConfiguration(graphName, test, testMethodName, configurationOverrides, loadGraphWith);
+        conf.setProperty(Graph.GRAPH, TestGraph.class.getName());
+        return conf;
+    }
+    
     @Override
     protected void configure(ArangoDBConfigurationBuilder builder, Class<?> test, String testMethodName) {
         if (testMethodName.startsWith("shouldProcessVerticesEdges")

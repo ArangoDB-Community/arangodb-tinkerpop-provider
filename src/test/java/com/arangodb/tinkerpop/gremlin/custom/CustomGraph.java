@@ -2,7 +2,9 @@ package com.arangodb.tinkerpop.gremlin.custom;
 
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBGraph;
 import org.apache.commons.configuration2.Configuration;
+import org.apache.tinkerpop.gremlin.structure.Graph;
 
+@Graph.OptIn("com.arangodb.tinkerpop.gremlin.custom.CustomStandardSuite")
 public class CustomGraph extends ArangoDBGraph {
 
     @SuppressWarnings("unused")
