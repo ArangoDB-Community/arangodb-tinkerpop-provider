@@ -53,6 +53,7 @@ public interface ArangoDBPersistentElement extends Element {
     default String id() {
         return Optional.ofNullable(key())
                 .map(it -> collection() + '/' + it)
+                // TODO: review
                 .orElse(label());
     }
 }

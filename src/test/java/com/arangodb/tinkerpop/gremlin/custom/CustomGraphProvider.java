@@ -34,6 +34,14 @@ public class CustomGraphProvider extends BaseGraphProvider {
                 builder.configureEdge("knows", "person", "person");
                 builder.configureEdge("self", "person", "person");
                 break;
+            case "testAttachableCreateMethod":
+                builder.withVertexCollection("person");
+                builder.withVertexCollection("project");
+                builder.withEdgeCollection("knows");
+                builder.withEdgeCollection("developedBy");
+                builder.configureEdge("knows", "person", "person");
+                builder.configureEdge("developedBy", "project", "person");
+                break;
         }
     }
 }

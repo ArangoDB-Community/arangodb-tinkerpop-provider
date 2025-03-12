@@ -141,7 +141,7 @@ import static com.arangodb.tinkerpop.gremlin.structure.ArangoDBElement.Exception
 @Graph.OptOut(
         test = "org.apache.tinkerpop.gremlin.structure.util.detached.DetachedGraphTest",
         method = "testAttachableCreateMethod",
-        reason = "test creates id without label prefix")
+        reason = "replaced by com.arangodb.tinkerpop.gremlin.custom.structure.util.detached.DetachedGraphTest#testAttachableCreateMethod()")
 @Graph.OptOut(
         test = "org.apache.tinkerpop.gremlin.structure.GraphTest",
         method = "shouldAddVertexWithUserSuppliedStringId",
