@@ -19,7 +19,7 @@ public class StructureGraphProvider extends BaseGraphProvider {
         conf.setProperty(Graph.GRAPH, TestGraph.class.getName());
         return conf;
     }
-    
+
     @Override
     protected void configure(ArangoDBConfigurationBuilder builder, Class<?> test, String testMethodName) {
         if (testMethodName.startsWith("shouldProcessVerticesEdges")
@@ -84,7 +84,7 @@ public class StructureGraphProvider extends BaseGraphProvider {
                     break;
                 case "shouldEvaluateConnectivityPatterns":
                     builder.withEdgeCollection("knows");
-                    builder.withEdgeCollection("knows");
+                    builder.withEdgeCollection("hates");
                     break;
                 case "shouldRemoveEdgesWithoutConcurrentModificationException":
                     builder.withEdgeCollection("link");

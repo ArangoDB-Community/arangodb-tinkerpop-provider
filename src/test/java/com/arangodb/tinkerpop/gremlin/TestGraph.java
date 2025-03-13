@@ -13,19 +13,19 @@ import org.apache.tinkerpop.gremlin.structure.Graph;
 @Graph.OptOut(
         test = "org.apache.tinkerpop.gremlin.structure.GraphTest",
         method = "shouldAddVertexWithUserSuppliedStringId",
-        reason = "FIXME")
+        reason = "FIXME: DE-996")
 @Graph.OptOut(
         test = "org.apache.tinkerpop.gremlin.structure.GraphTest",
         method = "shouldRemoveVertices",
-        reason = "Test creates vertices with random labels, which does not work with our schema-based approach.")
+        reason = "FIXME: DE-998")
 @Graph.OptOut(
         test = "org.apache.tinkerpop.gremlin.structure.GraphTest",
         method = "shouldRemoveEdges",
-        reason = "Test creates edges with random labels, which does not work with our schema-based approach.")
+        reason = "FIXME: DE-998")
 @Graph.OptOut(
         test = "org.apache.tinkerpop.gremlin.structure.GraphTest",
         method = "shouldEvaluateConnectivityPatterns",
-        reason = "FIXME")
+        reason = "FIXME: DE-996")
 @Graph.OptOut(
         test = "org.apache.tinkerpop.gremlin.structure.util.star.StarGraphTest",
         method = "shouldAttachWithCreateMethod",

@@ -592,6 +592,7 @@ public class ArangoDBUtil {
         return Optional.ofNullable(label);
     }
 
+    // FIXME: DE-996
     public static String getId(Graph.Features.ElementFeatures features, String label, Object... keyValues) {
         Optional<Object> optionalId = ElementHelper.getIdValue(keyValues);
         if (!optionalId.isPresent()) {
