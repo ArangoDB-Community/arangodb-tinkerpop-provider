@@ -276,6 +276,7 @@ public class ArangoDBGraphClient {
      * @return ArangoDBBaseQuery    the query object
      */
 
+    // FIXME: use multi-docs API
     public ArangoIterable<VertexData> getGraphVertices(final List<String> ids) {
         logger.debug("Get all {} graph vertices, filtered by ids: {}", graph.name(), ids);
         List<String> prefixedColNames = graph.vertexCollections().stream().map(graph::getPrefixedCollectioName).collect(Collectors.toList());
@@ -288,6 +289,7 @@ public class ArangoDBGraphClient {
      * @param ids the ids to match
      * @return ArangoDBBaseQuery    the query object
      */
+    // FIXME: use multi-docs API
     public ArangoIterable<EdgeData> getGraphEdges(List<String> ids) {
         logger.debug("Get all {} graph edges, filtered by ids: {}", graph.name(), ids);
         List<String> prefixedColNames = graph.edgeCollections().stream().map(graph::getPrefixedCollectioName).collect(Collectors.toList());
@@ -305,6 +307,7 @@ public class ArangoDBGraphClient {
             }
         } else {
             List<String> prunedIds = ids.stream()
+                    .map(graph::getPrefixedCollectioName)
                     .filter(it -> prefixedColNames.contains(ArangoDBUtil.extractCollection(it)))
                     .collect(Collectors.toList());
             queryBuilder.with(prefixedColNames, bindVars).documentsById(prunedIds, "d", bindVars);

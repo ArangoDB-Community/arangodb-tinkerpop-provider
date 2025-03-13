@@ -29,27 +29,27 @@ import org.apache.tinkerpop.gremlin.structure.Graph;
 @Graph.OptOut(
         test = "org.apache.tinkerpop.gremlin.structure.util.star.StarGraphTest",
         method = "shouldAttachWithCreateMethod",
-        reason = "FIXME")
+        reason = "FIXME: DE-997")
 @Graph.OptOut(
         test = "org.apache.tinkerpop.gremlin.structure.util.star.StarGraphTest",
         method = "shouldCopyFromGraphAToGraphB",
-        reason = "FIXME")
+        reason = "FIXME: DE-996")
 @Graph.OptOut(
         test = "org.apache.tinkerpop.gremlin.structure.VertexTest$BasicVertexTest",
         method = "shouldEvaluateEquivalentVertexHashCodeWithSuppliedIds",
-        reason = "FIXME")
+        reason = "FIXME: DE-996")
 @Graph.OptOut(
         test = "org.apache.tinkerpop.gremlin.structure.VertexTest$BasicVertexTest",
         method = "shouldEvaluateVerticesEquivalentWithSuppliedIdsViaTraversal",
-        reason = "FIXME")
+        reason = "FIXME: DE-996")
 @Graph.OptOut(
         test = "org.apache.tinkerpop.gremlin.structure.VertexTest$BasicVertexTest",
         method = "shouldEvaluateVerticesEquivalentWithSuppliedIdsViaIterators",
-        reason = "FIXME")
+        reason = "FIXME: DE-996")
 @Graph.OptOut(
         test = "org.apache.tinkerpop.gremlin.structure.VertexTest$AddEdgeTest",
         method = "shouldAddEdgeWithUserSuppliedStringId",
-        reason = "FIXME")
+        reason = "FIXME: DE-996")
 @Graph.OptOut(
         test = "org.apache.tinkerpop.gremlin.process.traversal.step.map.MergeEdgeTest$Traversals",
         method = "*",
