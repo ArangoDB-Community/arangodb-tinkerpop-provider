@@ -185,12 +185,6 @@ public class ArangoDBGraph implements Graph {
 
             @Override
             public boolean supportsUuidIds() {
-                /*	We can not use Java Objects as keys, ergo we can not support UUID and Integer
-                 *  the string representation of these is fine for ArangoDB, which makes the test
-                 *  complain because it expects the actual class to be deserialized. We can test
-                 *  to see if a string is accepted for deserialization.
-                 *  TODO As with properties, a way to support this is to store the id value class
-                 */
                 return false;
             }
         }
@@ -239,12 +233,6 @@ public class ArangoDBGraph implements Graph {
 
             @Override
             public boolean supportsUuidIds() {
-                /*	We can not use Java Objects as keys, ergo we can not support UUID and Integer
-                 *  the string representation of these is fine for ArangoDB, which makes the test
-                 *  complain because it expects the actual class to be deserialized. We can test
-                 *  to see if a string is accepted for deserialization.
-                 *  TODO As with properties, a way to support this is to store the id value class
-                 */
                 return false;
             }
         }

@@ -13,7 +13,7 @@ public class CustomGraphProvider extends BaseGraphProvider {
     @Override
     public Configuration newGraphConfiguration(String graphName, Class<?> test, String testMethodName, Map<String, Object> configurationOverrides, LoadGraphWith.GraphData loadGraphWith) {
         Configuration conf = super.newGraphConfiguration(graphName, test, testMethodName, configurationOverrides, loadGraphWith);
-        conf.setProperty(Graph.GRAPH, CustomGraph.class.getName());
+        conf.setProperty(Graph.GRAPH, CustomTestGraph.class.getName());
         return conf;
     }
 
@@ -35,12 +35,23 @@ public class CustomGraphProvider extends BaseGraphProvider {
                 builder.configureEdge("self", "person", "person");
                 break;
             case "testAttachableCreateMethod":
+            case "shouldAttachWithCreateMethod":
+                builder.withVertexCollection("vertex");
                 builder.withVertexCollection("person");
                 builder.withVertexCollection("project");
                 builder.withEdgeCollection("knows");
                 builder.withEdgeCollection("developedBy");
                 builder.configureEdge("knows", "person", "person");
                 builder.configureEdge("developedBy", "project", "person");
+                break;
+            case "shouldCopyFromGraphAToGraphB":
+                builder.withVertexCollection("vertex");
+                builder.withVertexCollection("person");
+                builder.withVertexCollection("software");
+                builder.withEdgeCollection("knows");
+                builder.withEdgeCollection("created");
+                builder.configureEdge("knows", "person", "person");
+                builder.configureEdge("created", "person", "software");
                 break;
         }
     }

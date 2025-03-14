@@ -29,11 +29,11 @@ import org.apache.tinkerpop.gremlin.structure.Graph;
 @Graph.OptOut(
         test = "org.apache.tinkerpop.gremlin.structure.util.star.StarGraphTest",
         method = "shouldAttachWithCreateMethod",
-        reason = "FIXME: DE-997")
+        reason = "replaced by com.arangodb.tinkerpop.gremlin.custom.structure.util.star.StarGraphTest.shouldAttachWithCreateMethod")
 @Graph.OptOut(
         test = "org.apache.tinkerpop.gremlin.structure.util.star.StarGraphTest",
         method = "shouldCopyFromGraphAToGraphB",
-        reason = "FIXME: DE-996")
+        reason = "replaced by com.arangodb.tinkerpop.gremlin.custom.structure.util.star.StarGraphTest.shouldCopyFromGraphAToGraphB")
 @Graph.OptOut(
         test = "org.apache.tinkerpop.gremlin.structure.VertexTest$BasicVertexTest",
         method = "shouldEvaluateEquivalentVertexHashCodeWithSuppliedIds",

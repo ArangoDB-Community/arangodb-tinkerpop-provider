@@ -18,10 +18,8 @@
  */
 package com.arangodb.tinkerpop.gremlin.custom.structure.util.detached;
 
-import com.arangodb.tinkerpop.gremlin.structure.ArangoDBGraph;
 import org.apache.tinkerpop.gremlin.AbstractGremlinTest;
 import org.apache.tinkerpop.gremlin.FeatureRequirement;
-import org.apache.tinkerpop.gremlin.LoadGraphWith;
 import org.apache.tinkerpop.gremlin.TestHelper;
 import org.apache.tinkerpop.gremlin.structure.Direction;
 import org.apache.tinkerpop.gremlin.structure.Edge;
@@ -44,7 +42,7 @@ import java.util.UUID;
  */
 public class DetachedGraphTest extends AbstractGremlinTest {
 
-    // FIXME: review after DE-996 and DE-997
+    // FIXME: review after DE-996
     @Ignore("FIXME")
     @Test
     @FeatureRequirement(featureClass = Graph.Features.VertexFeatures.class, feature = Graph.Features.VertexFeatures.FEATURE_USER_SUPPLIED_IDS)

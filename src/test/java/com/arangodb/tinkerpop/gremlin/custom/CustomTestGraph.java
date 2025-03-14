@@ -5,14 +5,14 @@ import org.apache.commons.configuration2.Configuration;
 import org.apache.tinkerpop.gremlin.structure.Graph;
 
 @Graph.OptIn("com.arangodb.tinkerpop.gremlin.custom.CustomStandardSuite")
-public class CustomGraph extends ArangoDBGraph {
+public class CustomTestGraph extends ArangoDBGraph {
 
     @SuppressWarnings("unused")
-    public static CustomGraph open(Configuration configuration) {
-        return new CustomGraph(configuration);
+    public static CustomTestGraph open(Configuration configuration) {
+        return new CustomTestGraph(configuration);
     }
 
-    public CustomGraph(Configuration configuration) {
+    public CustomTestGraph(Configuration configuration) {
         super(configuration);
     }
 

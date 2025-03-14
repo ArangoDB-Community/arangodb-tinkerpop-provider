@@ -144,7 +144,6 @@ public class StructureGraphProvider extends BaseGraphProvider {
                     builder.withVertexCollection("person");
                     builder.withEdgeCollection("self");
                     break;
-                case "shouldAttachWithCreateMethod":
                 case "testAttachableCreateMethod":
                     builder.withVertexCollection("person");
                     builder.withVertexCollection("project");

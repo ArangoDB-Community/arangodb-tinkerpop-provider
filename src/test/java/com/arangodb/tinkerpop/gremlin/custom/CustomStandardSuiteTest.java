@@ -4,7 +4,7 @@ import org.apache.tinkerpop.gremlin.GraphProviderClass;
 import org.junit.runner.RunWith;
 
 @RunWith(CustomStandardSuite.class)
-@GraphProviderClass(provider = CustomGraphProvider.class, graph = CustomGraph.class)
+@GraphProviderClass(provider = CustomGraphProvider.class, graph = CustomTestGraph.class)
 public class CustomStandardSuiteTest {
 
 }

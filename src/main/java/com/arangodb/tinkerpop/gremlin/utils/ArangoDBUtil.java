@@ -581,43 +581,50 @@ public class ArangoDBUtil {
         }
     }
 
+    // FIXME: review
     public static Optional<String> extractLabel(final String id, final String label) {
         String col = extractCollection(id);
         if (col != null) {
-            if (label != null && !label.equals(col)) {
+            String labelFromId = col.replaceFirst("^.*_", "");
+            if (label != null && !label.equals(labelFromId)) {
                 throw new IllegalArgumentException("Invalid label: [" + label + "] for id: [" + id + "]");
             }
-            return Optional.of(col);
+            return Optional.of(labelFromId);
         }
         return Optional.ofNullable(label);
     }
 
-    // FIXME: DE-996
+    // FIXME: use com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil.extractKey() and com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil.extractLabel()
     public static String getId(Graph.Features.ElementFeatures features, String label, Object... keyValues) {
         Optional<Object> optionalId = ElementHelper.getIdValue(keyValues);
         if (!optionalId.isPresent()) {
             return null;
         }
-        Object id = optionalId.get();
-        if (features.willAllowId(id)) {
-            if (id.toString().contains("/")) {
-                String fullId = id.toString();
-                String[] parts = fullId.split("/");
-                // The collection name is the last part of the full name
-                String[] collectionParts = parts[0].split("_");
-                String collectionName = collectionParts[collectionParts.length - 1];
-                if (collectionName.contains(label)) {
+        String id = optionalId
+                .filter(features::willAllowId)
+                .map(Object::toString)
+                .orElseThrow(Vertex.Exceptions::userSuppliedIdsOfThisTypeNotSupported);
+
+        if (id.contains("/")) {
+            String fullId = id;
+            String[] parts = fullId.split("/");
+            // The collection name is the last part of the full name
+            String[] collectionParts = parts[0].split("_");
+            String collectionName = collectionParts[collectionParts.length - 1];
+            Optional<String> inferredLabel = extractLabel(id, label);
+            if(inferredLabel.isPresent()) {
+                if (collectionName.contains(inferredLabel.get())) {
                     id = parts[1];
                 }
             }
-            Matcher m = ArangoDBUtil.DOCUMENT_KEY.matcher(id.toString());
-            if (m.matches()) {
-                return id.toString();
-            } else {
-                throw new ArangoDBGraphException(String.format("Given id (%s) has unsupported characters.", id));
-            }
+        }
+
+        // FIXME: review
+        Matcher m = ArangoDBUtil.DOCUMENT_KEY.matcher(id);
+        if (m.matches()) {
+            return id;
         } else {
-            throw Vertex.Exceptions.userSuppliedIdsOfThisTypeNotSupported();
+            throw new ArangoDBGraphException(String.format("Given id (%s) has unsupported characters.", id));
         }
     }
 

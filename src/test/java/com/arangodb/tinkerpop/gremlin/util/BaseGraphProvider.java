@@ -1,7 +1,7 @@
 package com.arangodb.tinkerpop.gremlin.util;
 
 import com.arangodb.tinkerpop.gremlin.TestGraph;
-import com.arangodb.tinkerpop.gremlin.custom.CustomGraph;
+import com.arangodb.tinkerpop.gremlin.custom.CustomTestGraph;
 import com.arangodb.tinkerpop.gremlin.structure.*;
 import com.arangodb.tinkerpop.gremlin.utils.ArangoDBConfigurationBuilder;
 import org.apache.commons.configuration2.Configuration;
@@ -130,7 +130,7 @@ public abstract class BaseGraphProvider extends AbstractGraphProvider {
                 ArangoDBEdge.class,
                 ArangoDBElement.class,
                 TestGraph.class,
-                CustomGraph.class,
+                CustomTestGraph.class,
                 ArangoDBGraph.class,
                 ArangoDBGraphVariables.class,
                 ArangoDBPersistentElement.class,
@@ -148,7 +148,6 @@ public abstract class BaseGraphProvider extends AbstractGraphProvider {
         return null;
     }
 
-    // FIXME: DE-997
     @Override
     public Object convertId(Object id, Class<? extends Element> c) {
         return id.toString();
