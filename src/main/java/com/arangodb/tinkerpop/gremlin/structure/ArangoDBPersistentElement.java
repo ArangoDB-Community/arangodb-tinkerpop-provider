@@ -19,6 +19,7 @@
 
 package com.arangodb.tinkerpop.gremlin.structure;
 
+import com.arangodb.entity.DocumentEntity;
 import com.arangodb.tinkerpop.gremlin.persistence.PersistentData;
 import org.apache.tinkerpop.gremlin.structure.Element;
 
@@ -35,8 +36,8 @@ public interface ArangoDBPersistentElement extends Element {
         return data().getKey();
     }
 
-    default void key(String key) {
-        data().setKey(key);
+    default void update(DocumentEntity entity) {
+        data().update(entity);
     }
 
     @Override
@@ -44,16 +45,18 @@ public interface ArangoDBPersistentElement extends Element {
         return data().getLabel();
     }
 
-    @SuppressWarnings("resource")
     default String collection() {
-        return graph().getPrefixedCollectioName(label());
+        return data().getCollection();
+    }
+
+    default ArangoDBId arangoId() {
+        return data().getId();
     }
 
     @Override
     default String id() {
         return Optional.ofNullable(key())
-                .map(it -> collection() + '/' + it)
-                // TODO: review
-                .orElse(label());
+                .map(it -> label() + '/' + it)
+                .orElse(null);
     }
 }

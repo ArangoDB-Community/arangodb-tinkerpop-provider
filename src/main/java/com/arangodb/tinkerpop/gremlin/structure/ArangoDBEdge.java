@@ -26,13 +26,11 @@ import org.apache.tinkerpop.gremlin.util.iterator.IteratorUtils;
 
 import java.util.*;
 
-import static com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil.*;
-
 
 public class ArangoDBEdge extends ArangoDBSimpleElement<EdgeData> implements Edge, ArangoDBPersistentElement {
 
-    public static ArangoDBEdge of(final String id, final String label, final String outVertexId, final String inVertexId, ArangoDBGraph graph) {
-        return new ArangoDBEdge(graph, EdgeData.of(extractLabel(id, label).orElse(DEFAULT_LABEL), extractKey(id), outVertexId, inVertexId));
+    public static ArangoDBEdge of(final ArangoDBId id, final ArangoDBId outVertexId, final ArangoDBId inVertexId, ArangoDBGraph graph) {
+        return new ArangoDBEdge(graph, EdgeData.of(id, outVertexId, inVertexId));
     }
 
     public ArangoDBEdge(ArangoDBGraph graph, EdgeData data) {

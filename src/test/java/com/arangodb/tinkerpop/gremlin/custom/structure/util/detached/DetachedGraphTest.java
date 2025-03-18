@@ -42,8 +42,7 @@ import java.util.UUID;
  */
 public class DetachedGraphTest extends AbstractGremlinTest {
 
-    // FIXME: review after DE-996
-    @Ignore("FIXME")
+    @Ignore("FIXME: numeric vertex properties ids")
     @Test
     @FeatureRequirement(featureClass = Graph.Features.VertexFeatures.class, feature = Graph.Features.VertexFeatures.FEATURE_USER_SUPPLIED_IDS)
     @FeatureRequirement(featureClass = Graph.Features.VertexFeatures.class, feature = Graph.Features.VertexPropertyFeatures.FEATURE_USER_SUPPLIED_IDS)

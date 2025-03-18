@@ -441,8 +441,8 @@ public class ArangoDBGraph implements Graph {
         GraphCreateOptions options = new GraphCreateOptions();
         // FIXME Cant be in orphan collections because it will be deleted with graph?
         // options.orphanCollections(GRAPH_VARIABLES_COLLECTION);
-        final List<String> prefVCols = vertexCollections.stream().map(this::getPrefixedCollectioName).collect(Collectors.toList());
-        final List<String> prefECols = edgeCollections.stream().map(this::getPrefixedCollectioName).collect(Collectors.toList());
+        final List<String> prefVCols = vertexCollections.stream().map(this::getPrefixedCollectionName).collect(Collectors.toList());
+        final List<String> prefECols = edgeCollections.stream().map(this::getPrefixedCollectionName).collect(Collectors.toList());
         final List<EdgeDefinition> edgeDefinitions = new ArrayList<>();
         if (relations.isEmpty()) {
             logger.info("No relations, creating default ones.");
@@ -488,9 +488,9 @@ public class ArangoDBGraph implements Graph {
     @Override
     public Vertex addVertex(Object... keyValues) {
         ElementHelper.legalPropertyKeyValueArray(keyValues);
-        String label = ElementHelper.getLabelValue(keyValues).orElse(null);
-        String id = ArangoDBUtil.getId(features().vertex(), label, keyValues);
-        ArangoDBVertex vertex = ArangoDBVertex.of(id, label, this);
+        String label = ElementHelper.getLabelValue(keyValues).orElse(Vertex.DEFAULT_LABEL);
+        ArangoDBId id = createId(features().vertex(), label, keyValues);
+        ArangoDBVertex vertex = ArangoDBVertex.of(id, this);
         if (!vertexCollections().contains(vertex.label())) {
             throw new IllegalArgumentException(String.format("Vertex label (%s) not in graph (%s) vertex collections.", vertex.label(), name));
         }
@@ -567,14 +567,14 @@ public class ArangoDBGraph implements Graph {
 
     @Override
     public Iterator<Edge> edges(Object... edgeIds) {
-        return getClient().getGraphEdges(getIdValues(edgeIds)).stream()
+        return getClient().getGraphEdges(getIdValues(Edge.DEFAULT_LABEL, edgeIds)).stream()
                 .map(it -> (Edge) new ArangoDBEdge(this, it))
                 .iterator();
     }
 
     @Override
     public Iterator<Vertex> vertices(Object... vertexIds) {
-        return getClient().getGraphVertices(getIdValues(vertexIds)).stream()
+        return getClient().getGraphVertices(getIdValues(Vertex.DEFAULT_LABEL, vertexIds)).stream()
                 .map(it -> (Vertex) new ArangoDBVertex(this, it))
                 .iterator();
     }
@@ -646,21 +646,19 @@ public class ArangoDBGraph implements Graph {
      * @param collectionName the collection name
      * @return the Collection name prefixed
      */
-    public String getPrefixedCollectioName(String collectionName) {
-        if (GRAPH_VARIABLES_COLLECTION.equals(collectionName)) {
+    public String getPrefixedCollectionName(String collectionName) {
+        if (!shouldPrefixCollectionNames) {
             return collectionName;
         }
-        if (GRAPH_COLLECTIONS.contains(collectionName)) {
-            return String.format("%s_%s", name, collectionName);
-        }
-        if (shouldPrefixCollectionNames) {
-            if (collectionName.startsWith(name + "_")) {
-                return collectionName;
-            }
-            return String.format("%s_%s", name, collectionName);
-        } else {
+
+        if (collectionName.startsWith(name + "_")) {
             return collectionName;
         }
+        return name + "_" + collectionName;
+    }
+
+    public ArangoDBId getArangoDBId(ArangoDBId id) {
+        return ArangoDBId.of(name, id.getLabel(), id.getKey());
     }
 
     @Override
@@ -692,22 +690,69 @@ public class ArangoDBGraph implements Graph {
         return relations;
     }
 
-    private String getIdValue(Object id) {
+    private ArangoDBId getIdValue(String defaultLabel, Object id) {
         if (id instanceof String) {
-            return (String) id;
+            return ArangoDBId.parseWithDefaultLabel(name, defaultLabel, (String) id);
         } else if (id instanceof Element) {
-            return getIdValue(((Element) id).id());
+            return getIdValue(defaultLabel, ((Element) id).id());
         } else {
             throw unsupportedIdType(id);
         }
     }
 
-    private List<String> getIdValues(Object[] edgeIds) {
-        return Arrays.stream(edgeIds)
-                .map(this::getIdValue)
+    private List<ArangoDBId> getIdValues(String defaultLabel, Object[] ids) {
+        return Arrays.stream(ids)
+                .map(it -> getIdValue(defaultLabel, it))
                 .collect(Collectors.toList());
     }
 
+    private  String extractKey(final String id) {
+        if (id == null) {
+            return null;
+        }
+        int separator = id.indexOf('/');
+        if (separator > 0) {
+            return id.substring(separator + 1);
+        } else {
+            return id;
+        }
+    }
+
+    private  String extractCollection(final String id) {
+        if (id == null) {
+            return null;
+        }
+        int separator = id.indexOf('/');
+        if (separator > 0) {
+            return id.substring(0, separator);
+        } else {
+            return null;
+        }
+    }
+
+    private  String extractLabel(final String collection, final String label) {
+        if (collection != null) {
+            if (label != null && !label.equals(collection)) {
+                throw new IllegalArgumentException("Mismatching label: [" + label + "] and collection: [" + collection + "]");
+            }
+            return collection;
+        } else {
+            return label;
+        }
+    }
+
+    public  ArangoDBId createId(Graph.Features.ElementFeatures features, String label, Object... keyValues) {
+        ElementHelper.validateLabel(label);
+        Optional<Object> optionalId = ElementHelper.getIdValue(keyValues);
+        if (!optionalId.isPresent()) {
+            return ArangoDBId.of(name, label, null);
+        }
+        String id = optionalId
+                .filter(features::willAllowId)
+                .map(Object::toString)
+                .orElseThrow(Vertex.Exceptions::userSuppliedIdsOfThisTypeNotSupported);
+        return ArangoDBId.of(name, extractLabel(extractCollection(id), label), extractKey(id));
+    }
 
     // TODO Decide which of these methods we want to keep
 

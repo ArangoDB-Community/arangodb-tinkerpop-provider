@@ -19,14 +19,18 @@
 
 package com.arangodb.tinkerpop.gremlin.persistence;
 
+import com.arangodb.serde.InternalId;
 import com.arangodb.serde.InternalKey;
 import com.arangodb.shaded.fasterxml.jackson.annotation.JsonProperty;
-import org.apache.tinkerpop.gremlin.structure.util.ElementHelper;
+import com.arangodb.tinkerpop.gremlin.structure.ArangoDBId;
 
 import java.util.*;
 import java.util.stream.Stream;
 
 public class VertexData implements PropertyData<VertexPropertyData>, PersistentData {
+
+    @InternalId
+    private ArangoDBId id;
 
     @JsonProperty
     private String label;
@@ -40,24 +44,22 @@ public class VertexData implements PropertyData<VertexPropertyData>, PersistentD
     public VertexData() {
     }
 
-    public static VertexData of(String label, String key) {
-        ElementHelper.validateLabel(label);
-        if (key != null && key.isEmpty()) throw new IllegalArgumentException("empty key");
-
+    public static VertexData of(ArangoDBId id) {
         VertexData data = new VertexData();
-        data.label = label;
-        data.key = key;
+        data.id = id;
+        data.label = id.getLabel();
+        data.key = id.getKey();
         return data;
     }
 
     @Override
-    public String getLabel() {
-        return label;
+    public ArangoDBId getId() {
+        return id;
     }
 
     @Override
-    public String getKey() {
-        return key;
+    public void setId(ArangoDBId id) {
+        this.id = id;
     }
 
     @Override
@@ -87,8 +89,9 @@ public class VertexData implements PropertyData<VertexPropertyData>, PersistentD
     @Override
     public String toString() {
         return "VertexData{" +
-                "key='" + key + '\'' +
+                "id=" + id +
                 ", label='" + label + '\'' +
+                ", key='" + key + '\'' +
                 ", properties=" + properties +
                 '}';
     }
@@ -97,11 +100,11 @@ public class VertexData implements PropertyData<VertexPropertyData>, PersistentD
     public boolean equals(Object o) {
         if (!(o instanceof VertexData)) return false;
         VertexData that = (VertexData) o;
-        return Objects.equals(label, that.label) && Objects.equals(key, that.key) && Objects.equals(properties, that.properties);
+        return Objects.equals(id, that.id) && Objects.equals(label, that.label) && Objects.equals(key, that.key) && Objects.equals(properties, that.properties);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(label, key, properties);
+        return Objects.hash(id, label, key, properties);
     }
 }

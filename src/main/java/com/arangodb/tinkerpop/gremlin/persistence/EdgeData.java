@@ -21,11 +21,14 @@ package com.arangodb.tinkerpop.gremlin.persistence;
 
 import com.arangodb.serde.*;
 import com.arangodb.shaded.fasterxml.jackson.annotation.JsonProperty;
-import org.apache.tinkerpop.gremlin.structure.util.ElementHelper;
+import com.arangodb.tinkerpop.gremlin.structure.ArangoDBId;
 
 import java.util.*;
 
 public class EdgeData extends SimplePropertyData implements PersistentData {
+
+    @InternalId
+    private ArangoDBId id;
 
     @JsonProperty
     private String label;
@@ -34,25 +37,20 @@ public class EdgeData extends SimplePropertyData implements PersistentData {
     private String key;
 
     @InternalFrom
-    private String from;
+    private ArangoDBId from;
 
     @InternalTo
-    private String to;
+    private ArangoDBId to;
 
     public static EdgeData of(
-            String label,
-            String key,
-            String from,
-            String to
+            ArangoDBId id,
+            ArangoDBId from,
+            ArangoDBId to
     ) {
-        ElementHelper.validateLabel(label);
-        if (key != null && key.isEmpty()) throw new IllegalArgumentException("empty key");
-        Objects.requireNonNull(from, "from");
-        Objects.requireNonNull(to, "to");
-
         EdgeData data = new EdgeData();
-        data.label = label;
-        data.key = key;
+        data.id = id;
+        data.label = id.getLabel();
+        data.key = id.getKey();
         data.from = from;
         data.to = to;
         return data;
@@ -62,13 +60,13 @@ public class EdgeData extends SimplePropertyData implements PersistentData {
     }
 
     @Override
-    public String getLabel() {
-        return label;
+    public ArangoDBId getId() {
+        return id;
     }
 
     @Override
-    public String getKey() {
-        return key;
+    public void setId(ArangoDBId id) {
+        this.id = id;
     }
 
     @Override
@@ -76,42 +74,43 @@ public class EdgeData extends SimplePropertyData implements PersistentData {
         this.key = key;
     }
 
-    public String getFrom() {
+    public ArangoDBId getFrom() {
         return from;
     }
 
-    public void setFrom(String from) {
+    public void setFrom(ArangoDBId from) {
         this.from = from;
     }
 
-    public String getTo() {
+    public ArangoDBId getTo() {
         return to;
     }
 
-    public void setTo(String to) {
+    public void setTo(ArangoDBId to) {
         this.to = to;
     }
 
     @Override
     public String toString() {
         return "EdgeData{" +
-                "from='" + from + '\'' +
+                "from=" + from +
+                ", id=" + id +
                 ", label='" + label + '\'' +
                 ", key='" + key + '\'' +
-                ", to='" + to + '\'' +
-                ", super=" + super.toString() +
+                ", to=" + to +
                 '}';
     }
 
     @Override
     public boolean equals(Object o) {
         if (!(o instanceof EdgeData)) return false;
+        if (!super.equals(o)) return false;
         EdgeData edgeData = (EdgeData) o;
-        return Objects.equals(label, edgeData.label) && Objects.equals(key, edgeData.key) && Objects.equals(from, edgeData.from) && Objects.equals(to, edgeData.to);
+        return Objects.equals(id, edgeData.id) && Objects.equals(label, edgeData.label) && Objects.equals(key, edgeData.key) && Objects.equals(from, edgeData.from) && Objects.equals(to, edgeData.to);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(label, key, from, to);
+        return Objects.hash(super.hashCode(), id, label, key, from, to);
     }
 }

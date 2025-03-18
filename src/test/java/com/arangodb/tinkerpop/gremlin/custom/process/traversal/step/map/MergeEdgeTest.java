@@ -88,8 +88,8 @@ public abstract class MergeEdgeTest extends AbstractGremlinTest {
         printTraversalForm(traversal);
         final Edge edge = traversal.next();
         assertEquals("knows", edge.label());
-        assertEquals("standard_person/100", edge.outVertex().id());
-        assertEquals("standard_person/101", edge.inVertex().id());
+        assertEquals("person/100", edge.outVertex().id());
+        assertEquals("person/101", edge.inVertex().id());
         assertFalse(traversal.hasNext());
         assertEquals(1, IteratorUtils.count(g.E()));
     }
@@ -105,8 +105,8 @@ public abstract class MergeEdgeTest extends AbstractGremlinTest {
         printTraversalForm(traversal);
         final Edge edge = traversal.next();
         assertEquals("knows", edge.label());
-        assertEquals("standard_person/100", edge.outVertex().id());
-        assertEquals("standard_person/101", edge.inVertex().id());
+        assertEquals("person/100", edge.outVertex().id());
+        assertEquals("person/101", edge.inVertex().id());
         assertEquals(0.5d, edge.<Double>value("weight").doubleValue(), 0.0001d);
         assertFalse(traversal.hasNext());
         assertEquals(2, IteratorUtils.count(g.E()));
@@ -122,7 +122,7 @@ public abstract class MergeEdgeTest extends AbstractGremlinTest {
             traversal.next();
             fail("Should have failed as vertices are not created");
         } catch (Exception ex) {
-            assertThat(ex.getMessage(), endsWith("Vertex id could not be resolved from mergeE: standard_person/100"));
+            assertThat(ex.getMessage(), endsWith("Vertex id could not be resolved from mergeE: person/100"));
         }
         assertEquals(0, IteratorUtils.count(g.E()));
     }
@@ -138,8 +138,8 @@ public abstract class MergeEdgeTest extends AbstractGremlinTest {
         printTraversalForm(traversal);
         final Edge edge = traversal.next();
         assertEquals("knows", edge.label());
-        assertEquals("standard_person/100", edge.outVertex().id());
-        assertEquals("standard_person/101", edge.inVertex().id());
+        assertEquals("person/100", edge.outVertex().id());
+        assertEquals("person/101", edge.inVertex().id());
         assertEquals("N", edge.<String>value("created"));
         assertFalse(traversal.hasNext());
         assertEquals(1, IteratorUtils.count(g.E()));
@@ -149,15 +149,15 @@ public abstract class MergeEdgeTest extends AbstractGremlinTest {
     @FeatureRequirement(featureClass = Graph.Features.VertexFeatures.class, feature = Graph.Features.VertexFeatures.FEATURE_USER_SUPPLIED_IDS)
     @FeatureRequirementSet(FeatureRequirementSet.Package.SIMPLE)
     public void g_mergeEXlabel_knows_out_marko_in_vadasX_optionXonCreate_created_YX_optionXonMatch_created_NX_exists_updated() {
-        g.addV("person").property(T.id, "standard_person/100").property("name", "marko").as("a").
-                addV("person").property(T.id, "standard_person/101").property("name", "vadas").as("b").
+        g.addV("person").property(T.id, "person/100").property("name", "marko").as("a").
+                addV("person").property(T.id, "person/101").property("name", "vadas").as("b").
                 addE("knows").from("a").to("b").property("created","Y").iterate();
         final Traversal<Edge, Edge> traversal = get_g_mergeEXlabel_knows_out_marko_in_vadasX_optionXonCreate_created_YX_optionXonMatch_created_NX_exists_updated();
         printTraversalForm(traversal);
         final Edge edge = traversal.next();
         assertEquals("knows", edge.label());
-        assertEquals("standard_person/100", edge.outVertex().id());
-        assertEquals("standard_person/101", edge.inVertex().id());
+        assertEquals("person/100", edge.outVertex().id());
+        assertEquals("person/101", edge.inVertex().id());
         assertEquals("N", edge.<String>value("created"));
         assertFalse(traversal.hasNext());
         assertEquals(1, IteratorUtils.count(g.E()));
@@ -167,8 +167,8 @@ public abstract class MergeEdgeTest extends AbstractGremlinTest {
     @FeatureRequirement(featureClass = Graph.Features.VertexFeatures.class, feature = Graph.Features.VertexFeatures.FEATURE_USER_SUPPLIED_IDS)
     @FeatureRequirementSet(FeatureRequirementSet.Package.SIMPLE)
     public void g_V_hasXperson_name_marko_X_mergeEXlabel_knowsX_optionXonCreate_created_YX_optionXonMatch_created_NX_exists_updated() {
-        g.addV("person").property(T.id, "standard_person/100").property("name", "marko").as("a").
-                addV("person").property(T.id, "standard_person/101").property("name", "vadas").as("b").
+        g.addV("person").property(T.id, "person/100").property("name", "marko").as("a").
+                addV("person").property(T.id, "person/101").property("name", "vadas").as("b").
                 addE("knows").from("a").to("b").property("created","Y").
                 addE("knows").from("a").to("b").iterate();
         final Traversal<Vertex, Edge> traversal = get_g_V_hasXperson_name_marko_X_mergeEXlabel_knowsX_optionXonCreate_created_YX_optionXonMatch_created_NX_exists_updated();
@@ -184,30 +184,30 @@ public abstract class MergeEdgeTest extends AbstractGremlinTest {
     @FeatureRequirement(featureClass = Graph.Features.VertexFeatures.class, feature = Graph.Features.VertexFeatures.FEATURE_USER_SUPPLIED_IDS)
     @FeatureRequirementSet(FeatureRequirementSet.Package.SIMPLE)
     public void g_injectXlabel_knows_out_marko_in_vadasX_mergeE() {
-        g.addV("person").property(T.id, "standard_person/100").property("name", "marko").
-                addV("person").property(T.id, "standard_person/101").property("name", "vadas").iterate();
+        g.addV("person").property(T.id, "person/100").property("name", "marko").
+                addV("person").property(T.id, "person/101").property("name", "vadas").iterate();
         final Traversal<Map<Object,Object>, Edge> traversal = get_g_injectXlabel_knows_out_marko_in_vadasX_mergeE();
         printTraversalForm(traversal);
 
         assertEquals(1, IteratorUtils.count(traversal));
         assertEquals(2, IteratorUtils.count(g.V()));
         assertEquals(1, IteratorUtils.count(g.E()));
-        assertEquals(1, IteratorUtils.count(g.V("standard_person/100").out("knows").hasId("standard_person/101")));
+        assertEquals(1, IteratorUtils.count(g.V("person/100").out("knows").hasId("person/101")));
     }
 
     @Test
     @FeatureRequirement(featureClass = Graph.Features.VertexFeatures.class, feature = Graph.Features.VertexFeatures.FEATURE_USER_SUPPLIED_IDS)
     @FeatureRequirementSet(FeatureRequirementSet.Package.SIMPLE)
     public void g_mergeE_with_outV_inV_options() {
-        g.addV("person").property(T.id, "standard_person/1")
-                .addV("person").property(T.id, "standard_person/2")
+        g.addV("person").property(T.id, "person/1")
+                .addV("person").property(T.id, "person/2")
                 .iterate();
 
         final Traversal<Edge, Edge> traversal = get_g_mergeE_with_outV_inV_options();
         printTraversalForm(traversal);
 
         assertEquals(1, IteratorUtils.count(traversal));
-        assertEquals(1, IteratorUtils.count(g.V("standard_person/1").out("knows").hasId("standard_person/2")));
+        assertEquals(1, IteratorUtils.count(g.V("person/1").out("knows").hasId("person/2")));
     }
 
     public static class Traversals extends MergeEdgeTest {
@@ -219,32 +219,32 @@ public abstract class MergeEdgeTest extends AbstractGremlinTest {
 
         @Override
         public Traversal<Edge, Edge> get_g_mergeEXlabel_knows_out_marko_in_vadasX() {
-            return g.mergeE(asMap(T.label, "knows", Direction.IN, new ReferenceVertex("standard_person/101"), Direction.OUT, new ReferenceVertex("standard_person/100")));
+            return g.mergeE(asMap(T.label, "knows", Direction.IN, new ReferenceVertex("person/101"), Direction.OUT, new ReferenceVertex("person/100")));
         }
 
         @Override
         public Traversal<Edge, Edge> get_g_mergeEXlabel_knows_out_marko_in_vadas_weight_05X_exists() {
-            return g.mergeE(asMap(T.label, "knows", Direction.IN, new ReferenceVertex("standard_person/101"), Direction.OUT, new ReferenceVertex("standard_person/100"), "weight", 0.5d));
+            return g.mergeE(asMap(T.label, "knows", Direction.IN, new ReferenceVertex("person/101"), Direction.OUT, new ReferenceVertex("person/100"), "weight", 0.5d));
         }
 
         @Override
         public Traversal<Edge, Edge> get_g_mergeEXlabel_knows_out_marko_in_vadasX_optionXonCreate_created_YX_optionXonMatch_created_NX() {
-            return g.mergeE(asMap(T.label, "knows", Direction.IN, new ReferenceVertex("standard_person/101"), Direction.OUT, new ReferenceVertex("standard_person/100"))).
-                    option(Merge.onCreate, asMap(T.label, "knows", Direction.IN, new ReferenceVertex("standard_person/101"), Direction.OUT, new ReferenceVertex("standard_person/100"), "created", "Y")).
+            return g.mergeE(asMap(T.label, "knows", Direction.IN, new ReferenceVertex("person/101"), Direction.OUT, new ReferenceVertex("person/100"))).
+                    option(Merge.onCreate, asMap(T.label, "knows", Direction.IN, new ReferenceVertex("person/101"), Direction.OUT, new ReferenceVertex("person/100"), "created", "Y")).
                     option(Merge.onMatch, asMap("created", "N"));
         }
 
         @Override
         public Traversal<Edge, Edge> get_g_mergeEXlabel_knows_out_marko_in_vadasX_optionXonCreate_created_YX_optionXonMatch_created_NX_exists() {
-            return g.mergeE(asMap(T.label, "knows", Direction.IN, new ReferenceVertex("standard_person/101"), Direction.OUT, new ReferenceVertex("standard_person/100"))).
-                    option(Merge.onCreate, asMap(T.label, "knows", Direction.IN, new ReferenceVertex("standard_person/101"), Direction.OUT, new ReferenceVertex("standard_person/100"), "created", "Y")).
+            return g.mergeE(asMap(T.label, "knows", Direction.IN, new ReferenceVertex("person/101"), Direction.OUT, new ReferenceVertex("person/100"))).
+                    option(Merge.onCreate, asMap(T.label, "knows", Direction.IN, new ReferenceVertex("person/101"), Direction.OUT, new ReferenceVertex("person/100"), "created", "Y")).
                     option(Merge.onMatch, asMap("created", "N"));
         }
 
         @Override
         public Traversal<Edge, Edge> get_g_mergeEXlabel_knows_out_marko_in_vadasX_optionXonCreate_created_YX_optionXonMatch_created_NX_exists_updated() {
-            return g.mergeE(asMap(T.label, "knows", Direction.IN, new ReferenceVertex("standard_person/101"), Direction.OUT, new ReferenceVertex("standard_person/100"))).
-                    option(Merge.onCreate, asMap(T.label, "knows", Direction.IN, new ReferenceVertex("standard_person/101"), Direction.OUT, new ReferenceVertex("standard_person/100"), "created", "Y")).
+            return g.mergeE(asMap(T.label, "knows", Direction.IN, new ReferenceVertex("person/101"), Direction.OUT, new ReferenceVertex("person/100"))).
+                    option(Merge.onCreate, asMap(T.label, "knows", Direction.IN, new ReferenceVertex("person/101"), Direction.OUT, new ReferenceVertex("person/100"), "created", "Y")).
                     option(Merge.onMatch, asMap("created", "N"));
         }
 
@@ -252,20 +252,20 @@ public abstract class MergeEdgeTest extends AbstractGremlinTest {
         public Traversal<Vertex, Edge> get_g_V_hasXperson_name_marko_X_mergeEXlabel_knowsX_optionXonCreate_created_YX_optionXonMatch_created_NX_exists_updated() {
             return g.V().has("person","name","marko").
                     mergeE(asMap(T.label, "knows")).
-                    option(Merge.onCreate, asMap(T.label, "knows", Direction.IN, new ReferenceVertex("standard_person/101"), Direction.OUT, new ReferenceVertex("standard_person/100"), "created", "Y")).
+                    option(Merge.onCreate, asMap(T.label, "knows", Direction.IN, new ReferenceVertex("person/101"), Direction.OUT, new ReferenceVertex("person/100"), "created", "Y")).
                     option(Merge.onMatch, asMap("created", "N"));
         }
 
         @Override
         public Traversal<Map<Object,Object>, Edge> get_g_injectXlabel_knows_out_marko_in_vadasX_mergeE() {
-            return g.inject((Map<Object,Object>) asMap(T.label, "knows", Direction.IN, new ReferenceVertex("standard_person/101"), Direction.OUT, new ReferenceVertex("standard_person/100"))).mergeE();
+            return g.inject((Map<Object,Object>) asMap(T.label, "knows", Direction.IN, new ReferenceVertex("person/101"), Direction.OUT, new ReferenceVertex("person/100"))).mergeE();
         }
 
         @Override
         public Traversal<Edge,Edge> get_g_mergeE_with_outV_inV_options() {
             return g.mergeE(asMap(T.label, "knows", Direction.OUT, Merge.outV, Direction.IN, Merge.inV))
-                    .option(Merge.outV, asMap(T.id, "standard_person/1"))
-                    .option(Merge.inV, asMap(T.id, "standard_person/2"));
+                    .option(Merge.outV, asMap(T.id, "person/1"))
+                    .option(Merge.inV, asMap(T.id, "person/2"));
         }
     }
 }

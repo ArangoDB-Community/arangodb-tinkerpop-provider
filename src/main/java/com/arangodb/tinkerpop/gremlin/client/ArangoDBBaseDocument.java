@@ -79,7 +79,7 @@ public abstract class ArangoDBBaseDocument {
         this._key = key;
         this.label = label;
         this.graph = graph;
-        this.collection = graph.getPrefixedCollectioName(label);
+        this.collection = graph.getPrefixedCollectionName(label);
     }
 
     /**

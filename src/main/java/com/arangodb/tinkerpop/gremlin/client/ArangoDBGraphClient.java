@@ -17,18 +17,15 @@ import com.arangodb.*;
 import com.arangodb.config.ArangoConfigProperties;
 import com.arangodb.entity.*;
 import com.arangodb.model.*;
+import com.arangodb.tinkerpop.gremlin.persistence.*;
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBEdge;
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBVertex;
-import com.arangodb.tinkerpop.gremlin.persistence.EdgeData;
-import com.arangodb.tinkerpop.gremlin.persistence.VertexData;
 import com.arangodb.tinkerpop.gremlin.structure.*;
 import org.apache.tinkerpop.gremlin.process.traversal.util.TraversalInterruptedException;
 import org.apache.tinkerpop.gremlin.structure.Direction;
 import org.apache.tinkerpop.gremlin.structure.Graph;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
 
 import static com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil.getArangoDirectionFromGremlinDirection;
 
@@ -105,25 +102,6 @@ public class ArangoDBGraphClient {
             return new ArangoDBGraphException("General ArangoDB error (unkown error code)", ex);
         }
 
-        /**
-         * "name to long" Message.
-         */
-
-        public static String NAME_TO_LONG = "Name is too long: {} bytes (max 64 bytes for labels, 256 for keys)";
-
-        /**
-         * Gets the naming convention error.
-         *
-         * @param cause   the cause
-         * @param details the details
-         * @return the naming convention error
-         */
-
-        public static ArangoDBGraphException getNamingConventionError(String cause, String details) {
-            return new ArangoDBGraphException("The provided label or name name does not satisfy the naming conventions." +
-                    String.format(cause, details));
-        }
-
     }
 
     private static final Logger logger = LoggerFactory.getLogger(ArangoDBGraphClient.class);
@@ -162,21 +140,6 @@ public class ArangoDBGraphClient {
         db.arango().shutdown();
     }
 
-    /**
-     * Request the version of ArangoDB.
-     *
-     * @return the Version number
-     * @throws ArangoDBGraphException if user has no access to the db
-     */
-
-    public String getVersion() throws ArangoDBGraphException {
-        try {
-            return db.getVersion().getVersion();
-        } catch (ArangoDBException ex) {
-            throw ArangoDBExceptions.getArangoDBException(ex);
-        }
-    }
-
     public ArangoDBGraphVariables getGraphVariables() {
         logger.debug("Get graph variables");
         ArangoDBGraphVariables result;
@@ -205,9 +168,9 @@ public class ArangoDBGraphClient {
         if (document.isPaired()) {
             throw new ArangoDBGraphException("Paired docuements can not be inserted, only updated");
         }
-        ArangoCollection gVars = db.collection(document.collection());
+        ArangoCollection gVars = db.collection(ArangoDBGraph.GRAPH_VARIABLES_COLLECTION);
         if (!gVars.exists()) {
-            CollectionEntity ce = db.createCollection(document.collection());
+            CollectionEntity ce = gVars.create();
             System.out.println(ce.getStatus());
         }
         DocumentCreateEntity<?> vertexEntity;
@@ -277,9 +240,9 @@ public class ArangoDBGraphClient {
      */
 
     // FIXME: use multi-docs API
-    public ArangoIterable<VertexData> getGraphVertices(final List<String> ids) {
+    public ArangoIterable<VertexData> getGraphVertices(final List<ArangoDBId> ids) {
         logger.debug("Get all {} graph vertices, filtered by ids: {}", graph.name(), ids);
-        List<String> prefixedColNames = graph.vertexCollections().stream().map(graph::getPrefixedCollectioName).collect(Collectors.toList());
+        List<String> prefixedColNames = graph.vertexCollections().stream().map(graph::getPrefixedCollectionName).collect(Collectors.toList());
         return getGraphDocuments(ids, prefixedColNames, VertexData.class);
     }
 
@@ -290,13 +253,13 @@ public class ArangoDBGraphClient {
      * @return ArangoDBBaseQuery    the query object
      */
     // FIXME: use multi-docs API
-    public ArangoIterable<EdgeData> getGraphEdges(List<String> ids) {
+    public ArangoIterable<EdgeData> getGraphEdges(List<ArangoDBId> ids) {
         logger.debug("Get all {} graph edges, filtered by ids: {}", graph.name(), ids);
-        List<String> prefixedColNames = graph.edgeCollections().stream().map(graph::getPrefixedCollectioName).collect(Collectors.toList());
+        List<String> prefixedColNames = graph.edgeCollections().stream().map(graph::getPrefixedCollectionName).collect(Collectors.toList());
         return getGraphDocuments(ids, prefixedColNames, EdgeData.class);
     }
 
-    private <V> ArangoIterable<V> getGraphDocuments(List<String> ids, List<String> prefixedColNames, Class<V> clazz) {
+    private <V> ArangoIterable<V> getGraphDocuments(List<ArangoDBId> ids, List<String> prefixedColNames, Class<V> clazz) {
         Map<String, Object> bindVars = new HashMap<>();
         ArangoDBQueryBuilder queryBuilder = new ArangoDBQueryBuilder();
         if (ids.isEmpty()) {
@@ -306,9 +269,9 @@ public class ArangoDBGraphClient {
                 queryBuilder.iterateCollection("d", prefixedColNames.get(0), bindVars);
             }
         } else {
-            List<String> prunedIds = ids.stream()
-                    .map(graph::getPrefixedCollectioName)
-                    .filter(it -> prefixedColNames.contains(ArangoDBUtil.extractCollection(it)))
+            List<ArangoDBId> prunedIds = ids.stream()
+                    .map(graph::getArangoDBId)
+                    .filter(it -> prefixedColNames.contains(it.getCollection()))
                     .collect(Collectors.toList());
             queryBuilder.with(prefixedColNames, bindVars).documentsById(prunedIds, "d", bindVars);
         }
@@ -396,7 +359,7 @@ public class ArangoDBGraphClient {
             }
             throw arangoDBException;
         }
-        edge.key(insertEntity.getKey());
+        edge.update(insertEntity);
     }
 
     public void deleteEdge(ArangoDBEdge edge) {
@@ -426,17 +389,15 @@ public class ArangoDBGraphClient {
             throw ArangoDBExceptions.getArangoDBException(e);
         }
         logger.debug("Edge updated, new rev {}", updateEntity.getRev());
-        edge.key(updateEntity.getKey());
+        edge.update(updateEntity);
     }
 
-    public VertexData readVertex(String id) {
+    public VertexData readVertex(ArangoDBId id) {
         logger.debug("Read vertex {} in {}", id, graph.name());
-        String col = ArangoDBUtil.extractCollection(id);
-        String key = ArangoDBUtil.extractKey(id);
         try {
             return db.graph(graph.name())
-                    .vertexCollection(col)
-                    .getVertex(key, VertexData.class);
+                    .vertexCollection(id.getCollection())
+                    .getVertex(id.getKey(), VertexData.class);
         } catch (ArangoDBException e) {
             logger.error("Failed to read vertex: {}", e.getErrorMessage());
             throw ArangoDBExceptions.getArangoDBException(e);
@@ -458,7 +419,7 @@ public class ArangoDBGraphClient {
             }
             throw arangoDBException;
         }
-        vertex.key(vertexEntity.getKey());
+        vertex.update(vertexEntity);
     }
 
     public void deleteVertex(ArangoDBVertex vertex) {
@@ -490,7 +451,7 @@ public class ArangoDBGraphClient {
         logger.debug("Document updated, new rev {}", vertexEntity.getRev());
     }
 
-    public Iterator<VertexData> getVertexNeighbors(String vertexId, List<String> edgeCollections, Direction direction) {
+    public Iterator<VertexData> getVertexNeighbors(ArangoDBId vertexId, List<String> edgeCollections, Direction direction) {
         logger.debug("Get vertex {}:{} Neighbors, in {}, from collections {}", vertexId, direction, graph.name(), edgeCollections);
         Map<String, Object> bindVars = new HashMap<>();
         bindVars.put("start", vertexId);
@@ -501,7 +462,7 @@ public class ArangoDBGraphClient {
         return executeAqlQuery(query, bindVars, null, VertexData.class);
     }
 
-    public Iterator<EdgeData> getVertexEdges(String vertexId, List<String> edgeCollections, Direction direction) {
+    public Iterator<EdgeData> getVertexEdges(ArangoDBId vertexId, List<String> edgeCollections, Direction direction) {
         logger.debug("Get vertex {}:{} Edges, in {}, from collections {}", vertexId, direction, graph.name(), edgeCollections);
         Map<String, Object> bindVars = new HashMap<>();
         bindVars.put("start", vertexId);

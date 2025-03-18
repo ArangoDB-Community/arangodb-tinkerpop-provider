@@ -8,30 +8,21 @@
 
 package com.arangodb.tinkerpop.gremlin.utils;
 
-import static org.apache.tinkerpop.gremlin.structure.Graph.Hidden.isHidden;
-
 import com.arangodb.ArangoGraph;
 import com.arangodb.entity.EdgeDefinition;
 import com.arangodb.entity.GraphEntity;
 import com.arangodb.model.GraphCreateOptions;
 import com.arangodb.shaded.fasterxml.jackson.databind.ObjectMapper;
-import com.arangodb.tinkerpop.gremlin.client.ArangoDBGraphClient;
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBGraphException;
 import com.arangodb.tinkerpop.gremlin.client.ArangoDBQueryBuilder;
 import com.arangodb.tinkerpop.gremlin.structure.*;
 
-import java.io.UnsupportedEncodingException;
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.tinkerpop.gremlin.structure.Direction;
-import org.apache.tinkerpop.gremlin.structure.Graph;
-import org.apache.tinkerpop.gremlin.structure.Vertex;
-import org.apache.tinkerpop.gremlin.structure.util.ElementHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -59,139 +50,10 @@ public class ArangoDBUtil {
     private static final ObjectMapper mapper = new ObjectMapper();
 
     /**
-     * The prefix to denote that a collection is a hidden collection.
-     */
-
-    private final static String HIDDEN_PREFIX = "adbt_";
-
-    /**
-     * The Constant HIDDEN_PREFIX_LENGTH.
-     */
-
-    private static final int HIDDEN_PREFIX_LENGTH = HIDDEN_PREFIX.length();
-
-    /**
-     * The regex to match DOCUMENT_KEY.
-     */
-
-    public static final Pattern DOCUMENT_KEY = Pattern.compile("^[A-Za-z0-9_:\\.@()\\+,=;\\$!\\*'%-]*");
-
-    /**
      * Instantiates a new ArangoDB Util.
      */
     private ArangoDBUtil() {
         // this is a helper class
-    }
-
-    /**
-     * Since attributes that start with underscore are considered to be system attributes (),
-     * rename name "_XXXX" to "«a»XXXX" for storage.
-     *
-     * @param key the name to convert
-     * @return String        the converted String
-     * @see <a href="https://docs.arangodb.com/latest/Manual/DataModeling/NamingConventions/AttributeNames.html">Manual</a>
-     */
-
-    public static String normalizeKey(String key) {
-        if (key.charAt(0) == '_') {
-            return "«a»" + key.substring(1);
-        }
-        return key;
-    }
-
-    /**
-     * Since attributes that start with underscore are considered to be system attributes (),
-     * rename Attribute "«a»XXXX" to "_XXXX" for retrieval.
-     *
-     * @param key the name to convert
-     * @return String        the converted String
-     * @see <a href="https://docs.arangodb.com/latest/Manual/DataModeling/NamingConventions/AttributeNames.html">Manual</a>
-     */
-
-    public static String denormalizeKey(String key) {
-        if (key.startsWith("«a»")) {
-            return "_" + key.substring(3);
-        }
-        return key;
-    }
-
-    /**
-     * Hidden keys, labels, etc. are prefixed in Tinkerpop with  @link Graph.Hidden.HIDDEN_PREFIX). Since in ArangoDB
-     * collection names must always start with a letter, this method normalises Hidden collections name to valid
-     * ArangoDB names by replacing the "~" with
-     *
-     * @param key the name to convert
-     * @return String        the converted String
-     * @see <a href="https://docs.arangodb.com/latest/Manual/DataModeling/NamingConventions/AttributeNames.html">Manual</a>
-     */
-
-    public static String normalizeCollection(String key) {
-        String nname = isHidden(key) ? key : HIDDEN_PREFIX.concat(key);
-        if (!NamingConventions.COLLECTION.hasValidNameSize(nname)) {
-            throw ArangoDBGraphClient.ArangoDBExceptions.getNamingConventionError(ArangoDBGraphClient.ArangoDBExceptions.NAME_TO_LONG, key);
-        }
-        return nname;
-    }
-
-    /**
-     * Since attributes that start with underscore are considered to be system attributes (),
-     * rename Attribute "«a»XXXX" to "_XXXX" for retrieval.
-     *
-     * @param key the name to convert
-     * @return String        the converted String
-     * @see <a href="https://docs.arangodb.com/latest/Manual/DataModeling/NamingConventions/AttributeNames.html">Manual</a>
-     */
-
-    public static String denormalizeCollection(String key) {
-        return isHidden(key) ? key.substring(HIDDEN_PREFIX_LENGTH) : key;
-    }
-
-    /**
-     * The Enum NamingConventions.
-     */
-
-    public enum NamingConventions {
-
-        /**
-         * The collection.
-         */
-        COLLECTION(64),
-
-        /**
-         * The name.
-         */
-        KEY(256);
-
-        /**
-         * The max length.
-         */
-
-        private int maxLength;
-
-        /**
-         * Instantiates a new naming conventions.
-         *
-         * @param maxLength the max length
-         */
-        NamingConventions(int maxLength) {
-            this.maxLength = maxLength;
-        }
-
-        /**
-         * Checks for valid name size.
-         *
-         * @param name the name
-         * @return true, if successful
-         */
-        public boolean hasValidNameSize(String name) {
-            final byte[] utf8Bytes;
-            try {
-                utf8Bytes = name.getBytes("UTF-8");
-            } catch (UnsupportedEncodingException e) {
-                return false;
-            }
-            return utf8Bytes.length <= maxLength;
-        }
     }
 
     /**
@@ -215,21 +77,21 @@ public class ArangoDBUtil {
         if (info.length != 2) {
             throw new ArangoDBGraphException("Error in configuration. Malformed relation " + relation);
         }
-        result.collection(graph.getPrefixedCollectioName(info[0]));
+        result.collection(graph.getPrefixedCollectionName(info[0]));
         info = info[1].split("->");
         if (info.length != 2) {
             throw new ArangoDBGraphException("Error in configuration. Malformed relation> " + relation);
         }
         List<String> trimmed = Arrays.stream(info[0].split(","))
                 .map(String::trim)
-                .map(c -> graph.getPrefixedCollectioName(c))
+                .map(c -> graph.getPrefixedCollectionName(c))
                 .collect(Collectors.toList());
         String[] from = new String[trimmed.size()];
         from = trimmed.toArray(from);
 
         trimmed = Arrays.stream(info[1].split(","))
                 .map(String::trim)
-                .map(c -> graph.getPrefixedCollectioName(c))
+                .map(c -> graph.getPrefixedCollectionName(c))
                 .collect(Collectors.toList());
         String[] to = new String[trimmed.size()];
         to = trimmed.toArray(to);
@@ -381,12 +243,12 @@ public class ArangoDBUtil {
             final List<String> edgeCollections) {
         final List<String> from = new ArrayList<>(vertexCollections);
         from.addAll(edgeCollections);
-        from.add(graph.getPrefixedCollectioName(ArangoDBGraph.ELEMENT_PROPERTIES_COLLECTION));
+        from.add(graph.getPrefixedCollectionName(ArangoDBGraph.ELEMENT_PROPERTIES_COLLECTION));
         String[] f = from.toArray(new String[from.size()]);
         EdgeDefinition ed = new EdgeDefinition()
-                .collection(graph.getPrefixedCollectioName(ArangoDBGraph.ELEMENT_PROPERTIES_EDGE_COLLECTION))
+                .collection(graph.getPrefixedCollectionName(ArangoDBGraph.ELEMENT_PROPERTIES_EDGE_COLLECTION))
                 .from(f)
-                .to(graph.getPrefixedCollectioName(ArangoDBGraph.ELEMENT_PROPERTIES_COLLECTION));
+                .to(graph.getPrefixedCollectionName(ArangoDBGraph.ELEMENT_PROPERTIES_COLLECTION));
         return ed;
     }
 
@@ -555,77 +417,6 @@ public class ArangoDBUtil {
                 return ArangoDBQueryBuilder.Direction.OUT;
         }
         throw new IllegalArgumentException("Unsupported direction: " + direction);
-    }
-
-    public static String extractKey(final String id) {
-        if (id == null) {
-            return null;
-        }
-        int separator = id.indexOf('/');
-        if (separator > 0) {
-            return id.substring(separator + 1);
-        } else {
-            return id;
-        }
-    }
-
-    public static String extractCollection(final String id) {
-        if (id == null) {
-            return null;
-        }
-        int separator = id.indexOf('/');
-        if (separator > 0) {
-            return id.substring(0, separator);
-        } else {
-            return null;
-        }
-    }
-
-    // FIXME: review
-    public static Optional<String> extractLabel(final String id, final String label) {
-        String col = extractCollection(id);
-        if (col != null) {
-            String labelFromId = col.replaceFirst("^.*_", "");
-            if (label != null && !label.equals(labelFromId)) {
-                throw new IllegalArgumentException("Invalid label: [" + label + "] for id: [" + id + "]");
-            }
-            return Optional.of(labelFromId);
-        }
-        return Optional.ofNullable(label);
-    }
-
-    // FIXME: use com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil.extractKey() and com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil.extractLabel()
-    public static String getId(Graph.Features.ElementFeatures features, String label, Object... keyValues) {
-        Optional<Object> optionalId = ElementHelper.getIdValue(keyValues);
-        if (!optionalId.isPresent()) {
-            return null;
-        }
-        String id = optionalId
-                .filter(features::willAllowId)
-                .map(Object::toString)
-                .orElseThrow(Vertex.Exceptions::userSuppliedIdsOfThisTypeNotSupported);
-
-        if (id.contains("/")) {
-            String fullId = id;
-            String[] parts = fullId.split("/");
-            // The collection name is the last part of the full name
-            String[] collectionParts = parts[0].split("_");
-            String collectionName = collectionParts[collectionParts.length - 1];
-            Optional<String> inferredLabel = extractLabel(id, label);
-            if(inferredLabel.isPresent()) {
-                if (collectionName.contains(inferredLabel.get())) {
-                    id = parts[1];
-                }
-            }
-        }
-
-        // FIXME: review
-        Matcher m = ArangoDBUtil.DOCUMENT_KEY.matcher(id);
-        if (m.matches()) {
-            return id;
-        } else {
-            throw new ArangoDBGraphException(String.format("Given id (%s) has unsupported characters.", id));
-        }
     }
 
 }

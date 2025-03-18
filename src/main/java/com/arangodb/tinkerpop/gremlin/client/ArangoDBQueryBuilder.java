@@ -11,6 +11,7 @@ package com.arangodb.tinkerpop.gremlin.client;
 import java.util.List;
 import java.util.Map;
 
+import com.arangodb.tinkerpop.gremlin.structure.ArangoDBId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -114,14 +115,14 @@ public class ArangoDBQueryBuilder {
 	 */
 	
 	public ArangoDBQueryBuilder documentsById(
-		List<String> ids,
+		List<ArangoDBId> ids,
 		String loopVariable,
 		Map<String, Object> bindVars) {
 		queryBuilder.append("LET docs = FLATTEN(RETURN Document(@ids))\n");
 		queryBuilder.append(String.format("FOR %s IN docs\n", loopVariable));
 		queryBuilder.append(String.format("  FILTER NOT IS_NULL(%s)\n", loopVariable)); // Not needed?
 		bindVars.put("ids", ids);
-		logger.debug("documentsById", queryBuilder.toString());
+		logger.debug("documentsById: {}", queryBuilder.toString());
 		return this;
 	}
 	

@@ -33,8 +33,6 @@ public class TestGraphClient extends ArangoDBGraphClient {
             if (e.getErrorNum() != 1924) // graph not found
                 throw e;
         }
-
-        db.clearQueryCache();
     }
 
 }
