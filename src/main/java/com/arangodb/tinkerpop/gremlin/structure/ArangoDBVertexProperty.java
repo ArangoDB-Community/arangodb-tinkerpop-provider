@@ -1,29 +1,45 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
 package com.arangodb.tinkerpop.gremlin.structure;
 
+import com.arangodb.tinkerpop.gremlin.persistence.VertexPropertyData;
 import org.apache.tinkerpop.gremlin.structure.*;
-import org.apache.tinkerpop.gremlin.structure.util.ElementHelper;
 import org.apache.tinkerpop.gremlin.structure.util.StringFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.tinkerpop.gremlin.util.iterator.IteratorUtils;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
-import static com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil.elementAlreadyRemoved;
-
-public class ArangoDBVertexProperty<V> implements Element, VertexProperty<V> {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ArangoDBVertexProperty.class);
+public class ArangoDBVertexProperty<P> extends ArangoDBSimpleElement<VertexPropertyData> implements VertexProperty<P> {
 
     private final String key;
     private final ArangoDBVertex vertex;
-    private final ArangoDBVertexPropertyData data;
-    private boolean removed;
 
-    public ArangoDBVertexProperty(String key, ArangoDBVertexPropertyData data, ArangoDBVertex vertex) {
+    public ArangoDBVertexProperty(String key, VertexPropertyData data, ArangoDBVertex vertex) {
+        super(vertex.graph(), data);
         this.key = key;
-        this.data = data;
         this.vertex = vertex;
-        removed = false;
+    }
+
+    @Override
+    protected boolean removed() {
+        return super.removed() || vertex.removed();
     }
 
     @Override
@@ -33,8 +49,8 @@ public class ArangoDBVertexProperty<V> implements Element, VertexProperty<V> {
 
     @SuppressWarnings("unchecked")
     @Override
-    public V value() throws NoSuchElementException {
-        return (V) data.getValue();
+    public P value() throws NoSuchElementException {
+        return (P) data.getValue();
     }
 
     @Override
@@ -43,10 +59,9 @@ public class ArangoDBVertexProperty<V> implements Element, VertexProperty<V> {
     }
 
     @Override
-    public Vertex element() {
+    public ArangoDBVertex element() {
         return vertex;
     }
-
 
     @Override
     public Object id() {
@@ -54,56 +69,34 @@ public class ArangoDBVertexProperty<V> implements Element, VertexProperty<V> {
     }
 
     @Override
-    public <W> Property<W> property(String key, W value) {
-        if (removed) throw elementAlreadyRemoved(VertexProperty.class, id());
-        LOGGER.info("set property {} = {}", key, value);
-        ElementHelper.validateProperty(key, value);
-        data.setProperty(key, value);
-        vertex.update();
-        return new ArangoDBProperty<>(this, key, value);
+    protected void doUpdate() {
+        vertex.doUpdate();
     }
 
     @Override
-    public void remove() {
-        if (removed) return;
-        vertex.removeProperty(data);
-        vertex.update();
-        removed = true;
+    protected void doRemove() {
+        vertex.removeProperty(this);
+        vertex.doUpdate();
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public <U> Iterator<Property<U>> properties(String... propertyKeys) {
-        return data.getProperties()
-                .entrySet()
-                .stream()
-                .filter(entry -> ElementHelper.keyExists(entry.getKey(), propertyKeys))
-                .map(entry -> (Property<U>) new ArangoDBProperty<>(this, entry.getKey(), entry.getValue().getValue()))
-                .collect(Collectors.toList()).iterator();
-    }
-
-    public void removeProperty(String key) {
-        if (removed) throw elementAlreadyRemoved(Edge.class, id());
-        if (data.hasProperty(key)) {
-            data.removeProperty(key);
-            vertex.update();
-        }
+    protected void doInsert() {
+        doUpdate();
     }
 
     @Override
-    public String toString() {
+    public String stringify() {
         return StringFactory.propertyString(this);
     }
 
-    @SuppressWarnings("EqualsWhichDoesntCheckParameterClass")
     @Override
-    public boolean equals(final Object object) {
-        return ElementHelper.areEqual(this, object);
+    public <U> Iterator<Property<U>> properties(String... propertyKeys) {
+        return IteratorUtils.cast(super.properties(propertyKeys));
     }
 
     @Override
-    public int hashCode() {
-        return ElementHelper.hashCode((Property<?>) this);
+    public String label() {
+        return VertexProperty.super.label();
     }
-
 }
+

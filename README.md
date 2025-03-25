@@ -7,7 +7,7 @@ An implementation of the [Apache TinkerPop OLTP Provider](https://tinkerpop.apac
 ## Compatibility
 
 This Provider supports:
-* Apache TinkerPop 3.3
+* Apache TinkerPop 3.7
 * ArangoDB 3.11+ (via ArangoDB Java Driver 7.17.0).
 
 ## ArangoDB
@@ -101,21 +101,24 @@ graph.close();
 ## A note on element IDs
 
 The provider implementation supports user supplied IDs, i.e. provide an id property for graph
-elements, but currently we only support String ids, that is:
+elements, but we only support String ids, that is:
 
 ```
 Vertex v1 = g.addV("person").property(T.id, "1");
 ```
 
 
-will create a vertex with id "1". However, implementation wise, in ArangoDB we are only allowed to manipulate the documents `name`, not its `id`. For this reason, providing a TinkerPop vertex id (`T.id`) actually sets the vertex's ArangoDB `name`. As a result, retrieving the vertex by the given id will fail:
+will create a vertex with id "1". However, implementation wise, in ArangoDB we are only allowed to manipulate the 
+documents `name`, not its `id`. For this reason, providing a TinkerPop vertex id (`T.id`) actually sets the vertex's 
+ArangoDB `name`. As a result, retrieving the vertex by the given id will fail:
 
 ```
 Vertex v2 = g.V("1");
 assert v2 == null;
 ```
 
-Since we know that documents IDs are created by concatenating (with a slash) the document's collection and its name, then we can find the vertex like so:
+Since we know that documents IDs are created by concatenating (with a slash) the document's collection and its name, 
+then we can find the vertex like so:
 
 ```
 Vertex v2 = g.V("person/1");

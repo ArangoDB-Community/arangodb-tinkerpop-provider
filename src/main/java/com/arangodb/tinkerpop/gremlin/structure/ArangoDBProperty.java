@@ -16,27 +16,27 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package com.arangodb.tinkerpop.gremlin.structure;
 
-import org.apache.tinkerpop.gremlin.structure.Element;
 import org.apache.tinkerpop.gremlin.structure.Property;
 import org.apache.tinkerpop.gremlin.structure.util.ElementHelper;
 import org.apache.tinkerpop.gremlin.structure.util.StringFactory;
 
-public final class ArangoDBProperty<V> implements Property<V> {
+public class ArangoDBProperty<V> implements Property<V> {
 
     private final String key;
     private final V value;
-    private final Element element;
+    private final ArangoDBSimpleElement<?> element;
 
-    public ArangoDBProperty(final Element element, final String key, final V value) {
+    public ArangoDBProperty(final ArangoDBSimpleElement<?> element, final String key, final V value) {
         this.element = element;
         this.key = key;
         this.value = value;
     }
 
     @Override
-    public Element element() {
+    public ArangoDBElement<?, ?> element() {
         return element;
     }
 
@@ -57,13 +57,7 @@ public final class ArangoDBProperty<V> implements Property<V> {
 
     @Override
     public void remove() {
-        if (element instanceof ArangoDBEdge) {
-            ((ArangoDBEdge) element).removeProperty(key);
-        } else if (element instanceof ArangoDBVertexProperty) {
-            ((ArangoDBVertexProperty) element).removeProperty(key);
-        } else {
-            throw new UnsupportedOperationException("Property " + this.key() + " is not an Edge");
-        }
+        element.removeProperty(key);
     }
 
     @Override
@@ -83,3 +77,4 @@ public final class ArangoDBProperty<V> implements Property<V> {
     }
 
 }
+

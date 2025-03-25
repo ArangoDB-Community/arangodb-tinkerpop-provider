@@ -1,209 +1,115 @@
-/// ///////////////////////////////////////////////////////////////////////////////////////
-//
-// Implementation of the TinkerPop OLTP Provider API for ArangoDB
-//
-// Copyright triAGENS GmbH Cologne and The University of York
-//
-/// ///////////////////////////////////////////////////////////////////////////////////////
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 
 package com.arangodb.tinkerpop.gremlin.structure;
 
-import java.util.*;
-import java.util.regex.Matcher;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import org.apache.commons.lang3.ArrayUtils;
-import org.apache.tinkerpop.gremlin.structure.Direction;
-import org.apache.tinkerpop.gremlin.structure.Edge;
-import org.apache.tinkerpop.gremlin.structure.Graph;
-import org.apache.tinkerpop.gremlin.structure.T;
-import org.apache.tinkerpop.gremlin.structure.Vertex;
-import org.apache.tinkerpop.gremlin.structure.VertexProperty;
-import org.apache.tinkerpop.gremlin.structure.VertexProperty.Cardinality;
+import com.arangodb.tinkerpop.gremlin.persistence.VertexData;
+import com.arangodb.tinkerpop.gremlin.persistence.VertexPropertyData;
+import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
+import org.apache.tinkerpop.gremlin.structure.*;
 import org.apache.tinkerpop.gremlin.structure.util.ElementHelper;
 import org.apache.tinkerpop.gremlin.structure.util.StringFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.tinkerpop.gremlin.util.iterator.IteratorUtils;
 
-import com.arangodb.tinkerpop.gremlin.client.ArangoDBGraphException;
-import com.arangodb.tinkerpop.gremlin.client.ArangoDBPropertyFilter;
-import com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil;
+import java.util.*;
+import java.util.stream.Collectors;
 
-import static com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil.elementAlreadyRemoved;
+import static com.arangodb.tinkerpop.gremlin.structure.ArangoDBElement.Exceptions.elementAlreadyRemoved;
+import static com.arangodb.tinkerpop.gremlin.utils.ArangoDBUtil.*;
 
+public class ArangoDBVertex extends ArangoDBElement<VertexPropertyData, VertexData> implements Vertex, ArangoDBPersistentElement {
 
-/**
- * The ArangoDB vertex class.
- *
- * @author Achim Brandt (http://www.triagens.de)
- * @author Johannes Gocke (http://www.triagens.de)
- * @author Guido Schwab (http://www.triagens.de)
- * @author Horacio Hoyos Rodriguez (https://www.york.ac.uk)
- */
-
-public class ArangoDBVertex implements Vertex {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(ArangoDBVertex.class);
-
-    private final ArangoDBGraph graph;
-    private final ArangoDBVertexData data;
-    private boolean removed;
-
-    public ArangoDBVertex(ArangoDBGraph graph, ArangoDBVertexData data) {
-        this.graph = graph;
-        this.data = data;
-        this.removed = false;
+    public static ArangoDBVertex of(final String id, final String label, ArangoDBGraph graph) {
+        return new ArangoDBVertex(graph, VertexData.of(extractLabel(id, label).orElse(DEFAULT_LABEL), extractKey(id)));
     }
 
-    public ArangoDBVertex(final String id, final String label, ArangoDBGraph graph) {
-        this.graph = graph;
-        String inferredLabel, key;
-        if (id != null) {
-            int separator = id.indexOf('/');
-            if (separator > 0) {
-                inferredLabel = id.substring(0, separator);
-                key = id.substring(separator + 1);
-            } else {
-                inferredLabel = label != null ? label : DEFAULT_LABEL;
-                key = id;
-            }
-        } else {
-            inferredLabel = label != null ? label : DEFAULT_LABEL;
-            key = null;
-        }
-
-        data = new ArangoDBVertexData(inferredLabel, key);
-        removed = false;
-    }
-
-    public boolean isRemoved() {
-        return removed;
+    public ArangoDBVertex(ArangoDBGraph graph, VertexData data) {
+        super(graph, data);
     }
 
     @Override
-    public String id() {
-        String key = data.getKey();
-        if (key == null) {
-            return null;
-        }
-        return graph.getPrefixedCollectioName(label()) + "/" + key;
+    public <V> VertexProperty<V> property(
+            final VertexProperty.Cardinality cardinality,
+            final String key,
+            final V value,
+            final Object... keyValues
+    ) {
+        if (removed()) throw elementAlreadyRemoved(id());
+        ElementHelper.legalPropertyKeyValueArray(keyValues);
+        ElementHelper.validateProperty(key, value);
+
+        Optional<VertexProperty<V>> optionalVertexProperty = ElementHelper.stageVertexProperty(this, cardinality, key, value, keyValues);
+        if (optionalVertexProperty.isPresent()) return optionalVertexProperty.get();
+
+        String idValue = ElementHelper.getIdValue(keyValues)
+                .map(it -> {
+                    if (!graph.features().vertex().properties().willAllowId(it)) {
+                        throw VertexProperty.Exceptions.userSuppliedIdsOfThisTypeNotSupported();
+                    }
+                    return it.toString();
+                })
+                .orElseGet(() -> UUID.randomUUID().toString());
+
+        VertexPropertyData prop = VertexPropertyData.of(idValue, value);
+        data.add(key, prop);
+
+        ArangoDBVertexProperty<V> vertexProperty = new ArangoDBVertexProperty<>(key, prop, this);
+        // TODO: optmize writing only once
+        ElementHelper.attachProperties(vertexProperty, keyValues);
+        doUpdate();
+        return vertexProperty;
     }
 
     @Override
-    public String label() {
-        return data.getLabel();
-    }
+    public Edge addEdge(String label, Vertex vertex, Object... keyValues) {
+        if (null == vertex) throw Graph.Exceptions.argumentCanNotBeNull("vertex");
+        if (removed() || ((ArangoDBVertex) vertex).removed()) throw elementAlreadyRemoved(id());
 
-    @Override
-    public ArangoDBGraph graph() {
-        return graph;
-    }
-
-    @Override
-    public void remove() {
-        if (removed) return;
-        LOGGER.info("removing {} from graph {}.", id(), graph.name());
-        edges(Direction.BOTH).forEachRemaining(Edge::remove);
-        graph.getClient().deleteVertex(data);
-        this.removed = true;
-    }
-
-    @Override
-    public Edge addEdge(String label, Vertex inVertex, Object... keyValues) {
-        LOGGER.info("addEdge in collection {} to vertex {}", label, inVertex == null ? "?" : inVertex.id());
         ElementHelper.legalPropertyKeyValueArray(keyValues);
         ElementHelper.validateLabel(label);
-        if (!graph.edgeCollections().contains(label)) {
-            throw new IllegalArgumentException(String.format("Edge label (%s)not in graph (%s) edge collections.", label, graph.name()));
+        String id = ArangoDBUtil.getId(graph.features().edge(), label, keyValues);
+        ArangoDBEdge edge = ArangoDBEdge.of(id, label, id(), (String) vertex.id(), graph);
+        if (!graph.edgeCollections().contains(edge.label())) {
+            throw new IllegalArgumentException(String.format("Edge label (%s) not in graph (%s) edge collections.", edge.label(), graph.name()));
         }
-        if (inVertex == null) {
-            throw Graph.Exceptions.argumentCanNotBeNull("vertex");
-        }
-        Object id;
-        ArangoDBEdge edge = null;
-        if (ElementHelper.getIdValue(keyValues).isPresent()) {
-            id = ElementHelper.getIdValue(keyValues).get();
-            if (graph.features().edge().willAllowId(id)) {
-                if (id.toString().contains("/")) {
-                    String fullId = id.toString();
-                    String[] parts = fullId.split("/");
-                    // The collection name is the last part of the full name
-                    String[] collectionParts = parts[0].split("_");
-                    String collectionName = collectionParts[collectionParts.length - 1];
-                    if (collectionName.contains(label)) {
-                        id = parts[1];
 
-                    }
-                }
-                Matcher m = ArangoDBUtil.DOCUMENT_KEY.matcher((String) id);
-                if (m.matches()) {
-                    edge = new ArangoDBEdge(id.toString(), label, (String) this.id(), (String) inVertex.id(), graph);
-                } else {
-                    throw new ArangoDBGraphException(String.format("Given id (%s) has unsupported characters.", id));
-                }
-            } else {
-                throw Vertex.Exceptions.userSuppliedIdsOfThisTypeNotSupported();
-            }
-        } else {
-            edge = new ArangoDBEdge(null, label, (String) this.id(), (String) inVertex.id(), graph);
-        }
-        // The vertex needs to exist before we can attach properties
-        edge.insert();
+        // TODO: optmize writing only once
+        edge.doInsert();
         ElementHelper.attachProperties(edge, keyValues);
         return edge;
     }
 
     @Override
-    public <V> VertexProperty<V> property(
-            final Cardinality cardinality,
-            final String key,
-            final V value,
-            final Object... keyValues
-    ) {
-        if (removed) throw elementAlreadyRemoved(Vertex.class, id());
-        ElementHelper.legalPropertyKeyValueArray(keyValues);
-        ElementHelper.validateProperty(key, value);
-
-        final Optional<VertexProperty<V>> optionalVertexProperty = ElementHelper.stageVertexProperty(this, cardinality, key, value, keyValues);
-        if (optionalVertexProperty.isPresent()) return optionalVertexProperty.get();
-
-        Optional<Object> optionalId = ElementHelper.getIdValue(keyValues);
-        Object[] filteredKeyValues = ArrayUtils.clone(keyValues);
-        String idValue = null;
-        if (optionalId.isPresent()) {
-            if (graph.features().vertex().properties().willAllowId(optionalId.get())) {
-                idValue = optionalId.get().toString();
-            } else {
-                throw VertexProperty.Exceptions.userSuppliedIdsOfThisTypeNotSupported();
-            }
-            int idIndex = 0;
-            for (int i = 0; i < filteredKeyValues.length; i += 2) {
-                if (filteredKeyValues[i] == T.id) {
-                    idIndex = i;
-                    break;
-                }
-            }
-            filteredKeyValues = ArrayUtils.remove(filteredKeyValues, idIndex);
-            filteredKeyValues = ArrayUtils.remove(filteredKeyValues, idIndex);
-        }
-
-        if (idValue == null) {
-            idValue = UUID.randomUUID().toString();
-        }
-
-        ArangoDBVertexPropertyData prop = new ArangoDBVertexPropertyData(idValue, value);
-
-        final List<ArangoDBVertexPropertyData> list = data.getProperties().getOrDefault(key, new ArrayList<>());
-        list.add(prop);
-        data.getProperties().put(key, list);
-
-        ArangoDBVertexProperty<V> vertexProperty = new ArangoDBVertexProperty<>(key, prop, this);
-        ElementHelper.attachProperties(vertexProperty, filteredKeyValues);
-        update();
-        return vertexProperty;
+    protected void doRemove() {
+        edges(Direction.BOTH).forEachRemaining(Edge::remove);
+        graph.getClient().deleteVertex(this);
     }
 
+    @Override
+    protected String stringify() {
+        return StringFactory.vertexString(this);
+    }
+
+    @Override
+    protected <V> Property<V> createProperty(String key, VertexPropertyData value) {
+        return new ArangoDBVertexProperty<>(key, value, this);
+    }
 
     @Override
     public Iterator<Edge> edges(Direction direction, String... edgeLabels) {
@@ -213,12 +119,9 @@ public class ArangoDBVertex implements Vertex {
         if (edgeCollections.isEmpty()) {
             return Collections.emptyIterator();
         }
-        return graph.getClient().getVertexEdges(id(), edgeCollections, direction)
-                .stream()
-                .map(it -> (Edge) new ArangoDBEdge(graph, it))
-                .iterator();
+        return IteratorUtils.map(graph.getClient().getVertexEdges(id(), edgeCollections, direction),
+                it -> new ArangoDBEdge(graph, it));
     }
-
 
     @Override
     public Iterator<Vertex> vertices(Direction direction, String... edgeLabels) {
@@ -228,59 +131,44 @@ public class ArangoDBVertex implements Vertex {
         if (edgeCollections.isEmpty()) {
             return Collections.emptyIterator();
         }
-        return graph.getClient().getDocumentNeighbors(id(), edgeCollections, direction, ArangoDBPropertyFilter.empty(), ArangoDBVertexData.class).stream()
-                .map(it -> (Vertex) new ArangoDBVertex(graph, it))
-                .iterator();
+        return IteratorUtils.map(graph.getClient().getVertexNeighbors(id(), edgeCollections, direction),
+                it -> new ArangoDBVertex(graph, it));
     }
 
+    @Override
+    public void doInsert() {
+        graph.getClient().insertVertex(this);
+    }
 
-    @SuppressWarnings("unchecked")
+    @Override
+    public void doUpdate() {
+        graph.getClient().updateVertex(this);
+    }
+
+    @Override
+    public <V> VertexProperty<V> property(final String key) {
+        return Vertex.super.property(key);
+    }
+
+    @Override
+    public <V> VertexProperty<V> property(final String key, final V value) {
+        return Vertex.super.property(key, value);
+    }
+
     @Override
     public <V> Iterator<VertexProperty<V>> properties(String... propertyKeys) {
-        LOGGER.debug("Get properties {}", (Object[]) propertyKeys);
-        return allProperties()
-                .filter(it -> ElementHelper.keyExists(it.key(), propertyKeys))
-                .map(it -> (VertexProperty<V>) it)
-                .iterator();
+        return IteratorUtils.cast(super.properties(propertyKeys));
     }
 
-
-    @Override
-    public String toString() {
-        return StringFactory.vertexString(this);
-    }
-
-    private Stream<ArangoDBVertexProperty<?>> allProperties() {
-        return data.getProperties().entrySet().stream()
-                .flatMap(x -> x.getValue().stream()
-                        .map(y -> new ArangoDBVertexProperty<>(x.getKey(), y, this))
-                );
-    }
-
-    public void insert() {
-        if (removed) throw elementAlreadyRemoved(Vertex.class, id());
-        graph.getClient().insertVertex(data);
-    }
-
-
-    public void update() {
-        if (removed) throw elementAlreadyRemoved(Vertex.class, id());
-        graph.getClient().updateVertex(data);
-    }
-
-    public void removeProperty(ArangoDBVertexPropertyData prop) {
-        if (removed) throw elementAlreadyRemoved(Vertex.class, id());
-        for (List<ArangoDBVertexPropertyData> it : data.getProperties().values()) {
-            if (it.remove(prop)) return;
-        }
+    public void removeProperty(ArangoDBVertexProperty<?> prop) {
+        if (removed()) throw ArangoDBElement.Exceptions.elementAlreadyRemoved(id());
+        data.remove(prop.key(), prop.data());
+        doUpdate();
     }
 
     /**
      * Query will raise an exception if the edge_collection name is not in the graph, so we need to filter out
      * edgeLabels not in the graph.
-     *
-     * @param edgeLabels
-     * @return
      */
     private List<String> getQueryEdgeCollections(String... edgeLabels) {
         List<String> vertexCollections;
@@ -295,17 +183,4 @@ public class ArangoDBVertex implements Vertex {
         }
         return vertexCollections;
     }
-
-    @Override
-    @SuppressWarnings("EqualsDoesntCheckParameterClass")
-    public boolean equals(final Object object) {
-        return ElementHelper.areEqual(this, object);
-    }
-
-    @Override
-    public int hashCode() {
-        return ElementHelper.hashCode(this);
-    }
-
 }
-

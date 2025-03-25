@@ -14,10 +14,6 @@ import com.arangodb.serde.InternalRev;
 import com.arangodb.tinkerpop.gremlin.structure.ArangoDBGraph;
 import com.arangodb.shaded.fasterxml.jackson.annotation.JsonIgnore;
 import com.arangodb.shaded.fasterxml.jackson.annotation.JsonProperty;
-import com.arangodb.tinkerpop.gremlin.structure.ArangoDBVertexPropertyData;
-
-import java.util.List;
-import java.util.Map;
 
 /**
  * The ArangoDB BaseBaseDocument provides the internal fields required for the driver to correctly
@@ -47,9 +43,6 @@ public abstract class ArangoDBBaseDocument {
 
     @JsonProperty
     protected String label;
-
-    @JsonProperty
-    protected Map<String, List<ArangoDBVertexPropertyData>> properties;
 
     /** The collection in which the element is placed. */
 
