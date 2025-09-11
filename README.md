@@ -2,6 +2,10 @@
 
 # arangodb-tinkerpop-provider
 
+
+> [!IMPORTANT]
+> ArangoDB now provides an official Tinkerpop [integration](https://github.com/arangodb/arangodb-tinkerpop-provider) 
+
 An implementation of the [Apache TinkerPop OLTP Provider](https://tinkerpop.apache.org/docs/3.3.3/dev/provider/#_provider_documentation) API for ArangoDB
 
 ## Compatibility
